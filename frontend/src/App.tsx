@@ -10,6 +10,8 @@ import RiskForm from "./pages/RiskForm";
 import RiskDetail from "./pages/RiskDetail";
 import AppLayout from "./components/AppLayout";
 import Settings from "./pages/Settings";
+import Users from "./pages/Users";
+import UserDetail from "./pages/UserDetail";
 import LandingPage from "./components/LandingPage";
 
 const router = createBrowserRouter([
@@ -32,6 +34,8 @@ const router = createBrowserRouter([
           { path: "/risks/new", element: <RiskForm /> },
           { path: "/risks/:id", element: <RiskDetail /> },
           { path: "/risks/:id/edit", element: <RiskForm /> },
+          { path: "/users", element: <Users /> },
+          { path: "/users/:id", element: <UserDetail /> },
           { path: "/settings", element: <Settings /> },
         ],
       },

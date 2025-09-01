@@ -16,6 +16,7 @@ import {
   Search,
   Menu,
   X,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -95,6 +96,12 @@ export default function AppLayout() {
             label="Risks"
             icon={<ListChecks size={20} />}
             description="Manage & Assess"
+          />
+          <NavItem
+            to="/users"
+            label="Users"
+            icon={<Users size={20} />}
+            description="Manage Users"
           />
           <NavItem
             to="/settings"
@@ -219,6 +226,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/risks") && pathname !== "/risks")
     return "Risk Details";
   if (pathname.startsWith("/risks")) return "Risk Management";
+  if (pathname.startsWith("/users") && pathname !== "/users")
+    return "User Details";
+  if (pathname.startsWith("/users")) return "User Management";
   if (pathname.startsWith("/settings")) return "Settings";
   return "RiskWorks";
 }

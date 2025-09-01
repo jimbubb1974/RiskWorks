@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 
@@ -14,6 +15,7 @@ class UserLogin(BaseModel):
 class UserRead(BaseModel):
 	id: int
 	email: EmailStr
+	created_at: datetime
 
 	class Config:
 		from_attributes = True
