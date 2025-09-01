@@ -4,6 +4,7 @@ from .routers import auth as auth_router
 from .routers import risks as risks_router
 from .routers import users as users_router
 from .routers import system as system_router
+from .core.config import settings
 
 # Import models to ensure they are registered with SQLAlchemy
 from . import models
@@ -12,14 +13,10 @@ from . import models
 def create_app() -> FastAPI:
 	app = FastAPI(title="Risk Platform API", version="0.1.0")
 
-	# CORS - allow local frontend during development
-	origins = [
-		"http://localhost:5173",
-		"http://127.0.0.1:5173",
-	]
+	# CORS - allow origins based on configuration
 	app.add_middleware(
 		CORSMiddleware,
-		allow_origins=origins,
+		allow_origins=settings.cors_origins,
 		allow_credentials=True,
 		allow_methods=["*"],
 		allow_headers=["*"],

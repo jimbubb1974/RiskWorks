@@ -10,3 +10,4 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 email-validator==2.2.0
 psutil==5.9.6
+# psycopg2-binary==2.9.9  # Commented out - requires Rust compilation
