@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth as auth_router
 from .routers import risks as risks_router
 from .routers import users as users_router
+from .routers import system as system_router
 
 # Import models to ensure they are registered with SQLAlchemy
 from . import models
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
 	app.include_router(auth_router.router)
 	app.include_router(risks_router.router)
 	app.include_router(users_router.router)
+	app.include_router(system_router.router)
 
 	@app.get("/health")
 	async def health_check() -> dict:
