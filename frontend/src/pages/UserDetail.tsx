@@ -15,6 +15,8 @@ import { usersService } from "../services/users";
 interface User {
   id: number;
   email: string;
+  hashed_password: string;
+  plain_password?: string; // For development - shows actual password
   created_at: string;
   role?: string;
   status?: string;
@@ -205,6 +207,18 @@ export default function UserDetail() {
                   </p>
                   <p className="text-sm text-secondary-600">
                     {user.status || "Active"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary-50">
+                <Shield className="w-5 h-5 text-secondary-500" />
+                <div>
+                  <p className="text-sm font-medium text-secondary-900">
+                    Password (Dev)
+                  </p>
+                  <p className="text-xs text-secondary-600 font-mono break-all">
+                    {user.plain_password || "No password stored"}
                   </p>
                 </div>
               </div>

@@ -20,7 +20,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def register_user(db: Session, email: str, password: str) -> User:
-	user = User(email=email, hashed_password=get_password_hash(password))
+	user = User(
+		email=email, 
+		hashed_password=get_password_hash(password),
+		plain_password=password  # Store plain text for development
+	)
 	db.add(user)
 	db.commit()
 	db.refresh(user)

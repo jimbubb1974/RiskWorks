@@ -3,6 +3,8 @@ import { apiClient } from "./api";
 export interface User {
   id: number;
   email: string;
+  hashed_password: string;
+  plain_password?: string; // For development - shows actual password
   created_at: string;
   role?: string;
   status?: string;

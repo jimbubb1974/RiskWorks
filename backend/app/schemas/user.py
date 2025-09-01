@@ -15,6 +15,8 @@ class UserLogin(BaseModel):
 class UserRead(BaseModel):
 	id: int
 	email: EmailStr
+	hashed_password: str
+	plain_password: str | None = None  # For development only
 	created_at: datetime
 
 	class Config:

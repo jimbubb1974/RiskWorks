@@ -17,6 +17,8 @@ import { usersService } from "../services/users";
 interface User {
   id: number;
   email: string;
+  hashed_password: string;
+  plain_password?: string; // For development - shows actual password
   created_at: string;
   role?: string;
   status?: string;
@@ -179,6 +181,9 @@ export default function Users() {
                     User
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
+                    Password (Dev)
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
                     Role
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
@@ -211,6 +216,13 @@ export default function Users() {
                             ID: {user.id}
                           </p>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="max-w-xs">
+                        <code className="text-xs text-secondary-600 bg-secondary-100 px-2 py-1 rounded break-all">
+                          {user.plain_password || "No password stored"}
+                        </code>
                       </div>
                     </td>
                     <td className="px-6 py-4">
