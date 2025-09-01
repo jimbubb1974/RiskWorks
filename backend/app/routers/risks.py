@@ -25,6 +25,8 @@ def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]) -> int:
 def list_risks_endpoint(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     min_severity: Optional[int] = Query(default=None),
+    min_likelihood: Optional[int] = Query(default=None),
+    min_impact: Optional[int] = Query(default=None),
     search: Optional[str] = Query(default=None),
     sort_by: Optional[str] = Query(default=None),
     order: str = Query(default="desc"),
@@ -38,6 +40,8 @@ def list_risks_endpoint(
         owner_id=user_id,
         status=status_filter,
         min_severity=min_severity,
+        min_likelihood=min_likelihood,
+        min_impact=min_impact,
         search=search,
         sort_by=sort_by,
         order=order,
@@ -48,7 +52,16 @@ def list_risks_endpoint(
 
 @router.post("", response_model=RiskRead, status_code=status.HTTP_201_CREATED)
 def create_risk_endpoint(payload: RiskCreate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-	risk = create_risk(db, owner_id=user_id, **payload.model_dump())
+	# Convert payload to dict and handle new fields
+	risk_data = payload.model_dump()
+	
+	# Ensure likelihood and impact are set
+	if "likelihood" not in risk_data:
+		risk_data["likelihood"] = 3
+	if "impact" not in risk_data:
+		risk_data["impact"] = 3
+	
+	risk = create_risk(db, owner_id=user_id, **risk_data)
 	return risk
 
 

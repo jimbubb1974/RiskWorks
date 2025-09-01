@@ -4,6 +4,9 @@ from .routers import auth as auth_router
 from .routers import risks as risks_router
 from .routers import users as users_router
 
+# Import models to ensure they are registered with SQLAlchemy
+from . import models
+
 
 def create_app() -> FastAPI:
 	app = FastAPI(title="Risk Platform API", version="0.1.0")
