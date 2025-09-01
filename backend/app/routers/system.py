@@ -50,10 +50,15 @@ def get_system_status(
         # Database connection test
         db_status = "connected"
         try:
-            # Test database connection
-            db.execute("SELECT 1")
-        except Exception:
+            # Test database connection using SQLAlchemy text()
+            from sqlalchemy import text
+            db.execute(text("SELECT 1"))
+            print(f"✅ Database connection test successful")
+        except Exception as e:
             db_status = "disconnected"
+            print(f"❌ Database connection test failed: {e}")
+            print(f"   Database engine URL: {get_engine().url}")
+            print(f"   Database file exists: {Path('risk_platform.db').exists()}")
         
         # Process information
         current_process = psutil.Process()
@@ -148,9 +153,9 @@ def get_port_status(
         return None
     
     common_ports = [
-        {"port": 3000, "service": "React Dev Server", "description": "Default React development server"},
-        {"port": 5173, "service": "Vite Dev Server", "description": "Vite development server (current)"},
         {"port": 8000, "service": "FastAPI Backend", "description": "Python FastAPI backend server"},
+        {"port": 5173, "service": "Vite Dev Server", "description": "Vite development server (current)"},
+        {"port": 3000, "service": "React Dev Server", "description": "Default React development server"},
         {"port": 5432, "service": "PostgreSQL", "description": "PostgreSQL database (if using)"},
         {"port": 3306, "service": "MySQL", "description": "MySQL database (if using)"},
         {"port": 6379, "service": "Redis", "description": "Redis cache (if using)"},
