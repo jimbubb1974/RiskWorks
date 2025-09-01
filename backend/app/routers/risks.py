@@ -23,12 +23,27 @@ def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]) -> int:
 
 @router.get("", response_model=list[RiskRead])
 def list_risks_endpoint(
-	status_filter: Optional[str] = Query(default=None, alias="status"),
-	min_severity: Optional[int] = Query(default=None),
-	db: Session = Depends(get_db),
-	user_id: int = Depends(get_current_user_id),
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    min_severity: Optional[int] = Query(default=None),
+    search: Optional[str] = Query(default=None),
+    sort_by: Optional[str] = Query(default=None),
+    order: str = Query(default="desc"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
 ):
-	return list_risks(db, owner_id=user_id, status=status_filter, min_severity=min_severity)
+    return list_risks(
+        db,
+        owner_id=user_id,
+        status=status_filter,
+        min_severity=min_severity,
+        search=search,
+        sort_by=sort_by,
+        order=order,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("", response_model=RiskRead, status_code=status.HTTP_201_CREATED)

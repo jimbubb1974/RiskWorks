@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import RisksList from "./pages/RisksList";
 import RiskForm from "./pages/RiskForm";
 import RiskDetail from "./pages/RiskDetail";
+import AppLayout from "./components/AppLayout";
+import Settings from "./pages/Settings";
 
 const router = createBrowserRouter([
   {
@@ -27,11 +29,18 @@ const router = createBrowserRouter([
     path: "/",
     element: <ProtectedRoute />,
     children: [
-      { path: "/dashboard", element: <Dashboard /> },
-      { path: "/risks", element: <RisksList /> },
-      { path: "/risks/new", element: <RiskForm /> },
-      { path: "/risks/:id", element: <RiskDetail /> },
-      { path: "/risks/:id/edit", element: <RiskForm /> },
+      {
+        path: "/",
+        element: <AppLayout />,
+        children: [
+          { path: "/dashboard", element: <Dashboard /> },
+          { path: "/risks", element: <RisksList /> },
+          { path: "/risks/new", element: <RiskForm /> },
+          { path: "/risks/:id", element: <RiskDetail /> },
+          { path: "/risks/:id/edit", element: <RiskForm /> },
+          { path: "/settings", element: <Settings /> },
+        ],
+      },
     ],
   },
 ]);

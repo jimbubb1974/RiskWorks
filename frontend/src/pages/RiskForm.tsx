@@ -10,7 +10,7 @@ const schema = z.object({
   description: z.string().optional(),
   severity: z.number().min(1).max(5),
   probability: z.number().min(1).max(5),
-  status: z.enum(["open", "mitigated", "closed"]).default("open"),
+  status: z.enum(["open", "mitigated", "closed"]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -26,7 +26,13 @@ export default function RiskForm() {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { severity: 3, probability: 3, status: "open" },
+    defaultValues: {
+      title: "",
+      description: "",
+      severity: 3,
+      probability: 3,
+      status: "open",
+    },
   });
 
   useEffect(() => {
@@ -55,47 +61,81 @@ export default function RiskForm() {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: "20px auto" }}>
-      <h1>{isEdit ? "Edit risk" : "Create risk"}</h1>
-      <form onSubmit={handleSubmit(onSubmit)}>
+    <div className="max-w-md mx-auto">
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">
+        {isEdit ? "Edit risk" : "Create risk"}
+      </h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
-          <label>Title</label>
-          <input type="text" {...register("title")} />
-          {errors.title && <p>{errors.title.message}</p>}
-        </div>
-        <div>
-          <label>Description</label>
-          <textarea {...register("description")} />
-        </div>
-        <div>
-          <label>Severity (1-5)</label>
+          <label className="mb-1 block text-sm text-gray-700">Title</label>
           <input
-            type="number"
-            min={1}
-            max={5}
-            {...register("severity", { valueAsNumber: true })}
+            type="text"
+            {...register("title")}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          {errors.severity && <p>{errors.severity.message}</p>}
+          {errors.title && (
+            <p className="text-sm text-red-600">{errors.title.message}</p>
+          )}
         </div>
         <div>
-          <label>Probability (1-5)</label>
-          <input
-            type="number"
-            min={1}
-            max={5}
-            {...register("probability", { valueAsNumber: true })}
+          <label className="mb-1 block text-sm text-gray-700">
+            Description
+          </label>
+          <textarea
+            {...register("description")}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          {errors.probability && <p>{errors.probability.message}</p>}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-sm text-gray-700">
+              Severity (1-5)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              {...register("severity", { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            {errors.severity && (
+              <p className="text-sm text-red-600">{errors.severity.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-700">
+              Probability (1-5)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              {...register("probability", { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            {errors.probability && (
+              <p className="text-sm text-red-600">
+                {errors.probability.message}
+              </p>
+            )}
+          </div>
         </div>
         <div>
-          <label>Status</label>
-          <select {...register("status")}>
+          <label className="mb-1 block text-sm text-gray-700">Status</label>
+          <select
+            {...register("status")}
+            className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
             <option value="open">Open</option>
             <option value="mitigated">Mitigated</option>
             <option value="closed">Closed</option>
           </select>
         </div>
-        <button disabled={isSubmitting} type="submit">
+        <button
+          disabled={isSubmitting}
+          type="submit"
+          className="inline-flex items-center rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+        >
           {isEdit ? "Save" : "Create"}
         </button>
       </form>

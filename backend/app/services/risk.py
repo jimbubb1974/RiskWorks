@@ -1,17 +1,36 @@
 from typing import Iterable, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.orm import Session
 
 from ..models.risk import Risk
 
 
-def list_risks(db: Session, owner_id: int, status: Optional[str] = None, min_severity: Optional[int] = None):
+def list_risks(
+	db: Session,
+	owner_id: int,
+	status: Optional[str] = None,
+	min_severity: Optional[int] = None,
+	search: Optional[str] = None,
+	sort_by: Optional[str] = None,
+	order: str = "desc",
+	limit: int = 50,
+	offset: int = 0,
+):
 	stmt = select(Risk).where(Risk.owner_id == owner_id)
 	if status:
 		stmt = stmt.where(Risk.status == status)
 	if min_severity is not None:
 		stmt = stmt.where(Risk.severity >= min_severity)
+	if search:
+		like = f"%{search}%"
+		stmt = stmt.where(Risk.title.ilike(like))
+	if sort_by in {"created_at", "updated_at", "severity", "probability", "title", "status"}:
+		col = getattr(Risk, sort_by)
+		stmt = stmt.order_by(desc(col) if order == "desc" else asc(col))
+	else:
+		stmt = stmt.order_by(desc(Risk.created_at))
+	stmt = stmt.limit(limit).offset(offset)
 	return list(db.scalars(stmt))
 
 

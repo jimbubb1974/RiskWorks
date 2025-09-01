@@ -26,25 +26,44 @@ export default function Register() {
   }
 
   return (
-    <div style={{ maxWidth: 360, margin: "40px auto" }}>
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit(onSubmit)}>
+    <div className="max-w-sm mx-auto mt-10">
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Register</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
-          <label>Email</label>
-          <input type="email" {...register("email")} />
-          {errors.email && <p>{errors.email.message}</p>}
+          <label className="mb-1 block text-sm text-gray-700">Email</label>
+          <input
+            type="email"
+            {...register("email")}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          {errors.email && (
+            <p className="text-sm text-red-600">{errors.email.message}</p>
+          )}
         </div>
         <div>
-          <label>Password</label>
-          <input type="password" {...register("password")} />
-          {errors.password && <p>{errors.password.message}</p>}
+          <label className="mb-1 block text-sm text-gray-700">Password</label>
+          <input
+            type="password"
+            {...register("password")}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          {errors.password && (
+            <p className="text-sm text-red-600">{errors.password.message}</p>
+          )}
         </div>
-        <button disabled={isSubmitting} type="submit">
+        <button
+          disabled={isSubmitting}
+          type="submit"
+          className="inline-flex items-center rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+        >
           Create account
         </button>
       </form>
-      <p>
-        Have an account? <Link to="/login">Sign in</Link>
+      <p className="mt-3 text-sm text-gray-600">
+        Have an account?{" "}
+        <Link className="text-indigo-600 hover:underline" to="/login">
+          Sign in
+        </Link>
       </p>
     </div>
   );

@@ -32,6 +32,7 @@ class RiskRead(RiskBase):
 	owner_id: int
 	created_at: datetime
 	updated_at: datetime
+	score: int
 
 	class Config:
 		from_attributes = True

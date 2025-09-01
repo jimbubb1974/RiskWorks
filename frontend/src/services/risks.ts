@@ -4,6 +4,11 @@ import type { Risk, RiskCreate, RiskUpdate } from "../types/risk";
 export async function listRisks(params?: {
   status?: string;
   min_severity?: number;
+  search?: string;
+  sort_by?: string;
+  order?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
 }): Promise<Risk[]> {
   const { data } = await apiClient.get<Risk[]>("/risks", { params });
   return data;

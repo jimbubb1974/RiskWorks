@@ -21,4 +21,8 @@ class Risk(Base):
 
 	owner = relationship("User", back_populates="risks")
 
+	@property
+	def score(self) -> int:
+		return int(self.severity) * int(self.probability)
+
 
