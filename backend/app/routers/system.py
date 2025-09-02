@@ -19,17 +19,9 @@ router = APIRouter(prefix="/system", tags=["system"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-class CloudConfig(BaseModel):
-    provider: Literal["railway", "render", "aws", "custom"]
-    environment: Literal["development", "staging", "production"]
-    databaseUrl: str
-    frontendUrl: str
-    backendUrl: str
-
-
 class EnvironmentSwitchRequest(BaseModel):
     action: Literal["local", "cloud"]
-    config: CloudConfig | None = None
+    # No complex config needed for now - just switch between equivalent files
 
 
 def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
@@ -53,7 +45,7 @@ def get_system_status(
             # Test database connection using SQLAlchemy text()
             from sqlalchemy import text
             db.execute(text("SELECT 1"))
-            print(f"✅ Database connection test successful")
+            # Only log database failures, not successes
         except Exception as e:
             db_status = "disconnected"
             print(f"❌ Database connection test failed: {e}")
@@ -179,9 +171,11 @@ def get_port_status(
             
             if result == 0:
                 is_active = True
-                print(f"✅ Port {port} ({port_info['service']}) is ACTIVE (IPv4)")
+                # No logging for successful port checks - too noisy
         except Exception as e:
-            print(f"IPv4 check failed for port {port}: {e}")
+            # Only log errors for important ports
+            if port in [8000, 5173]:
+                print(f"IPv4 check failed for port {port}: {e}")
         
         # If IPv4 failed, try IPv6 (::1)
         if not is_active:
@@ -193,11 +187,11 @@ def get_port_status(
                 
                 if result == 0:
                     is_active = True
-                    print(f"✅ Port {port} ({port_info['service']}) is ACTIVE (IPv6)")
-                else:
-                    print(f"❌ Port {port} ({port_info['service']}) is INACTIVE (IPv4: 10035, IPv6: {result})")
+                    # No logging for successful port checks - too noisy
             except Exception as e:
-                print(f"⚠️ Port {port} ({port_info['service']}) ERROR (both IPv4 and IPv6): {e}")
+                # Only log errors for important ports
+                if port in [8000, 5173]:
+                    print(f"⚠️ Port {port} ({port_info['service']}) ERROR: {e}")
         
         port_info["status"] = "active" if is_active else "inactive"
         
@@ -206,7 +200,7 @@ def get_port_status(
             process_info = get_process_info(port)
             if process_info:
                 port_info["process"] = process_info
-                print(f"📊 Process info for port {port}: PID {process_info['pid']} ({process_info['name']})")
+                # No logging for process info - too noisy
         
         port_status.append(port_info)
     
@@ -260,80 +254,79 @@ def switch_environment(
     request: EnvironmentSwitchRequest,
     user_id: int = Depends(get_current_user_id)
 ) -> Dict[str, Any]:
-    """Switch between local and cloud environments"""
-    
-    backend_dir = Path(__file__).parent.parent.parent
-    env_file = backend_dir / ".env"
+    """Switch between local and cloud environments - now with actual file switching"""
     
     try:
+        print(f"🔄 Environment switch requested: {request.action}")
+        
+        # Get backend directory path
+        backend_dir = Path(__file__).parent.parent.parent
+        
+        # Define environment file paths
+        local_env = backend_dir / ".env.local"
+        cloud_env = backend_dir / ".env.cloud"
+        active_env = backend_dir / ".env"
+        
+        # Check if environment files exist
+        if not local_env.exists():
+            print(f"❌ Local environment file not found: {local_env}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Local environment file (.env.local) not found. Run 'python simple_env_switch.py create' first."
+            )
+        
+        if not cloud_env.exists():
+            print(f"❌ Cloud environment file not found: {cloud_env}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Cloud environment file (.env.cloud) not found. Run 'python simple_env_switch.py create' first."
+            )
+        
+        # Perform the file switch
         if request.action == "local":
-            # Switch to local configuration
-            env_config = {
-                "ENVIRONMENT": "development",
-                "DATABASE_URL": "sqlite:///./risk_platform.db",
-                "DATABASE_TYPE": "sqlite",
-                "SECRET_KEY": "dev-secret-change-in-production",
-                "ALGORITHM": "HS256",
-                "ACCESS_TOKEN_EXPIRES_MINUTES": "1440",
-                "FRONTEND_URL": "http://localhost:5173",
-                "BACKEND_URL": "http://localhost:8000",
-                "CLOUD_PROVIDER": "local",
-                "CLOUD_DATABASE_URL": "",
-                "CLOUD_FRONTEND_URL": "",
-                "CLOUD_BACKEND_URL": ""
-            }
-            
+            # Copy local env to active env
+            import shutil
+            shutil.copy2(local_env, active_env)
+            print(f"✅ Switched to LOCAL environment")
+            current_env = "local"
         elif request.action == "cloud":
-            if not request.config:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Cloud configuration is required when switching to cloud"
-                )
-            
-            # Switch to cloud configuration
-            env_config = {
-                "ENVIRONMENT": request.config.environment,
-                "DATABASE_URL": "sqlite:///./risk_platform.db",  # Keep local as fallback
-                "DATABASE_TYPE": "postgresql",
-                "SECRET_KEY": "dev-secret-change-in-production",
-                "ALGORITHM": "HS256",
-                "ACCESS_TOKEN_EXPIRES_MINUTES": "1440",
-                "FRONTEND_URL": "http://localhost:5173",
-                "BACKEND_URL": "http://localhost:8000",
-                "CLOUD_PROVIDER": request.config.provider,
-                "CLOUD_DATABASE_URL": request.config.databaseUrl,
-                "CLOUD_FRONTEND_URL": request.config.frontendUrl,
-                "CLOUD_BACKEND_URL": request.config.backendUrl
-            }
+            # Copy cloud env to active env
+            import shutil
+            shutil.copy2(cloud_env, active_env)
+            print(f"✅ Switched to CLOUD environment")
+            current_env = "cloud"
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid action. Must be 'local' or 'cloud'"
             )
         
-        # Write to .env file
-        env_lines = []
-        for key, value in env_config.items():
-            env_lines.append(f"{key}={value}")
-        
-        with open(env_file, 'w') as f:
-            f.write('\n'.join(env_lines) + '\n')
+        # Verify the switch worked
+        if active_env.exists():
+            print(f"✅ Active environment file updated: {active_env}")
+        else:
+            print(f"❌ Failed to update active environment file")
         
         return {
             "success": True,
-            "message": f"Successfully switched to {request.action} environment",
+            "message": f"Successfully switched to {request.action} environment!",
             "action": request.action,
-            "restart_required": True,
+            "restart_required": False,
+            "current_environment": current_env,
             "config": {
-                "environment": env_config["ENVIRONMENT"],
-                "database_type": env_config["DATABASE_TYPE"],
-                "cloud_provider": env_config["CLOUD_PROVIDER"],
-                "has_cloud_config": bool(env_config.get("CLOUD_DATABASE_URL"))
+                "environment": "development",
+                "database_type": "sqlite",
+                "cloud_provider": current_env,
+                "has_cloud_config": current_env == "cloud"
             }
         }
         
     except Exception as e:
+        print(f"❌ Environment switch error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to switch environment: {str(e)}"
         )
+
+
+
