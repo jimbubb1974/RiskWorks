@@ -60,12 +60,13 @@ interface SystemStatus {
     lastChecked: Date;
   };
   database: {
-    status: "connected" | "disconnected" | "error";
+    status: "connected" | "disconnected" | "error" | "unknown";
     lastChecked: Date;
   };
   ports: PortStatus[];
   lastUpdated: Date;
   environment?: EnvironmentConfig;
+  systemInfo?: any; // Store the full system status response
 }
 
 export default function Settings() {
@@ -401,7 +402,11 @@ export default function Settings() {
       }
     } catch (error) {
       console.error("Environment switch failed:", error);
-      alert(`Failed to switch environment: ${error.message}`);
+      alert(
+        `Failed to switch environment: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     } finally {
       setSwitchingEnv(false);
     }
@@ -863,7 +868,16 @@ export default function Settings() {
                     Database
                   </p>
                   <p className="text-sm text-secondary-600">
-                    SQLite (risk_platform.db)
+                    {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
+                      "Unknown"}
+                    {systemStatus.systemInfo?.database?.engine
+                      ? ` (${
+                          systemStatus.systemInfo.database.engine
+                            .split("://")[1]
+                            ?.split("/")
+                            .pop() || "Unknown"
+                        })`
+                      : " (Unknown)"}
                   </p>
                 </div>
               </div>

@@ -80,10 +80,13 @@ def get_system_status(
         except ImportError:
             pass
         
+        from ..core.config import settings
+        
         return {
             "timestamp": datetime.utcnow().isoformat(),
             "database": {
                 "status": db_status,
+                "type": settings.database_type,
                 "engine": str(get_engine().url),
                 "user_count": user_count,
                 "risk_count": risk_count
@@ -148,7 +151,7 @@ def get_port_status(
         {"port": 8000, "service": "FastAPI Backend", "description": "Python FastAPI backend server"},
         {"port": 5173, "service": "Vite Dev Server", "description": "Vite development server (current)"},
         {"port": 3000, "service": "React Dev Server", "description": "Default React development server"},
-        {"port": 5432, "service": "PostgreSQL", "description": "PostgreSQL database (if using)"},
+        {"port": 5433, "service": "PostgreSQL", "description": "PostgreSQL database (if using)"},
         {"port": 3306, "service": "MySQL", "description": "MySQL database (if using)"},
         {"port": 6379, "service": "Redis", "description": "Redis cache (if using)"},
         {"port": 8080, "service": "Alternative Backend", "description": "Alternative backend port"},
@@ -246,9 +249,9 @@ def get_configuration(
             "cloud_provider": current_env
         },
         "database": {
-            "type": "sqlite",  # Always SQLite for now
+            "type": settings.database_type,  # Use actual database type from settings
             "is_local": True,  # Always local for now
-            "effective_url": "***hidden***" if current_env == "cloud" else "sqlite:///./risk_platform.db"
+            "effective_url": "***hidden***" if current_env == "cloud" else settings.database_url
         },
         "services": {
             "frontend": {
@@ -275,6 +278,8 @@ def switch_environment(
     user_id: int = Depends(get_current_user_id)
 ) -> Dict[str, Any]:
     """Switch between local and cloud environments - now with actual file switching"""
+    
+    from ..core.config import settings
     
     try:
         print(f"🔄 Environment switch requested: {request.action}")
@@ -343,12 +348,12 @@ def switch_environment(
                 "step3": "Activate virtual environment: .\\.venv\\Scripts\\Activate.ps1",
                 "step4": "Start backend: python .\\run.py"
             },
-            "config": {
-                "environment": "development",
-                "database_type": "sqlite",
-                "cloud_provider": current_env,
-                "has_cloud_config": current_env == "cloud"
-            }
+                            "config": {
+                    "environment": "development",
+                    "database_type": settings.database_type,
+                    "cloud_provider": current_env,
+                    "has_cloud_config": current_env == "cloud"
+                }
         }
         
     except Exception as e:

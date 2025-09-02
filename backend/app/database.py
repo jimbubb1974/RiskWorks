@@ -19,19 +19,31 @@ def create_database_engine():
 	"""Create database engine based on current configuration"""
 	try:
 		if settings.database_type == "postgresql":
-			# Only import PostgreSQL dependencies when needed
+			# Prefer a pure-Python driver to avoid compilation issues.
+			# Normalize URL to use pg8000 driver if not specified.
 			try:
-				import psycopg2
+				import pg8000  # noqa: F401
 			except ImportError:
-				print("Warning: PostgreSQL support not available. Install with: pip install psycopg2-binary")
+				print("Warning: PostgreSQL support not available. Install with: pip install pg8000")
 				print("Falling back to SQLite...")
 				return create_engine(
 					"sqlite:///./risk_platform.db",
 					connect_args={"check_same_thread": False}
 				)
+
+			# Ensure SQLAlchemy URL specifies pg8000 driver
+			db_url = settings.effective_database_url
+			if db_url.startswith("postgresql://") and "+" not in db_url:
+				db_url = db_url.replace("postgresql://", "postgresql+pg8000://", 1)
+				
+			return create_engine(
+				db_url,
+				connect_args=get_database_connect_args()
+			)
 		
+		# Default path (SQLite or explicit driver URLs)
 		return create_engine(
-			settings.effective_database_url, 
+			settings.effective_database_url,
 			connect_args=get_database_connect_args()
 		)
 	except Exception as e:
