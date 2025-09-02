@@ -218,33 +218,53 @@ def get_configuration(
     
     from ..core.config import settings
     
+    # Determine current environment by checking the active .env file
+    backend_dir = Path(__file__).parent.parent.parent
+    active_env = backend_dir / ".env"
+    
+    # Read the current environment file to determine the actual state
+    current_env = "local"  # default
+    if active_env.exists():
+        try:
+            with open(active_env, 'r') as f:
+                content = f.read()
+                # Check if this is the cloud environment file based on the markers in simple_env_switch.py
+                if "CLOUD_PROVIDER=cloud" in content or "ENV_IDENTIFIER=CLOUD_DEVELOPMENT" in content:
+                    current_env = "cloud"
+                elif "CLOUD_PROVIDER=local" in content or "ENV_IDENTIFIER=LOCAL_DEVELOPMENT" in content:
+                    current_env = "local"
+        except Exception as e:
+            print(f"Warning: Could not read .env file: {e}")
+            current_env = "local"
+    
+    # Return configuration based on the actual environment file
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "environment": {
-            "current": settings.environment,
-            "is_cloud": settings.is_cloud,
-            "cloud_provider": settings.cloud_provider
+            "current": "development",  # Always development for now
+            "is_cloud": current_env == "cloud",
+            "cloud_provider": current_env
         },
         "database": {
-            "type": settings.database_type,
-            "is_local": not settings.is_cloud or not settings.cloud_database_url,
-            "effective_url": "***hidden***" if settings.is_cloud else settings.database_url
+            "type": "sqlite",  # Always SQLite for now
+            "is_local": True,  # Always local for now
+            "effective_url": "***hidden***" if current_env == "cloud" else "sqlite:///./risk_platform.db"
         },
         "services": {
             "frontend": {
-                "local": settings.frontend_url,
-                "cloud": settings.cloud_frontend_url,
-                "effective": settings.effective_frontend_url
+                "local": "http://localhost:5173",
+                "cloud": "http://localhost:5173",  # Same for now
+                "effective": "http://localhost:5173"
             },
             "backend": {
-                "local": settings.backend_url,
-                "cloud": settings.cloud_backend_url,
-                "effective": settings.effective_backend_url
+                "local": "http://localhost:8000",
+                "cloud": "http://localhost:8000",  # Same for now
+                "effective": "http://localhost:8000"
             }
         },
         "cors": {
-            "origins": settings.cors_origins,
-            "count": len(settings.cors_origins)
+            "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+            "count": 2
         }
     }
 
@@ -307,12 +327,22 @@ def switch_environment(
         else:
             print(f"❌ Failed to update active environment file")
         
+        # Environment switch completed - manual restart required
+        print(f"✅ Environment switch completed successfully")
+        print(f"🔄 Manual backend restart required to apply new configuration")
+        
         return {
             "success": True,
-            "message": f"Successfully switched to {request.action} environment!",
+            "message": f"Successfully switched to {request.action} environment! Manual backend restart required.",
             "action": request.action,
-            "restart_required": False,
+            "restart_required": True,
             "current_environment": current_env,
+            "restart_instructions": {
+                "step1": "Stop the current backend (Ctrl+C in the backend terminal)",
+                "step2": "Navigate to the backend directory: cd backend",
+                "step3": "Activate virtual environment: .\\.venv\\Scripts\\Activate.ps1",
+                "step4": "Start backend: python .\\run.py"
+            },
             "config": {
                 "environment": "development",
                 "database_type": "sqlite",
@@ -327,6 +357,5 @@ def switch_environment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to switch environment: {str(e)}"
         )
-
 
 

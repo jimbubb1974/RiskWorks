@@ -20,14 +20,20 @@ class Settings(BaseSettings):
 	backend_url: str = "http://localhost:8000"
 	
 	# Cloud Configuration
-	cloud_provider: Literal["local", "railway", "render", "aws", "custom"] = "local"
+	cloud_provider: Literal["local", "cloud", "railway", "render", "aws", "custom"] = "local"
 	cloud_database_url: str | None = None
 	cloud_frontend_url: str | None = None
 	cloud_backend_url: str | None = None
 	
+	# Environment identification fields (from simple_env_switch.py)
+	env_identifier: str | None = None
+	env_description: str | None = None
+	env_timestamp: str | None = None
+	
 	class Config:
 		env_file = ".env"
 		case_sensitive = False
+		extra = "ignore"  # Ignore extra fields in .env files
 
 	@property
 	def is_cloud(self) -> bool:

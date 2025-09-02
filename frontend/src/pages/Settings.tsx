@@ -363,15 +363,27 @@ export default function Settings() {
         const result = await response.json();
         console.log(`✅ Environment switch successful:`, result);
 
-        // Show success message
-        alert(
-          `Successfully switched to ${action} environment! Backend is restarting...`
-        );
+        // Show success message with restart instructions
+        if (result.restart_required && result.restart_instructions) {
+          const instructions = Object.values(result.restart_instructions).join(
+            "\n"
+          );
+          alert(
+            `Successfully switched to ${action} environment!\n\n` +
+              `Manual backend restart required:\n\n` +
+              instructions
+          );
+        } else {
+          alert(
+            `Successfully switched to ${action} environment! Manual backend restart required.`
+          );
+        }
 
         // Close modal
         setShowEnvSwitcher(false);
 
-        // Wait a moment for backend to restart, then refresh
+        // Wait for backend to restart, then refresh
+        const waitTime = result.restart_required ? 5000 : 3000;
         setTimeout(async () => {
           try {
             await refreshStatus();
@@ -380,7 +392,7 @@ export default function Settings() {
               "Status refresh failed (backend may still be restarting)"
             );
           }
-        }, 3000);
+        }, waitTime);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
