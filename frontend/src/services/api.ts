@@ -6,6 +6,9 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Export apiClient as api for backward compatibility
+export const api = apiClient;
+
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {

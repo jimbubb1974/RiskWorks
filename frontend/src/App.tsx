@@ -12,6 +12,7 @@ import AppLayout from "./components/AppLayout";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
+import Reports from "./pages/Reports";
 import LandingPage from "./components/LandingPage";
 
 const router = createBrowserRouter([
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
           { path: "/risks/:id/edit", element: <RiskForm /> },
           { path: "/users", element: <Users /> },
           { path: "/users/:id", element: <UserDetail /> },
+          { path: "/reports", element: <Reports /> },
           { path: "/settings", element: <Settings /> },
         ],
       },

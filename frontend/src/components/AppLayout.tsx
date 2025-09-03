@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   Users,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -102,6 +103,12 @@ export default function AppLayout() {
             label="Users"
             icon={<Users size={20} />}
             description="Manage Users"
+          />
+          <NavItem
+            to="/reports"
+            label="Reports"
+            icon={<FileText size={20} />}
+            description="Generate & Export"
           />
           <NavItem
             to="/settings"
