@@ -14,3 +14,4 @@ psutil==5.9.6
 # psycopg2==2.9.9  # PostgreSQL adapter for Python (pure Python implementation)
 # asyncpg==0.29.0  # Modern async PostgreSQL driver for Python
 pg8000==1.31.2  # Pure-Python PostgreSQL driver compatible with SQLAlchemy
+psycopg[binary]>=3.1

@@ -455,6 +455,38 @@ export default function Settings() {
     }
   };
 
+  // Derive a clear indicator for DB target (Neon vs Local) from engine URL
+  const dbEngine = systemStatus.systemInfo?.database?.engine as
+    | string
+    | undefined;
+  const isCloudEnv = systemStatus.environment?.isCloud === true;
+
+  const extractHost = (engine?: string): string => {
+    if (!engine) return "";
+    if (engine.startsWith("sqlite")) return "local file";
+    const atIdx = engine.indexOf("@");
+    let after = "";
+    if (atIdx >= 0) {
+      after = engine.slice(atIdx + 1);
+    } else {
+      const schemeIdx = engine.indexOf("://");
+      after = schemeIdx >= 0 ? engine.slice(schemeIdx + 3) : engine;
+    }
+    const host = after.split("/")[0] || "";
+    return host;
+  };
+
+  const engineHost = extractHost(dbEngine);
+
+  const dbLabel = (() => {
+    if (dbEngine?.includes(".neon.tech")) return "Neon Cloud";
+    if (isCloudEnv && dbEngine?.startsWith("postgresql")) return "Cloud";
+    if (dbEngine?.startsWith("sqlite")) return "SQLite (Local)";
+    if (dbEngine?.includes("localhost") || dbEngine?.includes("127.0.0.1"))
+      return "Local";
+    return dbEngine ? "Remote" : "Unknown";
+  })();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -621,6 +653,29 @@ export default function Settings() {
                     {systemStatus.database.lastChecked.toLocaleTimeString()}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* DB Target Indicator */}
+            <div className="mt-4 p-4 rounded-lg bg-secondary-50 border">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <Cloud className="w-5 h-5 text-primary-600" />
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                      dbLabel === "Neon Cloud"
+                        ? "bg-primary-50 text-primary-700 border-primary-200"
+                        : dbLabel.includes("Local")
+                        ? "bg-success-50 text-success-700 border-success-200"
+                        : "bg-secondary-50 text-secondary-700 border-secondary-200"
+                    }`}
+                  >
+                    {dbLabel}
+                  </span>
+                </div>
+                <code className="text-xs font-mono text-secondary-700 bg-secondary-100 px-2 py-1 rounded">
+                  {engineHost || "Unknown host"}
+                </code>
               </div>
             </div>
           </div>

@@ -25,8 +25,8 @@ if config.config_file_name is not None:
 	fileConfig(config.config_file_name)
 
 # Override sqlalchemy.url from our app settings so Alembic uses the same DB
-if settings.database_url:
-	config.set_main_option("sqlalchemy.url", settings.database_url)
+if settings.effective_database_url:
+	config.set_main_option("sqlalchemy.url", settings.effective_database_url)
 
 # add your model's MetaData object here
 target_metadata = Base.metadata
