@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
+import { useState } from "react";
 
 const schema = z.object({
   email: z.string().email(),
@@ -15,6 +16,7 @@ type FormData = z.infer<typeof schema>;
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [loginError, setLoginError] = useState<string>("");
   const {
     register,
     handleSubmit,
@@ -22,8 +24,19 @@ export default function Login() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   async function onSubmit(values: FormData) {
-    await login(values.email, values.password);
-    navigate("/dashboard");
+    try {
+      setLoginError(""); // Clear any previous errors
+      await login(values.email, values.password);
+      navigate("/dashboard");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        setLoginError("Invalid email or password. Please try again.");
+      } else if (error.response?.status === 422) {
+        setLoginError("Invalid email format. Please check your email address.");
+      } else {
+        setLoginError("An error occurred during login. Please try again.");
+      }
+    }
   }
 
   return (
@@ -84,6 +97,15 @@ export default function Login() {
                 </p>
               )}
             </div>
+
+            {/* Login Error Message */}
+            {loginError && (
+              <div className="bg-danger-50 border border-danger-200 rounded-lg p-3">
+                <p className="text-sm text-danger-600 text-center">
+                  {loginError}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <label className="flex items-center">

@@ -10,8 +10,8 @@ from pathlib import Path
 # Add the app directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent / "app"))
 
-from core.config import settings
-from database import create_database_engine
+from app.core.config import settings
+from app.database import create_database_engine
 
 def test_postgresql_config():
     """Test PostgreSQL configuration"""
@@ -36,7 +36,8 @@ def test_postgresql_config():
             print("✅ Database connection successful!")
             
             # Test a simple query
-            result = conn.execute("SELECT 1 as test")
+            from sqlalchemy import text
+            result = conn.execute(text("SELECT 1 as test"))
             row = result.fetchone()
             print(f"✅ Test query successful: {row}")
             
@@ -54,7 +55,7 @@ def test_environment_switching():
     os.environ["ENVIRONMENT"] = "development"
     os.environ["DATABASE_TYPE"] = "sqlite"
     
-    from core.config import Settings
+    from app.core.config import Settings
     dev_settings = Settings()
     print(f"Development - Database Type: {dev_settings.database_type}")
     print(f"Development - Database URL: {dev_settings.database_url}")
