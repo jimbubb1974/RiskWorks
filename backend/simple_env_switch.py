@@ -19,8 +19,8 @@ def create_env_files():
 ENVIRONMENT=development
 
 # Database Configuration
-DATABASE_URL=sqlite:///./risk_platform.db
-DATABASE_TYPE=sqlite
+DATABASE_URL=postgresql+pg8000://postgres@localhost:5433/risk_platform
+DATABASE_TYPE=postgresql
 
 # Authentication
 SECRET_KEY=dev-secret-change-in-production
@@ -41,7 +41,7 @@ CLOUD_BACKEND_URL=
 
 # Environment Identifier - LOCAL
 ENV_IDENTIFIER=LOCAL_DEVELOPMENT
-ENV_DESCRIPTION=Local SQLite database with localhost services
+ENV_DESCRIPTION=Local PostgreSQL database with localhost services
 ENV_TIMESTAMP=2024-01-01_LOCAL
 """
 
@@ -53,8 +53,8 @@ ENV_TIMESTAMP=2024-01-01_LOCAL
 ENVIRONMENT=development
 
 # Database Configuration
-DATABASE_URL=sqlite:///./risk_platform.db
-DATABASE_TYPE=sqlite
+DATABASE_URL=postgresql+pg8000://postgres@localhost:5433/risk_platform
+DATABASE_TYPE=postgresql
 
 # Authentication
 SECRET_KEY=dev-secret-change-in-production
@@ -75,7 +75,7 @@ CLOUD_BACKEND_URL=
 
 # Environment Identifier - CLOUD
 ENV_IDENTIFIER=CLOUD_DEVELOPMENT
-ENV_DESCRIPTION=Cloud environment (testing mode)
+ENV_DESCRIPTION=Cloud environment with PostgreSQL database
 ENV_TIMESTAMP=2024-01-01_CLOUD
 """
 
@@ -99,8 +99,8 @@ ENV_TIMESTAMP=2024-01-01_CLOUD
     print(f"✅ Created {env_file} (copied from .env.local)")
     
     print("\n🎯 Environment files created successfully!")
-    print("   .env.local  - Local configuration")
-    print("   .env.cloud  - Cloud configuration (different for testing)")
+    print("   .env.local  - Local configuration (PostgreSQL)")
+    print("   .env.cloud  - Cloud configuration (PostgreSQL)")
     print("   .env        - Active configuration (currently local)")
 
 def switch_to_local():
@@ -130,6 +130,12 @@ def switch_to_cloud():
     shutil.copy2(cloud_file, env_file)
     print("✅ Switched to CLOUD environment")
     print("   Active: .env (copied from .env.cloud)")
+
+def regenerate_env_files():
+    """Regenerate environment files with updated configuration"""
+    print("🔄 Regenerating environment files with updated configuration...")
+    create_env_files()
+    print("✅ Environment files regenerated successfully!")
 
 def show_status():
     """Show current environment status"""
@@ -173,16 +179,19 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("🔧 Simple Environment Switcher")
         print("Usage:")
-        print("  python simple_env_switch.py create    - Create environment files")
-        print("  python simple_env_switch.py local     - Switch to local")
-        print("  python simple_env_switch.py cloud     - Switch to cloud")
-        print("  python simple_env_switch.py status    - Show current status")
+        print("  python simple_env_switch.py create      - Create environment files")
+        print("  python simple_env_switch.py regenerate  - Regenerate with updated config")
+        print("  python simple_env_switch.py local       - Switch to local")
+        print("  python simple_env_switch.py cloud       - Switch to cloud")
+        print("  python simple_env_switch.py status      - Show current status")
         sys.exit(1)
     
     command = sys.argv[1].lower()
     
     if command == "create":
         create_env_files()
+    elif command == "regenerate":
+        regenerate_env_files()
     elif command == "local":
         switch_to_local()
     elif command == "cloud":
@@ -191,4 +200,4 @@ if __name__ == "__main__":
         show_status()
     else:
         print(f"❌ Unknown command: {command}")
-        print("Use: create, local, cloud, or status")
+        print("Use: create, regenerate, local, cloud, or status")
