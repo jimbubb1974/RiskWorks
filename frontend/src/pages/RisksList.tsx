@@ -14,6 +14,8 @@ import {
   Shield,
   CheckCircle,
   MoreHorizontal,
+  Grid3X3,
+  List,
 } from "lucide-react";
 
 export default function RisksList() {
@@ -23,6 +25,7 @@ export default function RisksList() {
   const [search, setSearch] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const { data: risks = [], isLoading } = useQuery({
     queryKey: ["risks", status, minSeverity, search, sortBy, order],
@@ -48,13 +51,40 @@ export default function RisksList() {
             Monitor and assess organizational risks
           </p>
         </div>
-        <button
-          onClick={() => navigate("/risks/new")}
-          className="btn-primary group"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Risk
-        </button>
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center bg-secondary-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("cards")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "cards"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-secondary-600 hover:text-secondary-900"
+              }`}
+              title="Card view"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "table"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-secondary-600 hover:text-secondary-900"
+              }`}
+              title="Table view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={() => navigate("/risks/new")}
+            className="btn-primary group"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Risk
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -158,6 +188,12 @@ export default function RisksList() {
               <Plus className="w-5 h-5 mr-2" />
               Create First Risk
             </button>
+          </div>
+        ) : viewMode === "cards" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {risks.map((risk) => (
+              <RiskCard key={risk.id} risk={risk} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -305,6 +341,97 @@ function RiskScoreBadge({ score }: { score: number }) {
     >
       {score}
     </span>
+  );
+}
+
+function RiskCard({ risk }: { risk: any }) {
+  const riskScore = risk.severity * risk.probability;
+
+  return (
+    <div className="group bg-white rounded-xl border border-secondary-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
+      {/* Header with severity indicator and gradient accent */}
+      <div className="relative">
+        <div
+          className={`h-1 w-full ${
+            riskScore >= 16
+              ? "bg-gradient-to-r from-danger-400 to-danger-600"
+              : riskScore >= 9
+              ? "bg-gradient-to-r from-warning-400 to-warning-600"
+              : "bg-gradient-to-r from-success-400 to-success-600"
+          }`}
+        />
+        <div className="p-6 pb-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <RiskSeverityIndicator severity={risk.severity} />
+              <StatusBadge status={risk.status} />
+            </div>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <Link
+                to={`/risks/${risk.id}`}
+                className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                title="View details"
+              >
+                <Eye className="w-4 h-4 text-secondary-600" />
+              </Link>
+              <Link
+                to={`/risks/${risk.id}/edit`}
+                className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                title="Edit risk"
+              >
+                <Edit className="w-4 h-4 text-secondary-600" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Risk title and description */}
+          <h3 className="font-semibold text-secondary-900 text-lg mb-2 line-clamp-2 group-hover:text-primary-700 transition-colors">
+            {risk.title}
+          </h3>
+          {risk.description && (
+            <p className="text-secondary-600 text-sm line-clamp-3 mb-4">
+              {risk.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Risk metrics with enhanced visual hierarchy */}
+      <div className="px-6 pb-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-secondary-50 rounded-lg">
+            <div className="text-xs text-secondary-500 mb-2 font-medium">
+              Severity
+            </div>
+            <SeverityBadge severity={risk.severity} />
+          </div>
+          <div className="text-center p-3 bg-secondary-50 rounded-lg">
+            <div className="text-xs text-secondary-500 mb-2 font-medium">
+              Probability
+            </div>
+            <ProbabilityBadge probability={risk.probability} />
+          </div>
+          <div className="text-center p-3 bg-secondary-50 rounded-lg">
+            <div className="text-xs text-secondary-500 mb-2 font-medium">
+              Risk Score
+            </div>
+            <RiskScoreBadge score={riskScore} />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer with additional info and hover effects */}
+      <div className="px-6 py-4 bg-secondary-50 border-t border-secondary-100 group-hover:bg-secondary-100 transition-colors">
+        <div className="flex items-center justify-between text-xs text-secondary-600">
+          <span className="font-mono">#{risk.id}</span>
+          {risk.category && (
+            <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm">
+              {risk.category}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
