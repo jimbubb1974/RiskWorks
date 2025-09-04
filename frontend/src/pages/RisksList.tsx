@@ -23,7 +23,7 @@ export default function RisksList() {
   const [status, setStatus] = useState<string>("");
   const [minSeverity, setMinSeverity] = useState<number | "">("");
   const [search, setSearch] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortBy, setSortBy] = useState<string>("score");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
@@ -38,6 +38,17 @@ export default function RisksList() {
         order,
       }),
   });
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      // If clicking the same field, toggle order
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      // If clicking a new field, set it as sortBy and default to desc
+      setSortBy(field);
+      setOrder("desc");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -197,23 +208,90 @@ export default function RisksList() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            <div className="mb-4 text-sm text-secondary-600 flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4" />
+              Click column headers to sort
+            </div>
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-secondary-200">
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Risk
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("title")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Risk
+                      <SortIndicator
+                        field="title"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Severity
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("likelihood")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Likelihood
+                      <SortIndicator
+                        field="likelihood"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Probability
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("impact")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Impact
+                      <SortIndicator
+                        field="impact"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Risk Score
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("score")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Risk Score
+                      <SortIndicator
+                        field="score"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Status
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("status")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Status
+                      <SortIndicator
+                        field="status"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
+                    onClick={() => handleSort("created_at")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Created
+                      <SortIndicator
+                        field="created_at"
+                        currentSort={sortBy}
+                        order={order}
+                      />
+                    </div>
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
                     Actions
@@ -242,18 +320,21 @@ export default function RisksList() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <SeverityBadge severity={risk.severity} />
+                      <SeverityBadge severity={risk.likelihood} />
                     </td>
                     <td className="px-6 py-4">
-                      <ProbabilityBadge probability={risk.probability} />
+                      <ProbabilityBadge probability={risk.impact} />
                     </td>
                     <td className="px-6 py-4">
-                      <RiskScoreBadge
-                        score={risk.severity * risk.probability}
-                      />
+                      <RiskScoreBadge score={risk.score} />
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={risk.status} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-secondary-600">
+                        {new Date(risk.created_at).toLocaleDateString()}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -469,5 +550,34 @@ function StatusBadge({ status }: { status: string }) {
       {getIcon()}
       <span className="capitalize">{status}</span>
     </span>
+  );
+}
+
+function SortIndicator({
+  field,
+  currentSort,
+  order,
+}: {
+  field: string;
+  currentSort: string;
+  order: "asc" | "desc";
+}) {
+  if (currentSort !== field) {
+    return <ArrowUpDown className="w-4 h-4 text-secondary-400" />;
+  }
+
+  return (
+    <div className="flex flex-col">
+      <div
+        className={`w-0 h-0 border-l-2 border-r-2 border-b-2 border-transparent ${
+          order === "asc" ? "border-b-secondary-600" : "border-b-secondary-400"
+        }`}
+      />
+      <div
+        className={`w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent ${
+          order === "desc" ? "border-t-secondary-600" : "border-t-secondary-400"
+        }`}
+      />
+    </div>
   );
 }

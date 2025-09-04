@@ -12,6 +12,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.database import Base
 from app.models import user as user_model  # noqa: F401 - ensure model is imported for metadata
+from app.models import risk as risk_model  # noqa: F401 - ensure model is imported for metadata
+from app.models import action_item as action_item_model  # noqa: F401 - ensure model is imported for metadata
 from app.core.config import settings
 
 

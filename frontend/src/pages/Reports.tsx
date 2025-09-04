@@ -16,6 +16,9 @@ export default function Reports() {
   const [selectedFormat, setSelectedFormat] = useState<
     "pdf" | "excel" | "word"
   >("pdf");
+  const [selectedReportType, setSelectedReportType] = useState<
+    "summary" | "detailed"
+  >("summary");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
@@ -36,6 +39,14 @@ export default function Reports() {
   const generatePDF = () => {
     if (!filteredRisks.length) return;
 
+    if (selectedReportType === "detailed") {
+      generateDetailedPDF();
+    } else {
+      generateSummaryPDF();
+    }
+  };
+
+  const generateSummaryPDF = () => {
     const doc = new jsPDF();
 
     // Header
@@ -196,6 +207,227 @@ export default function Reports() {
     doc.save(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
+  const generateDetailedPDF = () => {
+    const doc = new jsPDF();
+
+    filteredRisks.forEach((risk, index) => {
+      if (index > 0) {
+        doc.addPage();
+      }
+
+      // Header with company branding
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, 210, 30, "F");
+
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text("RiskWorks", 20, 20);
+
+      doc.setFontSize(12);
+      doc.text("Risk Assessment Form", 20, 30);
+
+      // Risk level indicator (right side of header)
+      const riskLevelColor =
+        risk.risk_level === "High"
+          ? [220, 38, 38]
+          : risk.risk_level === "Medium"
+          ? [245, 158, 11]
+          : [34, 197, 94];
+
+      doc.setFillColor(riskLevelColor[0], riskLevelColor[1], riskLevelColor[2]);
+      doc.rect(150, 10, 50, 15, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text(risk.risk_level, 175, 20);
+
+      // Main content area
+      let yPos = 50;
+
+      // Title section
+      doc.setFontSize(16);
+      doc.setTextColor(59, 130, 246);
+      doc.text("Risk Title", 20, yPos);
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.title, 20, yPos + 10);
+
+      yPos += 25;
+
+      // Basic Information Grid
+      const leftCol = 20;
+      const rightCol = 120;
+
+      // Left column
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Category:", leftCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.category || "Not specified", leftCol + 30, yPos);
+
+      yPos += 15;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Status:", leftCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        risk.status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        leftCol + 30,
+        yPos
+      );
+
+      yPos += 15;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Owner:", leftCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.risk_owner || "Unassigned", leftCol + 30, yPos);
+
+      yPos += 15;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Department:", leftCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.department || "Not specified", leftCol + 30, yPos);
+
+      // Right column
+      yPos = 75;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Risk Score:", rightCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(16);
+      doc.text(risk.score.toString(), rightCol + 35, yPos);
+
+      yPos += 15;
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Likelihood:", rightCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.likelihood.toString(), rightCol + 35, yPos);
+
+      yPos += 15;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Impact:", rightCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.impact.toString(), rightCol + 35, yPos);
+
+      yPos += 15;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Location:", rightCol, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(risk.location || "Not specified", rightCol + 35, yPos);
+
+      // Description section
+      yPos = 140;
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Description:", 20, yPos);
+      doc.setTextColor(0, 0, 0);
+
+      // Handle long descriptions with word wrapping
+      const description = risk.description || "No description provided";
+      const maxWidth = 170;
+      const words = description.split(" ");
+      let line = "";
+      let lineY = yPos + 10;
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + " ";
+        if (doc.getTextWidth(testLine) > maxWidth && line !== "") {
+          doc.text(line, 20, lineY);
+          line = words[i] + " ";
+          lineY += 7;
+        } else {
+          line = testLine;
+        }
+      }
+      doc.text(line, 20, lineY);
+
+      // Root Cause section
+      yPos = Math.max(180, lineY + 15);
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Root Cause:", 20, yPos);
+      doc.setTextColor(0, 0, 0);
+
+      const rootCause = risk.root_cause || "Not specified";
+      const rootCauseWords = rootCause.split(" ");
+      line = "";
+      lineY = yPos + 10;
+
+      for (let i = 0; i < rootCauseWords.length; i++) {
+        const testLine = line + rootCauseWords[i] + " ";
+        if (doc.getTextWidth(testLine) > maxWidth && line !== "") {
+          doc.text(line, 20, lineY);
+          line = rootCauseWords[i] + " ";
+          lineY += 7;
+        } else {
+          line = testLine;
+        }
+      }
+      doc.text(line, 20, lineY);
+
+      // Mitigation Strategy section
+      yPos = Math.max(220, lineY + 15);
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Mitigation Strategy:", 20, yPos);
+      doc.setTextColor(0, 0, 0);
+
+      const mitigation = risk.mitigation_strategy || "Not specified";
+      const mitigationWords = mitigation.split(" ");
+      line = "";
+      lineY = yPos + 10;
+
+      for (let i = 0; i < rootCauseWords.length; i++) {
+        const testLine = line + mitigationWords[i] + " ";
+        if (line !== "" && doc.getTextWidth(testLine) > maxWidth) {
+          doc.text(line, 20, lineY);
+          line = mitigationWords[i] + " ";
+          lineY += 7;
+        } else {
+          line = testLine;
+        }
+      }
+      doc.text(line, 20, lineY);
+
+      // Dates section
+      yPos = Math.max(260, lineY + 15);
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Target Date:", 20, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        risk.target_date
+          ? new Date(risk.target_date).toLocaleDateString()
+          : "Not specified",
+        20,
+        yPos + 10
+      );
+
+      doc.setTextColor(100, 100, 100);
+      doc.text("Review Date:", 120, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        risk.review_date
+          ? new Date(risk.review_date).toLocaleDateString()
+          : "Not specified",
+        120,
+        yPos + 10
+      );
+
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Generated on: ${new Date().toLocaleDateString()} | Risk ID: ${
+          risk.id
+        }`,
+        20,
+        290
+      );
+    });
+
+    // Save the PDF
+    doc.save(`risk-detailed-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "open":
@@ -251,7 +483,10 @@ export default function Reports() {
             className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Download className="h-4 w-4" />
-            Export PDF
+            Export {selectedReportType === "detailed"
+              ? "Detailed"
+              : "Summary"}{" "}
+            PDF
           </button>
         </div>
       </div>
@@ -262,7 +497,22 @@ export default function Reports() {
           <Filter className="h-5 w-5" />
           Filters
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-secondary-700 mb-2">
+              Report Type
+            </label>
+            <select
+              value={selectedReportType}
+              onChange={(e) =>
+                setSelectedReportType(e.target.value as "summary" | "detailed")
+              }
+              className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="summary">Summary Table</option>
+              <option value="detailed">Detailed Forms (1 per risk)</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-secondary-700 mb-2">
               Category

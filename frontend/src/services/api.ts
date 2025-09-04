@@ -49,3 +49,66 @@ export async function meRequest(): Promise<UserResponse> {
   const { data } = await apiClient.get<UserResponse>("/auth/me");
   return data;
 }
+
+// Action Items API
+import type {
+  ActionItem,
+  ActionItemCreate,
+  ActionItemUpdate,
+} from "../types/actionItem";
+
+export async function getActionItems(params?: {
+  risk_id?: number;
+  status?: string;
+  assigned_to?: number;
+}): Promise<ActionItem[]> {
+  const { data } = await apiClient.get<ActionItem[]>("/action-items/", {
+    params,
+  });
+  return data;
+}
+
+export async function getActionItem(id: number): Promise<ActionItem> {
+  const { data } = await apiClient.get<ActionItem>(`/action-items/${id}`);
+  return data;
+}
+
+export async function createActionItem(
+  actionItem: ActionItemCreate
+): Promise<ActionItem> {
+  const { data } = await apiClient.post<ActionItem>(
+    "/action-items/",
+    actionItem
+  );
+  return data;
+}
+
+export async function updateActionItem(
+  id: number,
+  actionItem: ActionItemUpdate
+): Promise<ActionItem> {
+  const { data } = await apiClient.put<ActionItem>(
+    `/action-items/${id}`,
+    actionItem
+  );
+  return data;
+}
+
+export async function deleteActionItem(id: number): Promise<void> {
+  await apiClient.delete(`/action-items/${id}`);
+}
+
+export async function updateActionItemStatus(
+  id: number,
+  status: string,
+  progress_percentage?: number
+): Promise<ActionItem> {
+  const { data } = await apiClient.patch<ActionItem>(
+    `/action-items/${id}/status`,
+    {
+      status,
+      progress_percentage,
+    }
+  );
+  return data;
+}

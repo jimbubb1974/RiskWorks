@@ -236,6 +236,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/users") && pathname !== "/users")
     return "User Details";
   if (pathname.startsWith("/users")) return "User Management";
+  if (pathname.startsWith("/reports")) return "Reports";
   if (pathname.startsWith("/settings")) return "Settings";
   return "RiskWorks";
 }

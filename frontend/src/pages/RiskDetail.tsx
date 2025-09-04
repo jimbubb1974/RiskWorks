@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { deleteRisk, getRisk } from "../services/risks";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Risk } from "../types/risk";
+import type { ActionItem } from "../types/actionItem";
+import ActionItemsList from "../components/ActionItemsList";
+import ActionItemForm from "../components/ActionItemForm";
+import ActionItemEditForm from "../components/ActionItemEditForm";
 import {
   ArrowLeft,
   Edit,
@@ -23,6 +27,11 @@ export default function RiskDetail() {
   const params = useParams();
   const navigate = useNavigate();
   const [risk, setRisk] = useState<Risk | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingActionItem, setEditingActionItem] = useState<ActionItem | null>(
+    null
+  );
 
   useEffect(() => {
     async function load() {
@@ -39,6 +48,21 @@ export default function RiskDetail() {
     await deleteRisk(Number(params.id));
     navigate("/risks");
   }
+
+  const handleCreateActionItem = () => {
+    setShowCreateForm(true);
+  };
+
+  const handleEditActionItem = (actionItem: ActionItem) => {
+    setEditingActionItem(actionItem);
+    setShowEditForm(true);
+  };
+
+  const handleCloseForms = () => {
+    setShowCreateForm(false);
+    setShowEditForm(false);
+    setEditingActionItem(null);
+  };
 
   if (!risk) {
     return (
@@ -335,7 +359,31 @@ export default function RiskDetail() {
             )}
           </div>
         </div>
+
+        {/* Action Items Section */}
+        <div className="card-glass">
+          <ActionItemsList
+            riskId={risk.id}
+            onEdit={handleEditActionItem}
+            onCreate={handleCreateActionItem}
+          />
+        </div>
       </div>
+
+      {/* Action Item Forms */}
+      <ActionItemForm
+        riskId={risk.id}
+        isOpen={showCreateForm}
+        onClose={handleCloseForms}
+      />
+
+      {editingActionItem && (
+        <ActionItemEditForm
+          actionItem={editingActionItem}
+          isOpen={showEditForm}
+          onClose={handleCloseForms}
+        />
+      )}
     </div>
   );
 }
