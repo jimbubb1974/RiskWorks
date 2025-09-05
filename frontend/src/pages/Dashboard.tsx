@@ -26,12 +26,12 @@ export default function Dashboard() {
   const totalRisks = risks.length;
   const openRisks = risks.filter((r) => r.status === "open").length;
   const highSeverityRisks = risks.filter((r) => r.severity >= 4).length;
-  const recentRisks = risks.filter((r) => {
-    const created = new Date(r.created_at);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return created > weekAgo;
-  }).length;
+  // const recentRisks = risks.filter((r) => {
+  //   const created = new Date(r.created_at);
+  //   const weekAgo = new Date();
+  //   weekAgo.setDate(weekAgo.getDate() - 7);
+  //   return created > weekAgo;
+  // }).length;
 
   const averageRiskScore =
     totalRisks > 0

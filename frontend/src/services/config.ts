@@ -218,4 +218,4 @@ class ConfigService {
 export const configService = new ConfigService();
 
 // Re-export the interface to ensure it's available
-export type { EnvironmentConfig };
+// export type { EnvironmentConfig };

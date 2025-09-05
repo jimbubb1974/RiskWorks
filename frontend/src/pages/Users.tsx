@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Users as UsersIcon,
-  Mail,
   Calendar,
   Shield,
   Eye,
@@ -14,15 +13,15 @@ import { Link } from "react-router-dom";
 import { usersService } from "../services/users";
 
 // Define User interface locally to avoid import issues
-interface User {
-  id: number;
-  email: string;
-  hashed_password: string;
-  plain_password?: string; // For development - shows actual password
-  created_at: string;
-  role?: string;
-  status?: string;
-}
+// interface User {
+//   id: number;
+//   email: string;
+//   hashed_password: string;
+//   plain_password?: string; // For development - shows actual password
+//   created_at: string;
+//   role?: string;
+//   status?: string;
+// }
 
 export default function Users() {
   const [search, setSearch] = useState("");

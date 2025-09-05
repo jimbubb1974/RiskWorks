@@ -13,7 +13,6 @@ import {
   Clock,
   Shield,
   CheckCircle,
-  MoreHorizontal,
   Grid3X3,
   List,
 } from "lucide-react";

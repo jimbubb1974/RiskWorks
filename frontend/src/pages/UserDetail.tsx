@@ -12,15 +12,15 @@ import {
 import { usersService } from "../services/users";
 
 // Define User interface locally
-interface User {
-  id: number;
-  email: string;
-  hashed_password: string;
-  plain_password?: string; // For development - shows actual password
-  created_at: string;
-  role?: string;
-  status?: string;
-}
+// interface User {
+//   id: number;
+//   email: string;
+//   hashed_password: string;
+//   plain_password?: string; // For development - shows actual password
+//   created_at: string;
+//   role?: string;
+//   status?: string;
+// }
 
 export default function UserDetail() {
   const { id } = useParams<{ id: string }>();

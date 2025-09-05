@@ -21,15 +21,15 @@ const schema = z.object({
     .min(1, "Title is required")
     .max(255, "Title must be less than 255 characters"),
   description: z.string().optional(),
-  severity: z
+  likelihood: z
     .number()
-    .min(1, "Severity must be between 1-5")
-    .max(5, "Severity must be between 1-5"),
-  probability: z
+    .min(1, "Likelihood must be between 1-5")
+    .max(5, "Likelihood must be between 1-5"),
+  impact: z
     .number()
-    .min(1, "Probability must be between 1-5")
-    .max(5, "Probability must be between 1-5"),
-  status: z.enum(["open", "mitigated", "closed"]),
+    .min(1, "Impact must be between 1-5")
+    .max(5, "Impact must be between 1-5"),
+  status: z.enum(["open", "in_progress", "mitigated", "closed", "escalated"]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -51,15 +51,15 @@ export default function RiskForm() {
     defaultValues: {
       title: "",
       description: "",
-      severity: 3,
-      probability: 3,
+      likelihood: 3,
+      impact: 3,
       status: "open",
     },
   });
 
-  const severity = watch("severity");
-  const probability = watch("probability");
-  const riskScore = severity * probability;
+  const likelihood = watch("likelihood");
+  const impact = watch("impact");
+  const riskScore = likelihood * impact;
 
   useEffect(() => {
     async function load() {
@@ -70,8 +70,8 @@ export default function RiskForm() {
           reset({
             title: r.title,
             description: r.description ?? "",
-            severity: r.severity,
-            probability: r.probability,
+            likelihood: r.likelihood,
+            impact: r.impact,
             status: r.status,
           });
         } catch (error) {
@@ -168,10 +168,10 @@ export default function RiskForm() {
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-2">
                   <Target className="w-4 h-4 inline mr-2" />
-                  Severity (1-5)
+                  Impact (1-5)
                 </label>
                 <select
-                  {...register("severity", { valueAsNumber: true })}
+                  {...register("impact", { valueAsNumber: true })}
                   className="input"
                 >
                   <option value={1}>1 - Minimal Impact</option>
@@ -180,10 +180,10 @@ export default function RiskForm() {
                   <option value={4}>4 - Major Impact</option>
                   <option value={5}>5 - Critical Impact</option>
                 </select>
-                {errors.severity && (
+                {errors.impact && (
                   <p className="text-sm text-danger-600 mt-1 flex items-center">
                     <AlertTriangle className="w-4 h-4 mr-1" />
-                    {errors.severity.message}
+                    {errors.impact.message}
                   </p>
                 )}
               </div>
@@ -191,10 +191,10 @@ export default function RiskForm() {
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-2">
                   <BarChart3 className="w-4 h-4 inline mr-2" />
-                  Probability (1-5)
+                  Likelihood (1-5)
                 </label>
                 <select
-                  {...register("probability", { valueAsNumber: true })}
+                  {...register("likelihood", { valueAsNumber: true })}
                   className="input"
                 >
                   <option value={1}>1 - Very Unlikely</option>
@@ -203,10 +203,10 @@ export default function RiskForm() {
                   <option value={4}>4 - Likely</option>
                   <option value={5}>5 - Very Likely</option>
                 </select>
-                {errors.probability && (
+                {errors.likelihood && (
                   <p className="text-sm text-danger-600 mt-1 flex items-center">
                     <AlertTriangle className="w-4 h-4 mr-1" />
-                    {errors.probability.message}
+                    {errors.likelihood.message}
                   </p>
                 )}
               </div>

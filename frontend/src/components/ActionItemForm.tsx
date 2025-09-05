@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Save, Calendar, User, Target, AlertCircle } from "lucide-react";
+import { X, Save, Calendar, Target, AlertCircle } from "lucide-react";
 import type { ActionItemCreate } from "../types/actionItem";
 import { createActionItem } from "../services/api";
 

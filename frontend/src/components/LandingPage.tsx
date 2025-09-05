@@ -1,13 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  Shield,
-  TrendingUp,
-  Users,
-  ChevronRight,
-  Star,
-  Zap,
-  Target,
-} from "lucide-react";
+import { Shield, Users, ChevronRight, Star, Zap, Target } from "lucide-react";
 
 export default function LandingPage() {
   return (

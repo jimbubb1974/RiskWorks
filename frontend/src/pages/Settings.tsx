@@ -237,7 +237,7 @@ export default function Settings() {
             if (port === 5173) {
               try {
                 // Vite dev server responds to root path
-                const response = await fetch(`http://localhost:${port}/`, {
+                await fetch(`http://localhost:${port}/`, {
                   method: "GET",
                   mode: "no-cors",
                 });
@@ -250,7 +250,7 @@ export default function Settings() {
               } catch (error) {
                 // If that fails, try a simple connection test
                 try {
-                  const response = await fetch(`http://localhost:${port}`, {
+                  await fetch(`http://localhost:${port}`, {
                     method: "GET",
                     mode: "no-cors",
                   });
@@ -273,7 +273,7 @@ export default function Settings() {
 
             // For other ports, try health endpoint first, then root
             try {
-              const response = await fetch(`http://localhost:${port}/health`, {
+              await fetch(`http://localhost:${port}/health`, {
                 method: "GET",
                 mode: "no-cors",
               });
@@ -286,7 +286,7 @@ export default function Settings() {
             } catch (error) {
               // Try root path as fallback
               try {
-                const response = await fetch(`http://localhost:${port}`, {
+                await fetch(`http://localhost:${port}`, {
                   method: "GET",
                   mode: "no-cors",
                 });
