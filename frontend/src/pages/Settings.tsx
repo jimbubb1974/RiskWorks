@@ -469,14 +469,14 @@ export default function Settings() {
       );
 
       if (result.success) {
-        setSwitchMessage(result.message);
-
         if (result.requiresRestart) {
-          // Show detailed instructions
-          setTimeout(() => {
-            const instructions = result.instructions ? Object.values(result.instructions).join('\n\n') : result.message;
-            alert(`${result.message}\n\nInstructions:\n${instructions}`);
-          }, 1000);
+          // Show detailed instructions in the status message area
+          const instructions = result.instructions
+            ? Object.values(result.instructions).join("\n\n")
+            : result.message;
+          setSwitchMessage(`${result.message}\n\nInstructions:\n${instructions}`);
+        } else {
+          setSwitchMessage(result.message);
         }
 
         // Refresh status after a delay
@@ -485,18 +485,12 @@ export default function Settings() {
         }, 2000);
       } else {
         setSwitchMessage(result.message);
-        setTimeout(() => {
-          alert(result.message);
-        }, 1000);
       }
     } catch (error) {
       const errorMessage = `Failed to switch frontend: ${
         error instanceof Error ? error.message : "Unknown error"
       }`;
       setSwitchMessage(errorMessage);
-      setTimeout(() => {
-        alert(errorMessage);
-      }, 1000);
     } finally {
       setSwitchingFrontend(false);
     }
@@ -513,14 +507,14 @@ export default function Settings() {
       );
 
       if (result.success) {
-        setSwitchMessage(result.message);
-
         if (result.requiresRestart) {
-          // Show detailed instructions
-          setTimeout(() => {
-            const instructions = result.instructions ? Object.values(result.instructions).join('\n\n') : result.message;
-            alert(`${result.message}\n\nInstructions:\n${instructions}`);
-          }, 1000);
+          // Show detailed instructions in the status message area
+          const instructions = result.instructions
+            ? Object.values(result.instructions).join("\n\n")
+            : result.message;
+          setSwitchMessage(`${result.message}\n\nInstructions:\n${instructions}`);
+        } else {
+          setSwitchMessage(result.message);
         }
 
         // Refresh status after a delay
@@ -1387,9 +1381,11 @@ export default function Settings() {
                   {/* Switch Status Message */}
                   {switchMessage && (
                     <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                      <div className="flex items-center gap-2">
-                        <Info className="w-4 h-4 text-blue-600" />
-                        <p className="text-sm text-blue-800">{switchMessage}</p>
+                      <div className="flex items-start gap-2">
+                        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800 whitespace-pre-line">
+                          {switchMessage}
+                        </div>
                       </div>
                     </div>
                   )}
