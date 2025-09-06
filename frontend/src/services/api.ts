@@ -1,6 +1,15 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Production API URL - hardcoded for deployment
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? "https://riskworks.onrender.com" : "http://localhost:8000");
+
+// Debug logging
+console.log("API Configuration:", {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  PROD: import.meta.env.PROD,
+  API_BASE_URL: API_BASE_URL
+});
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
