@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const schema = z.object({
   email: z.string().email(),
@@ -41,12 +41,12 @@ export default function Login() {
   }
 
   // Load any pending switch instructions persisted by Settings
-  if (!switchNotice) {
+  useEffect(() => {
     try {
       const pending = localStorage.getItem("pendingSwitchMessage");
       if (pending) setSwitchNotice(pending);
     } catch {}
-  }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary-50 via-primary-50 to-accent-50 flex items-center justify-center p-4">
@@ -74,7 +74,12 @@ export default function Login() {
               <div className="mt-2 text-right">
                 <button
                   className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
-                  onClick={() => { try { localStorage.removeItem("pendingSwitchMessage"); } catch {}; setSwitchNotice(""); }}
+                  onClick={() => {
+                    try {
+                      localStorage.removeItem("pendingSwitchMessage");
+                    } catch {}
+                    setSwitchNotice("");
+                  }}
                 >
                   Dismiss
                 </button>

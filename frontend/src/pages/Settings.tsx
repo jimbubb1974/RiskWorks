@@ -475,10 +475,14 @@ export default function Settings() {
             : result.message;
           const msg = `${result.message}\n\nInstructions:\n${instructions}`;
           setSwitchMessage(msg);
-          try { localStorage.setItem("pendingSwitchMessage", msg); } catch {}
+          try {
+            localStorage.setItem("pendingSwitchMessage", msg);
+          } catch {}
         } else {
           setSwitchMessage(result.message);
-          try { localStorage.setItem("pendingSwitchMessage", result.message); } catch {}
+          try {
+            localStorage.setItem("pendingSwitchMessage", result.message);
+          } catch {}
         }
       } else {
         setSwitchMessage(result.message);
@@ -509,11 +513,12 @@ export default function Settings() {
           const instructions = result.instructions
             ? Object.values(result.instructions).join("\n\n")
             : result.message;
-          setSwitchMessage(
-            `${result.message}\n\nInstructions:\n${instructions}`
-          );
+          const msg = `${result.message}\n\nInstructions:\n${instructions}`;
+          setSwitchMessage(msg);
+          try { localStorage.setItem("pendingSwitchMessage", msg); } catch {}
         } else {
           setSwitchMessage(result.message);
+          try { localStorage.setItem("pendingSwitchMessage", result.message); } catch {}
         }
         // Do not auto-refresh; keep instructions visible until user acts
       } else {
