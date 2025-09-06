@@ -34,6 +34,40 @@ def switch_to_local():
     shutil.copy2(env_local, env_file)
     print(f"Updated backend/.env with local configuration")
     
+    # Ensure required local flags are present/normalized
+    text = env_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+    kv: dict[str, str] = {}
+    for line in text:
+        if "=" in line and not line.strip().startswith("#"):
+            k, v = line.split("=", 1)
+            kv[k.strip()] = v.strip()
+    kv["ENVIRONMENT"] = kv.get("ENVIRONMENT", "development") or "development"
+    kv["IS_CLOUD"] = "false"
+    kv["CLOUD_PROVIDER"] = "local"
+    # Rewrite file with normalized keys and single-line values
+    with open(env_file, "w", encoding="utf-8") as f:
+        f.write("# Environment Configuration - LOCAL\n")
+        for k in [
+            "ENVIRONMENT",
+            "IS_CLOUD",
+            "CLOUD_PROVIDER",
+            "DATABASE_URL",
+            "DATABASE_TYPE",
+            "SECRET_KEY",
+            "ALGORITHM",
+            "ACCESS_TOKEN_EXPIRES_MINUTES",
+            "FRONTEND_URL",
+            "BACKEND_URL",
+            "CLOUD_DATABASE_URL",
+            "CLOUD_FRONTEND_URL",
+            "CLOUD_BACKEND_URL",
+            "ENV_IDENTIFIER",
+            "ENV_DESCRIPTION",
+            "ENV_TIMESTAMP",
+        ]:
+            if k in kv and kv[k] is not None:
+                f.write(f"{k}={kv[k]}\n")
+    
     # Switch frontend
     print("\nSwitching frontend to local...")
     frontend_dir = project_root / "frontend"
