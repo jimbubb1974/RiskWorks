@@ -146,7 +146,7 @@ class ConfigService {
       (import.meta.env.PROD
         ? "https://riskworks.onrender.com"
         : "http://localhost:8000");
-    
+
     return API_BASE_URL;
   }
 

@@ -136,8 +136,7 @@ export default function Dashboard() {
                         {risk.title}
                       </h3>
                       <p className="text-sm text-secondary-600">
-                        Score: {risk.likelihood * risk.impact} •{" "}
-                        {risk.status}
+                        Score: {risk.likelihood * risk.impact} • {risk.status}
                       </p>
                     </div>
                   </div>

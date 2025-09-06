@@ -1263,12 +1263,14 @@ export default function Settings() {
                               </p>
                               <div className="space-y-1">
                                 <p className="text-sm font-mono text-secondary-900">
-                                  {deploymentInfo.frontend?.version?.short_hash ||
+                                  {deploymentInfo.frontend?.version
+                                    ?.short_hash ||
                                     deploymentInfo.version?.short_hash ||
                                     "Unknown"}
                                 </p>
                                 <p className="text-xs text-secondary-500 truncate">
-                                  {deploymentInfo.frontend?.version?.commit_message ||
+                                  {deploymentInfo.frontend?.version
+                                    ?.commit_message ||
                                     deploymentInfo.version?.commit_message ||
                                     "No message"}
                                 </p>
@@ -1279,7 +1281,8 @@ export default function Settings() {
                                 Platform
                               </p>
                               <p className="text-sm text-secondary-900 capitalize">
-                                {deploymentInfo.frontend?.deployment?.platform ||
+                                {deploymentInfo.frontend?.deployment
+                                  ?.platform ||
                                   import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
                                   (import.meta.env.PROD ? "netlify" : "local")}
                               </p>
@@ -1289,7 +1292,8 @@ export default function Settings() {
                                 Environment
                               </p>
                               <p className="text-sm text-secondary-900 capitalize">
-                                {deploymentInfo.frontend?.deployment?.environment ||
+                                {deploymentInfo.frontend?.deployment
+                                  ?.environment ||
                                   deploymentInfo.deployment?.environment ||
                                   (import.meta.env.PROD
                                     ? "production"
@@ -1301,7 +1305,8 @@ export default function Settings() {
                                 Deployed
                               </p>
                               <p className="text-sm text-secondary-900">
-                                {deploymentInfo.frontend?.deployment?.deployment_time
+                                {deploymentInfo.frontend?.deployment
+                                  ?.deployment_time
                                   ? new Date(
                                       deploymentInfo.frontend.deployment.deployment_time
                                     ).toLocaleString()
@@ -1313,7 +1318,9 @@ export default function Settings() {
                               </p>
                             </div>
                             <div>
-                              <p className="text-xs text-secondary-600 mb-1">URL</p>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                URL
+                              </p>
                               <p className="text-sm font-mono text-secondary-900">
                                 {deploymentInfo.frontend?.deployment?.url ||
                                   import.meta.env.VITE_FRONTEND_URL ||
@@ -1352,12 +1359,14 @@ export default function Settings() {
                               </p>
                               <div className="space-y-1">
                                 <p className="text-sm font-mono text-secondary-900">
-                                  {deploymentInfo.backend?.version?.short_hash ||
+                                  {deploymentInfo.backend?.version
+                                    ?.short_hash ||
                                     deploymentInfo.version?.short_hash ||
                                     "Unknown"}
                                 </p>
                                 <p className="text-xs text-secondary-500 truncate">
-                                  {deploymentInfo.backend?.version?.commit_message ||
+                                  {deploymentInfo.backend?.version
+                                    ?.commit_message ||
                                     deploymentInfo.version?.commit_message ||
                                     "No message"}
                                 </p>
@@ -1378,7 +1387,8 @@ export default function Settings() {
                                 Environment
                               </p>
                               <p className="text-sm text-secondary-900 capitalize">
-                                {deploymentInfo.backend?.deployment?.environment ||
+                                {deploymentInfo.backend?.deployment
+                                  ?.environment ||
                                   deploymentInfo.deployment?.environment ||
                                   "Unknown"}
                               </p>
@@ -1388,7 +1398,8 @@ export default function Settings() {
                                 Deployed
                               </p>
                               <p className="text-sm text-secondary-900">
-                                {deploymentInfo.backend?.deployment?.deployment_time
+                                {deploymentInfo.backend?.deployment
+                                  ?.deployment_time
                                   ? new Date(
                                       deploymentInfo.backend.deployment.deployment_time
                                     ).toLocaleString()
@@ -1401,8 +1412,8 @@ export default function Settings() {
                             </div>
                             {(deploymentInfo.backend?.deployment?.service_id ||
                               deploymentInfo.deployment?.service_id) &&
-                              (deploymentInfo.backend?.deployment?.service_id !==
-                                "unknown" ||
+                              (deploymentInfo.backend?.deployment
+                                ?.service_id !== "unknown" ||
                                 deploymentInfo.deployment?.service_id !==
                                   "unknown") && (
                                 <div>
@@ -1410,7 +1421,8 @@ export default function Settings() {
                                     Service ID
                                   </p>
                                   <p className="text-sm font-mono text-secondary-900">
-                                    {deploymentInfo.backend?.deployment?.service_id ||
+                                    {deploymentInfo.backend?.deployment
+                                      ?.service_id ||
                                       deploymentInfo.deployment?.service_id}
                                   </p>
                                 </div>
@@ -1420,7 +1432,8 @@ export default function Settings() {
                                 Python
                               </p>
                               <p className="text-sm text-secondary-900">
-                                {deploymentInfo.backend?.build?.python_version ||
+                                {deploymentInfo.backend?.build
+                                  ?.python_version ||
                                   deploymentInfo.build?.python_version ||
                                   "Unknown"}
                               </p>
