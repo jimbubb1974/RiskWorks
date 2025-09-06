@@ -1330,7 +1330,7 @@ export default function Settings() {
                               systemStatus.environment?.isCloud
                             }
                           >
-                            {switchingBackend ? "Switching..." : "Render"}
+                            {switchingBackend ? "Switching..." : "Cloud (Render)"}
                           </button>
                           <button
                             className={`px-2 py-1 text-xs rounded border ${
