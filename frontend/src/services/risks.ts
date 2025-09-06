@@ -3,7 +3,7 @@ import type { Risk, RiskCreate, RiskUpdate } from "../types/risk";
 
 export async function listRisks(params?: {
   status?: string;
-  min_severity?: number;
+  min_likelihood?: number;
   search?: string;
   sort_by?: string;
   order?: "asc" | "desc";

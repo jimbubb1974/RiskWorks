@@ -7,10 +7,6 @@ export type Risk = {
   likelihood: number;
   impact: number;
 
-  // Legacy fields for backward compatibility
-  severity: number;
-  probability: number;
-
   // Enhanced fields
   category?: string;
   risk_owner?: string;
@@ -45,8 +41,6 @@ export type RiskCreate = {
   description?: string | null;
   likelihood: number;
   impact: number;
-  severity?: number;
-  probability?: number;
   category?: RiskCategory;
   risk_owner?: string;
   department?: string;
