@@ -999,9 +999,11 @@ export default function Settings() {
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 text-xs text-secondary-500">
-              Last updated: {systemStatus.lastUpdated.toLocaleTimeString()}
-            </div>
+                <div className="mt-4 text-xs text-secondary-500">
+                  Last updated: {systemStatus.lastUpdated.toLocaleTimeString()}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* System Information - Collapsible */}
