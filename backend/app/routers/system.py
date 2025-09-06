@@ -516,6 +516,22 @@ async def switch_backend_environment(
         stderr_text = ""
         ran_script = False
 
+        script_used = None
+        env_snapshot = {}
+        env_mtime = None
+        backend_env_path = (backend_dir / ".env")
+
+        def parse_env_file(fp: Path) -> dict:
+            data = {}
+            try:
+                for line in fp.read_text(encoding="utf-8", errors="ignore").splitlines():
+                    if "=" in line and not line.strip().startswith("#"):
+                        k, v = line.split("=", 1)
+                        data[k.strip()] = v.strip()
+            except Exception:
+                pass
+            return data
+
         try:
             if request.target == "local":
                 # Prefer project-level script, fallback to backend script
@@ -532,6 +548,7 @@ async def switch_backend_environment(
             script_path = next((p for p in candidates if p.exists()), None)
 
             if script_path is not None:
+                script_used = str(script_path)
                 completed = subprocess.run(
                     [sys.executable, str(script_path)],
                     capture_output=True,
@@ -548,6 +565,18 @@ async def switch_backend_environment(
             stderr_text = f"Failed to execute switch script: {e}"
             ran_script = False
 
+        # Capture env snapshot after attempted switch (without requiring app restart)
+        try:
+            if backend_env_path.exists():
+                env_snapshot = {
+                    k: v
+                    for k, v in parse_env_file(backend_env_path).items()
+                    if k in {"ENVIRONMENT", "IS_CLOUD", "CLOUD_PROVIDER", "DATABASE_URL"}
+                }
+                env_mtime = backend_env_path.stat().st_mtime
+        except Exception:
+            pass
+
         if request.target == "local":
             return {
                 "success": True,
@@ -556,6 +585,10 @@ async def switch_backend_environment(
                 "log": stdout_text,
                 "error": stderr_text or None,
                 "ran_script": ran_script,
+                "script_used": script_used,
+                "env_file": str(backend_env_path),
+                "env_mtime": env_mtime,
+                "env_snapshot": env_snapshot,
                 "instructions": {
                     "automated": "✅ Automated: Run 'python switch_to_local.py' from the project root if not already applied",
                     "manual_backend": "✅ Manual Backend: Run 'python backend/switch_to_local.py' then 'python backend/.\\run.py'",
@@ -572,6 +605,10 @@ async def switch_backend_environment(
                 "log": stdout_text,
                 "error": stderr_text or None,
                 "ran_script": ran_script,
+                "script_used": script_used,
+                "env_file": str(backend_env_path),
+                "env_mtime": env_mtime,
+                "env_snapshot": env_snapshot,
                 "instructions": {
                     "automated": "✅ Automated: Run 'python switch_to_cloud.py' from the project root if not already applied",
                     "manual_backend": "✅ Manual Backend: Run 'python backend/switch_to_cloud.py' then 'python backend/.\\run.py'",

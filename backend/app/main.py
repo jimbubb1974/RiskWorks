@@ -19,6 +19,12 @@ def create_app() -> FastAPI:
 	print(f"DEBUG: CORS origins configured: {settings.cors_origins}")
 	print(f"DEBUG: Environment: {settings.environment}")
 	print(f"DEBUG: Is cloud: {settings.is_cloud}")
+	try:
+		print(f"DEBUG: Effective provider: {settings.effective_cloud_provider}")
+		print(f"DEBUG: Effective backend URL: {settings.effective_backend_url}")
+		print(f"DEBUG: Effective database URL (masked): {'***hidden***' if settings.is_cloud else settings.effective_database_url}")
+	except Exception as _e:
+		pass
 	
 	app.add_middleware(
 		CORSMiddleware,
