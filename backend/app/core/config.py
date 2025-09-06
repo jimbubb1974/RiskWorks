@@ -86,6 +86,9 @@ class Settings(BaseSettings):
 		if self.environment == "production":
 			origins.append("https://68bc47a45692b986d4178d95--riskworks.netlify.app")
 			origins.append("https://riskworks.netlify.app")
+			# Add Vercel frontend URLs
+			origins.append("https://risk-works.vercel.app")
+			origins.append("https://risk-works-bjpjjcj9e-jim-bubbs-projects.vercel.app")
 		
 		return origins
 
