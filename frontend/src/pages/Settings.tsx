@@ -1056,59 +1056,178 @@ export default function Settings() {
             </button>
 
             {expandedSections.system && (
-              <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <Globe className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Frontend URL
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {window.location.origin}
-                      </p>
+              <div className="mt-4 space-y-6">
+                {/* Two-Column Layout: Frontend Left, Backend Right */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Frontend Information - Left Side */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                      <h4 className="text-md font-semibold text-secondary-900">
+                        Frontend
+                      </h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          URL
+                        </p>
+                        <p className="text-sm font-mono text-secondary-900">
+                          {window.location.origin}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          Platform
+                        </p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {import.meta.env.VITE_DEPLOYMENT_PLATFORM || 
+                           (import.meta.env.PROD ? "cloud" : "local")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          Environment
+                        </p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {import.meta.env.PROD ? "production" : "development"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <Server className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Backend URL
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.environment?.services?.backend
-                          ?.effective || "Unknown"}
-                      </p>
+
+                  {/* Backend Information - Right Side */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Server className="w-5 h-5 text-green-600" />
+                      <h4 className="text-md font-semibold text-secondary-900">
+                        Backend
+                      </h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          URL
+                        </p>
+                        <p className="text-sm font-mono text-secondary-900">
+                          {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          Database
+                        </p>
+                        <p className="text-sm text-secondary-900">
+                          {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
+                            "Unknown"}
+                          {systemStatus.systemInfo?.database?.engine
+                            ? ` (${
+                                systemStatus.systemInfo.database.engine
+                                  .split("://")[1]
+                                  ?.split("/")
+                                  .pop() || "Unknown"
+                              })`
+                            : " (Unknown)"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          Platform
+                        </p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {systemStatus.environment?.cloudProvider || "unknown"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">
+                          Environment
+                        </p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {systemStatus.environment?.environment || "unknown"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <Database className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Database
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
-                          "Unknown"}
-                        {systemStatus.systemInfo?.database?.engine
-                          ? ` (${
-                              systemStatus.systemInfo.database.engine
-                                .split("://")[1]
-                                ?.split("/")
-                                .pop() || "Unknown"
-                            })`
-                          : " (Unknown)"}
+                </div>
+
+                {/* Environment Toggle Controls */}
+                <div className="border-t pt-6">
+                  <h4 className="text-md font-semibold text-secondary-900 mb-4">
+                    Environment Controls
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Frontend Toggle */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-blue-600" />
+                        <h5 className="text-sm font-medium text-secondary-900">
+                          Frontend Environment
+                        </h5>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          className={`px-3 py-2 text-xs rounded-md border ${
+                            import.meta.env.PROD 
+                              ? "bg-blue-100 border-blue-300 text-blue-700" 
+                              : "bg-gray-100 border-gray-300 text-gray-600"
+                          }`}
+                          disabled
+                        >
+                          {import.meta.env.PROD ? "Cloud" : "Local"}
+                        </button>
+                        <button
+                          className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
+                          onClick={() => {
+                            // TODO: Implement frontend environment switching
+                            alert("Frontend switching coming soon!");
+                          }}
+                        >
+                          Switch
+                        </button>
+                      </div>
+                      
+                      <p className="text-xs text-secondary-500">
+                        Current: {import.meta.env.PROD ? "Cloud (Vercel/Netlify)" : "Local (localhost:5173)"}
                       </p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <Activity className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Auto-refresh
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        Every 30 seconds
+
+                    {/* Backend Toggle */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Server className="w-4 h-4 text-green-600" />
+                        <h5 className="text-sm font-medium text-secondary-900">
+                          Backend Environment
+                        </h5>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          className={`px-3 py-2 text-xs rounded-md border ${
+                            systemStatus.environment?.isCloud 
+                              ? "bg-green-100 border-green-300 text-green-700" 
+                              : "bg-gray-100 border-gray-300 text-gray-600"
+                          }`}
+                          disabled
+                        >
+                          {systemStatus.environment?.isCloud ? "Cloud" : "Local"}
+                        </button>
+                        <button
+                          className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
+                          onClick={() => {
+                            // TODO: Implement backend environment switching
+                            alert("Backend switching coming soon!");
+                          }}
+                        >
+                          Switch
+                        </button>
+                      </div>
+                      
+                      <p className="text-xs text-secondary-500">
+                        Current: {systemStatus.environment?.isCloud ? "Cloud (Render)" : "Local (localhost:8000)"}
                       </p>
                     </div>
                   </div>
@@ -1239,6 +1358,7 @@ export default function Settings() {
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
                             {deploymentInfo.frontend?.deployment?.platform ||
+                              import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
                               (import.meta.env.PROD ? "netlify" : "local")}
                           </p>
                         </div>
@@ -1249,7 +1369,9 @@ export default function Settings() {
                           <p className="text-sm text-secondary-900 capitalize">
                             {deploymentInfo.frontend?.deployment?.environment ||
                               deploymentInfo.deployment?.environment ||
-                              (import.meta.env.PROD ? "production" : "development")}
+                              (import.meta.env.PROD
+                                ? "production"
+                                : "development")}
                           </p>
                         </div>
                         <div>
@@ -1273,8 +1395,9 @@ export default function Settings() {
                           <p className="text-xs text-secondary-600 mb-1">URL</p>
                           <p className="text-sm font-mono text-secondary-900">
                             {deploymentInfo.frontend?.deployment?.url ||
-                              (import.meta.env.PROD 
-                                ? "https://riskworks.netlify.app" 
+                              import.meta.env.VITE_FRONTEND_URL ||
+                              (import.meta.env.PROD
+                                ? "https://riskworks.netlify.app"
                                 : "http://localhost:5173")}
                           </p>
                         </div>
