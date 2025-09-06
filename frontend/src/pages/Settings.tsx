@@ -520,11 +520,7 @@ export default function Settings() {
         } else {
           setSwitchMessage(result.message);
         }
-
-        // Refresh status after a delay
-        setTimeout(() => {
-          refreshStatus();
-        }, 2000);
+        // Do not auto-refresh; keep instructions visible until user acts
       } else {
         setSwitchMessage(result.message);
         setTimeout(() => {
@@ -1380,10 +1376,24 @@ export default function Settings() {
                   {/* Switch Status Message */}
                   {switchMessage && (
                     <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-3">
                         <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-blue-800 whitespace-pre-line">
+                        <div className="flex-1 text-sm text-blue-800 whitespace-pre-line">
                           {switchMessage}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <button
+                            className="px-2 py-1 text-xs rounded border border-blue-300 text-blue-700 hover:bg-blue-100"
+                            onClick={() => refreshStatus()}
+                          >
+                            Refresh status
+                          </button>
+                          <button
+                            className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setSwitchMessage(null)}
+                          >
+                            Dismiss
+                          </button>
                         </div>
                       </div>
                     </div>
