@@ -469,8 +469,15 @@ export default function Settings() {
       );
 
       if (result.success) {
-        const msg =
+        let msg =
           "Switch applied. Please restart your frontend dev server:\n- Frontend: cd frontend && npm run dev";
+        if (targetPlatform !== "local") {
+          const cloudUrl =
+            targetPlatform === "vercel"
+              ? "https://risk-works.vercel.app"
+              : "https://riskworks.netlify.app";
+          msg = `Switch applied.\nCloud frontend URL: ${cloudUrl}\n\nPlease restart your frontend dev server:\n- Frontend: cd frontend && npm run dev`;
+        }
         setSwitchMessage(msg);
         try {
           localStorage.setItem("pendingSwitchMessage", msg);
@@ -1253,21 +1260,41 @@ export default function Settings() {
 
                         {/* Frontend Platform Options - always visible */}
                         <button
-                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          className={`px-2 py-1 text-xs rounded border ${
+                            (!import.meta.env.PROD ||
+                              import.meta.env.VITE_DEPLOYMENT_PLATFORM === "local" ||
+                              (typeof window !== "undefined" &&
+                                !window.location.host.includes("vercel.app") &&
+                                !window.location.host.includes("netlify.app")))
+                              ? "bg-blue-100 border-blue-300 text-blue-700"
+                              : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          }`}
                           onClick={() => handleFrontendSwitch("local")}
                           disabled={switchingFrontend}
                         >
                           {switchingFrontend ? "Switching..." : "Local"}
                         </button>
                         <button
-                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          className={`px-2 py-1 text-xs rounded border ${
+                            (import.meta.env.VITE_DEPLOYMENT_PLATFORM === "vercel" ||
+                              (typeof window !== "undefined" &&
+                                window.location.host.includes("vercel.app")))
+                              ? "bg-blue-100 border-blue-300 text-blue-700"
+                              : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          }`}
                           onClick={() => handleFrontendSwitch("vercel")}
                           disabled={switchingFrontend}
                         >
                           Vercel
                         </button>
                         <button
-                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          className={`px-2 py-1 text-xs rounded border ${
+                            (import.meta.env.VITE_DEPLOYMENT_PLATFORM === "netlify" ||
+                              (typeof window !== "undefined" &&
+                                window.location.host.includes("netlify.app")))
+                              ? "bg-blue-100 border-blue-300 text-blue-700"
+                              : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          }`}
                           onClick={() => handleFrontendSwitch("netlify")}
                           disabled={switchingFrontend}
                         >
@@ -1418,7 +1445,17 @@ export default function Settings() {
                                 {deploymentInfo.frontend?.deployment
                                   ?.platform ||
                                   import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
-                                  (import.meta.env.PROD ? "netlify" : "local")}
+                                  (import.meta.env.VITE_FRONTEND_URL?.includes(
+                                    "vercel.app"
+                                  )
+                                    ? "vercel"
+                                    : import.meta.env.VITE_FRONTEND_URL?.includes(
+                                        "netlify.app"
+                                      )
+                                    ? "netlify"
+                                    : import.meta.env.PROD
+                                    ? "cloud"
+                                    : "local")}
                               </p>
                             </div>
                             <div>
