@@ -20,18 +20,18 @@ import {
 export default function RisksList() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<string>("");
-  const [minSeverity, setMinSeverity] = useState<number | "">("");
+  const [minLikelihood, setMinLikelihood] = useState<number | "">("");
   const [search, setSearch] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("score");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const { data: risks = [], isLoading } = useQuery({
-    queryKey: ["risks", status, minSeverity, search, sortBy, order],
+    queryKey: ["risks", status, minLikelihood, search, sortBy, order],
     queryFn: () =>
       listRisks({
         status: status || undefined,
-        min_severity: typeof minSeverity === "number" ? minSeverity : undefined,
+        min_likelihood: typeof minLikelihood === "number" ? minLikelihood : undefined,
         search: search || undefined,
         sort_by: sortBy || undefined,
         order,

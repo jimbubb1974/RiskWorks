@@ -25,7 +25,7 @@ export default function Dashboard() {
   // Calculate metrics
   const totalRisks = risks.length;
   const openRisks = risks.filter((r) => r.status === "open").length;
-  const highSeverityRisks = risks.filter((r) => r.severity >= 4).length;
+  const highSeverityRisks = risks.filter((r) => r.likelihood >= 4).length;
   // const recentRisks = risks.filter((r) => {
   //   const created = new Date(r.created_at);
   //   const weekAgo = new Date();
@@ -36,7 +36,7 @@ export default function Dashboard() {
   const averageRiskScore =
     totalRisks > 0
       ? (
-          risks.reduce((sum, r) => sum + r.severity * r.probability, 0) /
+          risks.reduce((sum, r) => sum + r.likelihood * r.impact, 0) /
           totalRisks
         ).toFixed(1)
       : 0;
@@ -124,9 +124,9 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        risk.severity >= 4
+                        risk.likelihood >= 4
                           ? "bg-danger-500"
-                          : risk.severity >= 3
+                          : risk.likelihood >= 3
                           ? "bg-warning-500"
                           : "bg-success-500"
                       }`}
@@ -136,7 +136,7 @@ export default function Dashboard() {
                         {risk.title}
                       </h3>
                       <p className="text-sm text-secondary-600">
-                        Score: {risk.severity * risk.probability} •{" "}
+                        Score: {risk.likelihood * risk.impact} •{" "}
                         {risk.status}
                       </p>
                     </div>

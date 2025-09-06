@@ -298,11 +298,11 @@ export default function RiskForm() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary-600">Severity:</span>
-                  <span className="font-medium">{severity}/5</span>
+                  <span className="font-medium">{likelihood}/5</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary-600">Probability:</span>
-                  <span className="font-medium">{probability}/5</span>
+                  <span className="font-medium">{impact}/5</span>
                 </div>
               </div>
             </div>
