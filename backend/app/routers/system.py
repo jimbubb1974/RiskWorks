@@ -471,3 +471,90 @@ def switch_environment(
         )
 
 
+class BackendSwitchRequest(BaseModel):
+    target: Literal["render", "local"]
+
+
+class FrontendSwitchRequest(BaseModel):
+    platform: Literal["vercel", "netlify"]
+
+
+@router.post("/switch-environment")
+async def switch_backend_environment(
+    request: BackendSwitchRequest,
+    user_id: int = Depends(get_current_user_id)
+):
+    """Switch backend environment between Render and Local"""
+    try:
+        current_env = "cloud" if settings.is_cloud else "local"
+        target_env = "cloud" if request.target == "render" else "local"
+        
+        if current_env == target_env:
+            return {
+                "success": True,
+                "message": f"Backend is already running on {request.target}",
+                "requires_restart": False
+            }
+        
+        # For now, return instructions for manual switching
+        if request.target == "local":
+            return {
+                "success": True,
+                "message": "To switch to local backend, run the local development server and update your frontend configuration",
+                "requires_restart": True,
+                "instructions": {
+                    "backend": "Run: python .\\run.py from the backend directory",
+                    "frontend": "Update VITE_API_URL to http://localhost:8000"
+                }
+            }
+        else:  # render
+            return {
+                "success": True,
+                "message": "To switch to Render backend, deploy to Render and update your frontend configuration",
+                "requires_restart": True,
+                "instructions": {
+                    "backend": "Deploy to Render and update environment variables",
+                    "frontend": "Update VITE_API_URL to https://riskworks.onrender.com"
+                }
+            }
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to switch backend environment: {str(e)}"
+        )
+
+
+@router.post("/switch-frontend-platform")
+async def switch_frontend_platform(
+    request: FrontendSwitchRequest,
+    user_id: int = Depends(get_current_user_id)
+):
+    """Switch frontend platform between Vercel and Netlify"""
+    try:
+        current_platform = getattr(settings, 'cloud_frontend_url', '')
+        
+        if request.platform == "vercel":
+            target_url = "https://risk-works.vercel.app"
+            platform_name = "Vercel"
+        else:  # netlify
+            target_url = "https://riskworks.netlify.app"
+            platform_name = "Netlify"
+        
+        return {
+            "success": True,
+            "message": f"To switch to {platform_name}, redeploy your frontend with the correct environment variables",
+            "requires_restart": True,
+            "instructions": {
+                "frontend": f"Update VITE_FRONTEND_URL to {target_url} and redeploy",
+                "backend": f"Add {target_url} to CORS origins if not already present"
+            }
+        }
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to switch frontend platform: {str(e)}"
+        )
+
+

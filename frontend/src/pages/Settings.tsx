@@ -22,6 +22,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { apiClient } from "../services/api";
+import { environmentSwitchService, SwitchResult } from "../services/environmentSwitch";
 
 interface PortStatus {
   port: number;
@@ -87,6 +88,9 @@ export default function Settings() {
   );
   const [showEnvSwitcher, setShowEnvSwitcher] = useState(false);
   const [switchingEnv, setSwitchingEnv] = useState(false);
+  const [switchingFrontend, setSwitchingFrontend] = useState(false);
+  const [switchingBackend, setSwitchingBackend] = useState(false);
+  const [switchMessage, setSwitchMessage] = useState<string | null>(null);
 
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -442,6 +446,84 @@ export default function Settings() {
       );
     } finally {
       setSwitchingEnv(false);
+    }
+  };
+
+  // Handle frontend environment switching
+  const handleFrontendSwitch = async (targetPlatform: 'vercel' | 'netlify' | 'local') => {
+    setSwitchingFrontend(true);
+    setSwitchMessage(null);
+    
+    try {
+      const result = await environmentSwitchService.switchFrontend(targetPlatform);
+      
+      if (result.success) {
+        setSwitchMessage(result.message);
+        
+        if (result.requiresRestart) {
+          // Show restart instructions
+          setTimeout(() => {
+            alert(result.message);
+          }, 1000);
+        }
+        
+        // Refresh status after a delay
+        setTimeout(() => {
+          refreshStatus();
+        }, 2000);
+      } else {
+        setSwitchMessage(result.message);
+        setTimeout(() => {
+          alert(result.message);
+        }, 1000);
+      }
+    } catch (error) {
+      const errorMessage = `Failed to switch frontend: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      setSwitchMessage(errorMessage);
+      setTimeout(() => {
+        alert(errorMessage);
+      }, 1000);
+    } finally {
+      setSwitchingFrontend(false);
+    }
+  };
+
+  // Handle backend environment switching
+  const handleBackendSwitch = async (targetPlatform: 'render' | 'local') => {
+    setSwitchingBackend(true);
+    setSwitchMessage(null);
+    
+    try {
+      const result = await environmentSwitchService.switchBackend(targetPlatform);
+      
+      if (result.success) {
+        setSwitchMessage(result.message);
+        
+        if (result.requiresRestart) {
+          // Show restart instructions
+          setTimeout(() => {
+            alert(result.message);
+          }, 1000);
+        }
+        
+        // Refresh status after a delay
+        setTimeout(() => {
+          refreshStatus();
+        }, 2000);
+      } else {
+        setSwitchMessage(result.message);
+        setTimeout(() => {
+          alert(result.message);
+        }, 1000);
+      }
+    } catch (error) {
+      const errorMessage = `Failed to switch backend: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      setSwitchMessage(errorMessage);
+      setTimeout(() => {
+        alert(errorMessage);
+      }, 1000);
+    } finally {
+      setSwitchingBackend(false);
     }
   };
 
@@ -1176,15 +1258,42 @@ export default function Settings() {
                         >
                           {import.meta.env.PROD ? "Cloud" : "Local"}
                         </button>
-                        <button
-                          className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
-                          onClick={() => {
-                            // TODO: Implement frontend environment switching
-                            alert("Frontend switching coming soon!");
-                          }}
-                        >
-                          Switch
-                        </button>
+                        
+                        {/* Frontend Platform Options */}
+                        {import.meta.env.PROD ? (
+                          <div className="flex gap-1">
+                            <button
+                              className={`px-2 py-1 text-xs rounded border ${
+                                import.meta.env.VITE_DEPLOYMENT_PLATFORM === 'vercel'
+                                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                              }`}
+                              onClick={() => handleFrontendSwitch('vercel')}
+                              disabled={switchingFrontend}
+                            >
+                              Vercel
+                            </button>
+                            <button
+                              className={`px-2 py-1 text-xs rounded border ${
+                                import.meta.env.VITE_DEPLOYMENT_PLATFORM === 'netlify'
+                                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                              }`}
+                              onClick={() => handleFrontendSwitch('netlify')}
+                              disabled={switchingFrontend}
+                            >
+                              Netlify
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
+                            onClick={() => handleFrontendSwitch('local')}
+                            disabled={switchingFrontend}
+                          >
+                            {switchingFrontend ? "Switching..." : "Local"}
+                          </button>
+                        )}
                       </div>
 
                       <p className="text-xs text-secondary-500">
@@ -1217,15 +1326,32 @@ export default function Settings() {
                             ? "Cloud"
                             : "Local"}
                         </button>
-                        <button
-                          className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
-                          onClick={() => {
-                            // TODO: Implement backend environment switching
-                            alert("Backend switching coming soon!");
-                          }}
-                        >
-                          Switch
-                        </button>
+                        
+                        {/* Backend Platform Options */}
+                        <div className="flex gap-1">
+                          <button
+                            className={`px-2 py-1 text-xs rounded border ${
+                              systemStatus.environment?.isCloud
+                                ? "bg-green-100 border-green-300 text-green-700"
+                                : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                            }`}
+                            onClick={() => handleBackendSwitch('render')}
+                            disabled={switchingBackend}
+                          >
+                            {switchingBackend ? "Switching..." : "Render"}
+                          </button>
+                          <button
+                            className={`px-2 py-1 text-xs rounded border ${
+                              !systemStatus.environment?.isCloud
+                                ? "bg-green-100 border-green-300 text-green-700"
+                                : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                            }`}
+                            onClick={() => handleBackendSwitch('local')}
+                            disabled={switchingBackend}
+                          >
+                            {switchingBackend ? "Switching..." : "Local"}
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-xs text-secondary-500">
@@ -1236,6 +1362,16 @@ export default function Settings() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Switch Status Message */}
+                  {switchMessage && (
+                    <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <Info className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm text-blue-800">{switchMessage}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Deployment Information - Two Column Layout */}
