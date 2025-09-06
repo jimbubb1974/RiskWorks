@@ -31,7 +31,8 @@ export default function RisksList() {
     queryFn: () =>
       listRisks({
         status: status || undefined,
-        min_likelihood: typeof minLikelihood === "number" ? minLikelihood : undefined,
+        min_likelihood:
+          typeof minLikelihood === "number" ? minLikelihood : undefined,
         search: search || undefined,
         sort_by: sortBy || undefined,
         order,
@@ -152,6 +153,7 @@ export default function RisksList() {
             <option value="updated_at">Updated Date</option>
             <option value="likelihood">Likelihood</option>
             <option value="impact">Impact</option>
+            <option value="score">Risk Score</option>
             <option value="title">Title</option>
             <option value="status">Status</option>
           </select>

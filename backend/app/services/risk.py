@@ -31,7 +31,11 @@ def list_risks(
 	if search:
 		like = f"%{search}%"
 		stmt = stmt.where(Risk.title.ilike(like))
-	if sort_by in {"created_at", "updated_at", "severity", "probability", "likelihood", "impact", "title", "status", "category"}:
+	if sort_by == "score":
+		# Sort by computed score (likelihood * impact)
+		score_expr = Risk.likelihood * Risk.impact
+		stmt = stmt.order_by(desc(score_expr) if order == "desc" else asc(score_expr))
+	elif sort_by in {"created_at", "updated_at", "likelihood", "impact", "title", "status", "category"}:
 		col = getattr(Risk, sort_by)
 		stmt = stmt.order_by(desc(col) if order == "desc" else asc(col))
 	else:
