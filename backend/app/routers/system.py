@@ -503,7 +503,7 @@ async def switch_backend_environment(
                 "message": "Switching to local backend - configuration updated",
                 "requires_restart": True,
                 "instructions": {
-                    "backend": "✅ Backend: Run 'python .\\run.py' from the backend directory",
+                    "backend": "✅ Backend: Run 'python switch_to_local.py' then 'python .\\run.py' from the backend directory",
                     "frontend_config": "✅ Frontend: Create/update frontend/.env.local with:\nVITE_API_URL=http://localhost:8000\nVITE_FRONTEND_URL=http://localhost:5173\nVITE_DEPLOYMENT_PLATFORM=local",
                     "restart": "🔄 Restart frontend dev server: npm run dev",
                     "verify": "🌐 Open http://localhost:5173 to verify the switch"
@@ -515,7 +515,7 @@ async def switch_backend_environment(
                 "message": "Switching to Render backend - configuration updated",
                 "requires_restart": True,
                 "instructions": {
-                    "backend": "✅ Backend: Already deployed on Render at https://riskworks.onrender.com",
+                    "backend": "✅ Backend: Run 'python switch_to_cloud.py' then 'python .\\run.py' from the backend directory",
                     "frontend_local": "✅ Frontend Local: Create/update frontend/.env.local with:\nVITE_API_URL=https://riskworks.onrender.com\nVITE_FRONTEND_URL=http://localhost:5173\nVITE_DEPLOYMENT_PLATFORM=local",
                     "frontend_cloud": "✅ Frontend Cloud: Update VITE_API_URL environment variable to https://riskworks.onrender.com in your deployment platform",
                     "restart": "🔄 Restart frontend dev server (npm run dev) or redeploy cloud frontend",
