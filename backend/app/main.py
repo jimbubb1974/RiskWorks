@@ -15,6 +15,10 @@ def create_app() -> FastAPI:
 	app = FastAPI(title="Risk Platform API", version="0.1.0")
 
 	# CORS - allow origins based on configuration
+	print(f"DEBUG: CORS origins configured: {settings.cors_origins}")
+	print(f"DEBUG: Environment: {settings.environment}")
+	print(f"DEBUG: Is cloud: {settings.is_cloud}")
+	
 	app.add_middleware(
 		CORSMiddleware,
 		allow_origins=settings.cors_origins,
@@ -33,6 +37,15 @@ def create_app() -> FastAPI:
 	@app.get("/health")
 	async def health_check() -> dict:
 		return {"status": "ok"}
+	
+	@app.get("/debug/cors")
+	async def debug_cors() -> dict:
+		from .core.config import settings
+		return {
+			"cors_origins": settings.cors_origins,
+			"environment": settings.environment,
+			"is_cloud": settings.is_cloud
+		}
 
 	return app
 
