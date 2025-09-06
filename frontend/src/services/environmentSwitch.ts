@@ -135,20 +135,32 @@ class EnvironmentSwitchService {
   // Switch cloud frontend platform
   private async switchCloudFrontend(targetPlatform: 'vercel' | 'netlify'): Promise<SwitchResult> {
     try {
-      // This would typically involve:
-      // 1. Updating environment variables
-      // 2. Triggering a redeploy
-      // 3. Updating CORS settings on backend
-      
-      const response = await apiClient.post('/system/switch-frontend-platform', {
+      // Get configuration template from backend
+      const response = await apiClient.post('/config/update-frontend', {
+        target: 'frontend',
+        environment: 'cloud',
         platform: targetPlatform
       });
 
-      return {
-        success: response.data.success,
-        message: response.data.message,
-        requiresRestart: response.data.requires_restart
-      };
+      if (response.data.success) {
+        return {
+          success: true,
+          message: response.data.message,
+          requiresRestart: true,
+          instructions: {
+            'config_generated': `Configuration generated for ${targetPlatform}`,
+            'file_content': response.data.config_content,
+            'file_path': response.data.file_path,
+            'instructions': Object.values(response.data.instructions).join('\n')
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || `Failed to switch to ${targetPlatform}`,
+          requiresRestart: false
+        };
+      }
     } catch (error) {
       return {
         success: false,
@@ -160,11 +172,40 @@ class EnvironmentSwitchService {
 
   // Switch to local frontend
   private async switchToLocalFrontend(): Promise<SwitchResult> {
-    return {
-      success: true,
-      message: 'To switch to local frontend, run the local development server and update your browser URL to http://localhost:5173',
-      requiresRestart: true
-    };
+    try {
+      // Get configuration template from backend
+      const response = await apiClient.post('/config/update-frontend', {
+        target: 'frontend',
+        environment: 'local',
+        platform: 'local'
+      });
+
+      if (response.data.success) {
+        return {
+          success: true,
+          message: response.data.message,
+          requiresRestart: true,
+          instructions: {
+            'config_generated': 'Configuration generated for local development',
+            'file_content': response.data.config_content,
+            'file_path': response.data.file_path,
+            'instructions': Object.values(response.data.instructions).join('\n')
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Failed to generate local configuration',
+          requiresRestart: false
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to update frontend configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        requiresRestart: false
+      };
+    }
   }
 
   // Get available frontend platforms

@@ -369,9 +369,9 @@ export default function Settings() {
   const refreshStatus = async () => {
     setIsLoading(true);
     try {
-    await Promise.all([
-      checkBackendHealth(),
-      checkPorts(),
+      await Promise.all([
+        checkBackendHealth(),
+        checkPorts(),
         // Get environment configuration from backend
         apiClient
           .get("/system/config")
@@ -697,7 +697,7 @@ export default function Settings() {
                   </p>
                 </div>
               </div>
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
                 {getStatusIcon(systemStatus.database.status)}
                 <div>
                   <p className="text-sm font-medium text-secondary-900">
@@ -905,30 +905,30 @@ export default function Settings() {
                     </div>
                     {systemStatus.backend.responseTime && (
                       <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      Response Time
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      {systemStatus.backend.responseTime}ms
-                    </p>
+                        <Clock className="w-5 h-5 text-secondary-500" />
+                        <div>
+                          <p className="text-sm font-medium text-secondary-900">
+                            Response Time
+                          </p>
+                          <p className="text-sm text-secondary-600">
+                            {systemStatus.backend.responseTime}ms
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-secondary-500" />
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Last Checked
+                        </p>
+                        <p className="text-sm text-secondary-600">
+                          {systemStatus.backend.lastChecked.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-                    <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Last Checked
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {systemStatus.backend.lastChecked.toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
                 {/* Database Details */}
                 <div className="p-4 rounded-lg bg-secondary-50">
@@ -936,88 +936,88 @@ export default function Settings() {
                     <Database className="w-4 h-4" />
                     Database Service
                   </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3">
-                {getStatusIcon(systemStatus.database.status)}
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Connection
-                  </p>
-                  <p
-                    className={`text-sm ${
+                      {getStatusIcon(systemStatus.database.status)}
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Connection
+                        </p>
+                        <p
+                          className={`text-sm ${
                             getStatusColor(systemStatus.database.status).split(
                               " "
                             )[0]
-                    }`}
-                  >
+                          }`}
+                        >
                           {systemStatus.database.status
                             .charAt(0)
                             .toUpperCase() +
-                      systemStatus.database.status.slice(1)}
-                  </p>
-                </div>
-              </div>
-              {systemStatus.systemInfo?.database && (
-                <>
-                        <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Users
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.systemInfo.database.user_count}
-                      </p>
+                            systemStatus.database.status.slice(1)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                    {systemStatus.systemInfo?.database && (
+                      <>
                         <div className="flex items-center gap-3">
-                    <Activity className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Risks
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.systemInfo.database.risk_count}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
+                          <User className="w-5 h-5 text-secondary-500" />
+                          <div>
+                            <p className="text-sm font-medium text-secondary-900">
+                              Users
+                            </p>
+                            <p className="text-sm text-secondary-600">
+                              {systemStatus.systemInfo.database.user_count}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Activity className="w-5 h-5 text-secondary-500" />
+                          <div>
+                            <p className="text-sm font-medium text-secondary-900">
+                              Risks
+                            </p>
+                            <p className="text-sm text-secondary-600">
+                              {systemStatus.systemInfo.database.risk_count}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Last Checked
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {systemStatus.database.lastChecked.toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            </div>
+                      <Clock className="w-5 h-5 text-secondary-500" />
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Last Checked
+                        </p>
+                        <p className="text-sm text-secondary-600">
+                          {systemStatus.database.lastChecked.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-            {/* DB Target Indicator */}
+                  {/* DB Target Indicator */}
                   <div className="mt-4 p-3 rounded-lg bg-white border">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3">
                         <Cloud className="w-4 h-4 text-primary-600" />
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      dbLabel === "Neon Cloud"
-                        ? "bg-primary-50 text-primary-700 border-primary-200"
-                        : dbLabel.includes("Local")
-                        ? "bg-success-50 text-success-700 border-success-200"
-                        : "bg-secondary-50 text-secondary-700 border-secondary-200"
-                    }`}
-                  >
-                    {dbLabel}
-                  </span>
-                </div>
-                <code className="text-xs font-mono text-secondary-700 bg-secondary-100 px-2 py-1 rounded">
-                  {engineHost || "Unknown host"}
-                </code>
-              </div>
-            </div>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                            dbLabel === "Neon Cloud"
+                              ? "bg-primary-50 text-primary-700 border-primary-200"
+                              : dbLabel.includes("Local")
+                              ? "bg-success-50 text-success-700 border-success-200"
+                              : "bg-secondary-50 text-secondary-700 border-secondary-200"
+                          }`}
+                        >
+                          {dbLabel}
+                        </span>
+                      </div>
+                      <code className="text-xs font-mono text-secondary-700 bg-secondary-100 px-2 py-1 rounded">
+                        {engineHost || "Unknown host"}
+                      </code>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1030,11 +1030,11 @@ export default function Settings() {
               className="flex items-center justify-between w-full text-left"
             >
               <div className="flex items-center gap-3">
-              <Globe className="w-6 h-6 text-primary-600" />
-              <h3 className="text-lg font-semibold text-secondary-900">
-                Port Status
-              </h3>
-            </div>
+                <Globe className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-semibold text-secondary-900">
+                  Port Status
+                </h3>
+              </div>
               {expandedSections.ports ? (
                 <ChevronDown className="w-5 h-5 text-secondary-500" />
               ) : (
@@ -1044,115 +1044,115 @@ export default function Settings() {
 
             {expandedSections.ports && (
               <div className="mt-4">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-secondary-200">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Port
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Service
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Process Info
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-secondary-100">
-                  {systemStatus.ports.map((port) => (
-                    <tr key={port.port} className="hover:bg-secondary-50">
-                      <td className="px-4 py-3">
-                        <code className="text-sm font-mono text-secondary-900 bg-secondary-100 px-2 py-1 rounded">
-                          {port.port}
-                        </code>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-secondary-900">
-                        {port.service}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                            port.status
-                          )}`}
-                        >
-                          {getStatusIcon(port.status)}
-                          {port.status.charAt(0).toUpperCase() +
-                            port.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-secondary-600">
-                        {(port as any).process ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                                PID: {(port as any).process.pid}
-                              </span>
-                              <span className="text-xs text-secondary-500">
-                                {(port as any).process.name}
-                              </span>
-                            </div>
-                            {(port as any).process.cmdline && (
-                              <div className="text-xs text-secondary-400 font-mono truncate max-w-xs">
-                                {(port as any).process.cmdline}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-secondary-200">
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Port
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Service
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Process Info
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Description
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-secondary-100">
+                      {systemStatus.ports.map((port) => (
+                        <tr key={port.port} className="hover:bg-secondary-50">
+                          <td className="px-4 py-3">
+                            <code className="text-sm font-mono text-secondary-900 bg-secondary-100 px-2 py-1 rounded">
+                              {port.port}
+                            </code>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-secondary-900">
+                            {port.service}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
+                                port.status
+                              )}`}
+                            >
+                              {getStatusIcon(port.status)}
+                              {port.status.charAt(0).toUpperCase() +
+                                port.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-secondary-600">
+                            {(port as any).process ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                    PID: {(port as any).process.pid}
+                                  </span>
+                                  <span className="text-xs text-secondary-500">
+                                    {(port as any).process.name}
+                                  </span>
+                                </div>
+                                {(port as any).process.cmdline && (
+                                  <div className="text-xs text-secondary-400 font-mono truncate max-w-xs">
+                                    {(port as any).process.cmdline}
+                                  </div>
+                                )}
+                                <div className="flex gap-3 text-xs text-secondary-500">
+                                  <span>
+                                    CPU: {(port as any).process.cpu_percent}%
+                                  </span>
+                                  <span>
+                                    RAM: {(port as any).process.memory_mb}MB
+                                  </span>
+                                </div>
                               </div>
+                            ) : (
+                              <span className="text-xs text-secondary-400 italic">
+                                {port.status === "active"
+                                  ? "Process info unavailable"
+                                  : "Not running"}
+                              </span>
                             )}
-                            <div className="flex gap-3 text-xs text-secondary-500">
-                              <span>
-                                CPU: {(port as any).process.cpu_percent}%
-                              </span>
-                              <span>
-                                RAM: {(port as any).process.memory_mb}MB
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-secondary-400 italic">
-                            {port.status === "active"
-                              ? "Process info unavailable"
-                              : "Not running"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-secondary-600">
-                        {port.description}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-secondary-500">
-              Last updated: {systemStatus.lastUpdated.toLocaleTimeString()}
-            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-secondary-600">
+                            {port.description}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-xs text-secondary-500">
+                  Last updated: {systemStatus.lastUpdated.toLocaleTimeString()}
+                </div>
               </div>
             )}
           </div>
 
           {/* System Information - Collapsible */}
-            <div className="card">
+          <div className="card">
             <button
               onClick={() => toggleSection("system")}
               className="flex items-center justify-between w-full text-left"
             >
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <Info className="w-6 h-6 text-primary-600" />
-                  <h3 className="text-lg font-semibold text-secondary-900">
+                <h3 className="text-lg font-semibold text-secondary-900">
                   System Information
-                  </h3>
-                </div>
+                </h3>
+              </div>
               {expandedSections.system ? (
                 <ChevronDown className="w-5 h-5 text-secondary-500" />
               ) : (
                 <ChevronRight className="w-5 h-5 text-secondary-500" />
               )}
-                </button>
+            </button>
 
             {expandedSections.system && (
               <div className="mt-4 space-y-6">
@@ -1165,15 +1165,15 @@ export default function Settings() {
                       <h4 className="text-md font-semibold text-secondary-900">
                         Frontend
                       </h4>
-              </div>
+                    </div>
 
                     <div className="space-y-3">
-                  <div>
+                      <div>
                         <p className="text-xs text-secondary-600 mb-1">URL</p>
                         <p className="text-sm font-mono text-secondary-900">
                           {window.location.origin}
                         </p>
-                  </div>
+                      </div>
                       <div>
                         <p className="text-xs text-secondary-600 mb-1">
                           Platform
@@ -1182,16 +1182,16 @@ export default function Settings() {
                           {import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
                             (import.meta.env.PROD ? "cloud" : "local")}
                         </p>
-                </div>
-                  <div>
+                      </div>
+                      <div>
                         <p className="text-xs text-secondary-600 mb-1">
                           Environment
-                    </p>
+                        </p>
                         <p className="text-sm text-secondary-900 capitalize">
                           {import.meta.env.PROD ? "production" : "development"}
-                    </p>
-                  </div>
-                </div>
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Backend Information - Right Side */}
@@ -1204,7 +1204,7 @@ export default function Settings() {
                     </div>
 
                     <div className="space-y-3">
-                  <div>
+                      <div>
                         <p className="text-xs text-secondary-600 mb-1">URL</p>
                         <p className="text-sm font-mono text-secondary-900">
                           {systemStatus.environment?.services?.backend
@@ -1213,8 +1213,8 @@ export default function Settings() {
                       </div>
                       <div>
                         <p className="text-xs text-secondary-600 mb-1">
-                      Database
-                    </p>
+                          Database
+                        </p>
                         <p className="text-sm text-secondary-900">
                           {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
                             "Unknown"}
@@ -1226,8 +1226,8 @@ export default function Settings() {
                                   .pop() || "Unknown"
                               })`
                             : " (Unknown)"}
-                    </p>
-                  </div>
+                        </p>
+                      </div>
                       <div>
                         <p className="text-xs text-secondary-600 mb-1">
                           Platform
@@ -1235,24 +1235,24 @@ export default function Settings() {
                         <p className="text-sm text-secondary-900 capitalize">
                           {systemStatus.environment?.cloudProvider || "unknown"}
                         </p>
-                </div>
-                  <div>
+                      </div>
+                      <div>
                         <p className="text-xs text-secondary-600 mb-1">
                           Environment
-                    </p>
+                        </p>
                         <p className="text-sm text-secondary-900 capitalize">
                           {systemStatus.environment?.environment || "unknown"}
-                    </p>
+                        </p>
                       </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
                 {/* Environment Toggle Controls */}
                 <div className="border-t pt-6">
                   <h4 className="text-md font-semibold text-secondary-900 mb-4">
                     Environment Controls
-                </h4>
+                  </h4>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Frontend Toggle */}
@@ -1329,7 +1329,10 @@ export default function Settings() {
                       <div className="flex gap-2">
                         {/* Current Backend State - Not a button */}
                         <div className="px-3 py-2 text-xs rounded-md bg-green-50 border border-green-200 text-green-800">
-                          Current: {systemStatus.environment?.isCloud ? "Cloud" : "Local"}
+                          Current:{" "}
+                          {systemStatus.environment?.isCloud
+                            ? "Cloud"
+                            : "Local"}
                         </div>
 
                         {/* Backend Platform Options */}
@@ -1384,8 +1387,8 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
-                    )}
-                  </div>
+                  )}
+                </div>
 
                 {/* Deployment Information - Two Column Layout */}
                 {deploymentInfo && (
@@ -1406,12 +1409,12 @@ export default function Settings() {
 
                         <div className="p-4 rounded-lg bg-secondary-50 border">
                           <div className="space-y-3">
-                  <div>
+                            <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Version
                               </p>
                               <div className="space-y-1">
-                    <p className="text-sm font-mono text-secondary-900">
+                                <p className="text-sm font-mono text-secondary-900">
                                   {deploymentInfo.frontend?.version
                                     ?.short_hash ||
                                     deploymentInfo.version?.short_hash ||
@@ -1423,8 +1426,8 @@ export default function Settings() {
                                     deploymentInfo.version?.commit_message ||
                                     "No message"}
                                 </p>
-                  </div>
-                </div>
+                              </div>
+                            </div>
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Platform
@@ -1435,7 +1438,7 @@ export default function Settings() {
                                   import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
                                   (import.meta.env.PROD ? "netlify" : "local")}
                               </p>
-              </div>
+                            </div>
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Environment
@@ -1448,7 +1451,7 @@ export default function Settings() {
                                     ? "production"
                                     : "development")}
                               </p>
-            </div>
+                            </div>
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Deployed
@@ -1465,8 +1468,8 @@ export default function Settings() {
                                     ).toLocaleString()
                                   : "Unknown"}
                               </p>
-            </div>
-                <div>
+                            </div>
+                            <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 URL
                               </p>
@@ -1476,8 +1479,8 @@ export default function Settings() {
                                   (import.meta.env.PROD
                                     ? "https://riskworks.netlify.app"
                                     : "http://localhost:5173")}
-                  </p>
-                </div>
+                              </p>
+                            </div>
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Node.js
@@ -1486,7 +1489,7 @@ export default function Settings() {
                                 {deploymentInfo.frontend?.build?.node_version ||
                                   "22"}
                               </p>
-              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1502,7 +1505,7 @@ export default function Settings() {
 
                         <div className="p-4 rounded-lg bg-secondary-50 border">
                           <div className="space-y-3">
-                <div>
+                            <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Version
                               </p>
@@ -1518,19 +1521,19 @@ export default function Settings() {
                                     ?.commit_message ||
                                     deploymentInfo.version?.commit_message ||
                                     "No message"}
-                  </p>
-                </div>
-              </div>
-                <div>
+                                </p>
+                              </div>
+                            </div>
+                            <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Platform
-                  </p>
+                              </p>
                               <p className="text-sm text-secondary-900 capitalize">
                                 {deploymentInfo.backend?.deployment?.platform ||
                                   deploymentInfo.deployment?.platform ||
-                      "Unknown"}
-                  </p>
-                </div>
+                                  "Unknown"}
+                              </p>
+                            </div>
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Environment
@@ -1541,8 +1544,8 @@ export default function Settings() {
                                   deploymentInfo.deployment?.environment ||
                                   "Unknown"}
                               </p>
-              </div>
-                <div>
+                            </div>
+                            <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Deployed
                               </p>
@@ -1558,7 +1561,7 @@ export default function Settings() {
                                     ).toLocaleString()
                                   : "Unknown"}
                               </p>
-                </div>
+                            </div>
                             {(deploymentInfo.backend?.deployment?.service_id ||
                               deploymentInfo.deployment?.service_id) &&
                               (deploymentInfo.backend?.deployment
@@ -1574,7 +1577,7 @@ export default function Settings() {
                                       ?.service_id ||
                                       deploymentInfo.deployment?.service_id}
                                   </p>
-              </div>
+                                </div>
                               )}
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
@@ -1586,7 +1589,7 @@ export default function Settings() {
                                   deploymentInfo.build?.python_version ||
                                   "Unknown"}
                               </p>
-            </div>
+                            </div>
                           </div>
                         </div>
                       </div>

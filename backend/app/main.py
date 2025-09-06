@@ -5,6 +5,7 @@ from .routers import risks as risks_router
 from .routers import users as users_router
 from .routers import system as system_router
 from .routers import action_items as action_items_router
+from .routers import config_manager as config_router
 from .core.config import settings
 
 # Import models to ensure they are registered with SQLAlchemy
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
 	app.include_router(users_router.router)
 	app.include_router(system_router.router)
 	app.include_router(action_items_router.router)
+	app.include_router(config_router.router)
 
 	@app.get("/health")
 	async def health_check() -> dict:
