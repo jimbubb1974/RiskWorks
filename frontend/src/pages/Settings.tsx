@@ -806,7 +806,7 @@ export default function Settings() {
                           : "bg-success-50 text-success-700 border-success-200"
                       }`}
                     >
-                      {systemStatus.environment.environment.toUpperCase()}
+                      {systemStatus.environment.environment?.toUpperCase() || "UNKNOWN"}
                     </span>
                   </div>
                 </div>
@@ -817,7 +817,7 @@ export default function Settings() {
                       Cloud Provider
                     </p>
                     <p className="text-sm text-secondary-600 capitalize">
-                      {systemStatus.environment.cloudProvider}
+                      {systemStatus.environment.cloudProvider || "Unknown"}
                     </p>
                   </div>
                 </div>
@@ -828,8 +828,8 @@ export default function Settings() {
                       Database
                     </p>
                     <p className="text-sm text-secondary-600">
-                      {systemStatus.environment.database.type.toUpperCase()}
-                      {systemStatus.environment.database.isLocal
+                      {systemStatus.environment.database?.type?.toUpperCase() || "UNKNOWN"}
+                      {systemStatus.environment.database?.isLocal
                         ? " (Local)"
                         : " (Cloud)"}
                     </p>
@@ -842,7 +842,7 @@ export default function Settings() {
                       CORS Origins
                     </p>
                     <p className="text-sm text-secondary-600">
-                      {systemStatus.environment.cors.count} origins
+                      {systemStatus.environment.cors?.count || 0} origins
                     </p>
                   </div>
                 </div>
@@ -857,9 +857,9 @@ export default function Settings() {
                   <div>
                     <p className="text-xs text-secondary-600 mb-1">Frontend</p>
                     <p className="text-sm font-mono text-secondary-900">
-                      {systemStatus.environment.services.frontend.effective}
+                      {systemStatus.environment.services?.frontend?.effective || "Unknown"}
                     </p>
-                    {systemStatus.environment.services.frontend.cloud && (
+                    {systemStatus.environment.services?.frontend?.cloud && (
                       <p className="text-xs text-secondary-500">
                         Cloud:{" "}
                         {systemStatus.environment.services.frontend.cloud}
@@ -869,9 +869,9 @@ export default function Settings() {
                   <div>
                     <p className="text-xs text-secondary-600 mb-1">Backend</p>
                     <p className="text-sm font-mono text-secondary-900">
-                      {systemStatus.environment.services.backend.effective}
+                      {systemStatus.environment.services?.backend?.effective || "Unknown"}
                     </p>
-                    {systemStatus.environment.services.backend.cloud && (
+                    {systemStatus.environment.services?.backend?.cloud && (
                       <p className="text-xs text-secondary-500">
                         Cloud: {systemStatus.environment.services.backend.cloud}
                       </p>

@@ -240,11 +240,9 @@ def get_configuration(
     
     return {
         "timestamp": datetime.utcnow().isoformat(),
-        "environment": {
-            "environment": environment,
-            "isCloud": is_cloud,
-            "cloudProvider": cloud_provider
-        },
+        "environment": environment,
+        "isCloud": is_cloud,
+        "cloudProvider": cloud_provider,
         "database": {
             "type": database_type,
             "isLocal": is_local_db,
