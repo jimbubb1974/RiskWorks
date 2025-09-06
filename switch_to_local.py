@@ -11,11 +11,11 @@ def switch_to_local():
     """Switch both frontend and backend to local configuration"""
     project_root = Path(__file__).parent
     
-    print("🔄 Switching to local development environment...")
+    print("Switching to local development environment...")
     print("=" * 50)
     
     # Switch backend
-    print("\n🏠 Switching backend to local...")
+    print("\nSwitching backend to local...")
     backend_dir = project_root / "backend"
     env_file = backend_dir / ".env"
     env_local = backend_dir / ".env.local"
@@ -28,14 +28,14 @@ def switch_to_local():
     # Backup current .env file
     if env_file.exists():
         shutil.copy2(env_file, env_backup)
-        print(f"✅ Backed up backend/.env to backend/.env.backup")
+        print(f"Backed up backend/.env to backend/.env.backup")
     
     # Copy local config to .env
     shutil.copy2(env_local, env_file)
-    print(f"✅ Updated backend/.env with local configuration")
+    print(f"Updated backend/.env with local configuration")
     
     # Switch frontend
-    print("\n🌐 Switching frontend to local...")
+    print("\nSwitching frontend to local...")
     frontend_dir = project_root / "frontend"
     frontend_env = frontend_dir / ".env.local"
     
@@ -46,30 +46,30 @@ VITE_DEPLOYMENT_PLATFORM=local"""
     
     with open(frontend_env, 'w') as f:
         f.write(frontend_config)
-    print(f"✅ Updated frontend/.env.local with local configuration")
+    print(f"Updated frontend/.env.local with local configuration")
     
     # Verify the switch
-    print("\n🔍 Verifying configuration...")
+    print("\nVerifying configuration...")
     
     # Check backend
     with open(env_file, 'r') as f:
         backend_content = f.read()
         if "CLOUD_PROVIDER=local" in backend_content:
-            print("✅ Backend: Successfully switched to local configuration!")
+            print("Backend: Successfully switched to local configuration.")
         else:
-            print("❌ Backend: Configuration switch failed!")
+            print("Backend: Configuration switch failed.")
             return False
     
     # Check frontend
     with open(frontend_env, 'r') as f:
         frontend_content = f.read()
         if "VITE_API_URL=http://localhost:8000" in frontend_content:
-            print("✅ Frontend: Successfully switched to local configuration!")
+            print("Frontend: Successfully switched to local configuration.")
         else:
-            print("❌ Frontend: Configuration switch failed!")
+            print("Frontend: Configuration switch failed.")
             return False
     
-    print("\n📋 Next steps:")
+    print("\nNext steps:")
     print("1. Restart your backend server: cd backend && python .\\run.py")
     print("2. Restart your frontend server: cd frontend && npm run dev")
     print("3. Open http://localhost:5173 to verify the switch")
@@ -79,6 +79,6 @@ VITE_DEPLOYMENT_PLATFORM=local"""
 if __name__ == "__main__":
     success = switch_to_local()
     if success:
-        print("\n🎉 Successfully switched to local development environment!")
+        print("\nSuccessfully switched to local development environment.")
     else:
-        print("\n💥 Failed to switch to local development environment!")
+        print("\nFailed to switch to local development environment.")

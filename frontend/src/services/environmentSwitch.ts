@@ -148,9 +148,12 @@ class EnvironmentSwitchService {
           .catch(() => null),
       ]);
 
-      const anySuccess = (localResult?.success || currentResult?.success) ?? false;
+      const anySuccess =
+        (localResult?.success || currentResult?.success) ?? false;
       const requiresRestart =
-        localResult?.requires_restart || currentResult?.requires_restart || false;
+        localResult?.requires_restart ||
+        currentResult?.requires_restart ||
+        false;
 
       if (!anySuccess) {
         return {
@@ -180,7 +183,8 @@ class EnvironmentSwitchService {
       return {
         success: true,
         message:
-          (localResult?.message || currentResult?.message ||
+          (localResult?.message ||
+            currentResult?.message ||
             "Environment switch applied.") +
           (logs.length ? `\n\nLogs:\n${logs.join("\n")}` : ""),
         requiresRestart,
