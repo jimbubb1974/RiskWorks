@@ -75,6 +75,10 @@ class Settings(BaseSettings):
 		if self.is_cloud and self.cloud_frontend_url:
 			origins.append(self.cloud_frontend_url)
 		
+		# Add Netlify frontend URL for production
+		if self.environment == "production":
+			origins.append("https://68bc47a45692b986d4178d95--riskworks.netlify.app")
+		
 		return origins
 
 
