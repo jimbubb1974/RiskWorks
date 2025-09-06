@@ -140,8 +140,14 @@ class ConfigService {
       return this.config.services.backend.effective;
     }
 
-    // Fallback to localhost
-    return "http://localhost:8000";
+    // Use the same logic as api.ts
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.PROD
+        ? "https://riskworks.onrender.com"
+        : "http://localhost:8000");
+    
+    return API_BASE_URL;
   }
 
   /**

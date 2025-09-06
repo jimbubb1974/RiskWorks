@@ -17,7 +17,6 @@ import {
   ArrowLeftRight,
   RotateCcw,
 } from "lucide-react";
-import { configService } from "../services/config";
 import { apiClient } from "../services/api";
 
 interface PortStatus {
@@ -329,13 +328,19 @@ export default function Settings() {
         checkBackendHealth(),
         checkPorts(),
         // Get environment configuration from backend
-        apiClient.get("/system/config").then((response) => {
-          if (response.status === 200) {
-            setSystemStatus((prev) => ({ ...prev, environment: response.data }));
-          }
-        }).catch((error) => {
-          console.error("Failed to get environment config:", error);
-        }),
+        apiClient
+          .get("/system/config")
+          .then((response) => {
+            if (response.status === 200) {
+              setSystemStatus((prev) => ({
+                ...prev,
+                environment: response.data,
+              }));
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to get environment config:", error);
+          }),
       ]);
     } catch (error) {
       console.error("Error refreshing status:", error);
@@ -904,7 +909,8 @@ export default function Settings() {
                     Backend URL
                   </p>
                   <p className="text-sm text-secondary-600">
-                    {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                    {systemStatus.environment?.services?.backend?.effective ||
+                      "Unknown"}
                   </p>
                 </div>
               </div>
