@@ -1135,7 +1135,8 @@ export default function Settings() {
                                 "Unknown"}
                             </p>
                             <p className="text-xs text-secondary-500 truncate">
-                              {deploymentInfo.backend?.version?.commit_message ||
+                              {deploymentInfo.backend?.version
+                                ?.commit_message ||
                                 deploymentInfo.version?.commit_message ||
                                 "No message"}
                             </p>
@@ -1188,7 +1189,8 @@ export default function Settings() {
                                 Service ID
                               </p>
                               <p className="text-sm font-mono text-secondary-900">
-                                {deploymentInfo.backend?.deployment?.service_id ||
+                                {deploymentInfo.backend?.deployment
+                                  ?.service_id ||
                                   deploymentInfo.deployment?.service_id}
                               </p>
                             </div>
@@ -1224,7 +1226,8 @@ export default function Settings() {
                                 "Unknown"}
                             </p>
                             <p className="text-xs text-secondary-500 truncate">
-                              {deploymentInfo.frontend?.version?.commit_message ||
+                              {deploymentInfo.frontend?.version
+                                ?.commit_message ||
                                 deploymentInfo.version?.commit_message ||
                                 "No message"}
                             </p>
@@ -1236,7 +1239,7 @@ export default function Settings() {
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
                             {deploymentInfo.frontend?.deployment?.platform ||
-                              "netlify"}
+                              (import.meta.env.PROD ? "netlify" : "local")}
                           </p>
                         </div>
                         <div>
@@ -1246,7 +1249,7 @@ export default function Settings() {
                           <p className="text-sm text-secondary-900 capitalize">
                             {deploymentInfo.frontend?.deployment?.environment ||
                               deploymentInfo.deployment?.environment ||
-                              "production"}
+                              (import.meta.env.PROD ? "production" : "development")}
                           </p>
                         </div>
                         <div>
@@ -1254,7 +1257,8 @@ export default function Settings() {
                             Deployed
                           </p>
                           <p className="text-sm text-secondary-900">
-                            {deploymentInfo.frontend?.deployment?.deployment_time
+                            {deploymentInfo.frontend?.deployment
+                              ?.deployment_time
                               ? new Date(
                                   deploymentInfo.frontend.deployment.deployment_time
                                 ).toLocaleString()
@@ -1269,7 +1273,9 @@ export default function Settings() {
                           <p className="text-xs text-secondary-600 mb-1">URL</p>
                           <p className="text-sm font-mono text-secondary-900">
                             {deploymentInfo.frontend?.deployment?.url ||
-                              "https://riskworks.netlify.app"}
+                              (import.meta.env.PROD 
+                                ? "https://riskworks.netlify.app" 
+                                : "http://localhost:5173")}
                           </p>
                         </div>
                         <div>
