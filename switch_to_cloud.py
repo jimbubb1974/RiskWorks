@@ -34,6 +34,40 @@ def switch_to_cloud():
     shutil.copy2(env_cloud, env_file)
     print(f"✅ Updated backend/.env with cloud configuration")
     
+    # Ensure required cloud flags are present/normalized
+    text = env_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+    kv = {}
+    for line in text:
+        if "=" in line and not line.strip().startswith("#"):
+            k, v = line.split("=", 1)
+            kv[k.strip()] = v.strip()
+    kv["ENVIRONMENT"] = kv.get("ENVIRONMENT", "production") or "production"
+    kv["IS_CLOUD"] = "true"
+    kv["CLOUD_PROVIDER"] = "render"
+    # Rewrite file with normalized keys and single-line values
+    with open(env_file, "w", encoding="utf-8") as f:
+        f.write("# Environment Configuration - CLOUD\n")
+        for k in [
+            "ENVIRONMENT",
+            "IS_CLOUD",
+            "CLOUD_PROVIDER",
+            "DATABASE_URL",
+            "DATABASE_TYPE",
+            "SECRET_KEY",
+            "ALGORITHM",
+            "ACCESS_TOKEN_EXPIRES_MINUTES",
+            "FRONTEND_URL",
+            "BACKEND_URL",
+            "CLOUD_DATABASE_URL",
+            "CLOUD_FRONTEND_URL",
+            "CLOUD_BACKEND_URL",
+            "ENV_IDENTIFIER",
+            "ENV_DESCRIPTION",
+            "ENV_TIMESTAMP",
+        ]:
+            if k in kv and kv[k] is not None:
+                f.write(f"{k}={kv[k]}\n")
+    
     # Switch frontend
     print("\n🌐 Switching frontend to cloud...")
     frontend_dir = project_root / "frontend"
@@ -54,7 +88,7 @@ VITE_DEPLOYMENT_PLATFORM=local"""
     # Check backend
     with open(env_file, 'r') as f:
         backend_content = f.read()
-        if "CLOUD_PROVIDER=cloud" in backend_content:
+        if "CLOUD_PROVIDER=render" in backend_content or "IS_CLOUD=true" in backend_content:
             print("✅ Backend: Successfully switched to cloud configuration!")
         else:
             print("❌ Backend: Configuration switch failed!")

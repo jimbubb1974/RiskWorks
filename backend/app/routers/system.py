@@ -6,6 +6,9 @@ import socket
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import subprocess
+import sys
+from pathlib import Path
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -318,8 +321,9 @@ def get_deployment_info(
             # Git not available or error, use fallback
             pass
         
-        # Get environment info
-        environment = os.getenv("ENVIRONMENT", "production")
+        # Get environment info from settings (authoritative)
+        from ..core.config import settings as app_settings
+        environment = app_settings.environment
         render_service_id = os.getenv("RENDER_SERVICE_ID", "unknown")
         render_deploy_id = os.getenv("RENDER_DEPLOY_ID", "unknown")
         
@@ -331,6 +335,11 @@ def get_deployment_info(
             # Running on Render
             deployment_time = os.getenv("RENDER_DEPLOY_TIME", deployment_time)
         
+        # Determine effective backend platform from configuration
+        effective_platform = (
+            app_settings.effective_cloud_provider if app_settings.is_cloud else "local"
+        )
+
         return {
             "timestamp": datetime.utcnow().isoformat(),
             "backend": {
@@ -345,7 +354,7 @@ def get_deployment_info(
                     "service_id": render_service_id,
                     "deploy_id": render_deploy_id,
                     "deployment_time": deployment_time,
-                    "platform": "render" if "RENDER" in os.environ else "local"
+                    "platform": effective_platform
                 },
                 "build": {
                     "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
@@ -496,14 +505,59 @@ async def switch_backend_environment(
                 "requires_restart": False
             }
         
-        # Provide specific configuration instructions
+        # Apply switch by executing scripts and provide guidance
+        # Resolve project root and available scripts
+        routers_dir = Path(__file__).resolve().parent
+        app_dir = routers_dir.parent
+        backend_dir = app_dir.parent
+        project_root = backend_dir.parent
+
+        stdout_text = ""
+        stderr_text = ""
+        ran_script = False
+
+        try:
+            if request.target == "local":
+                # Prefer project-level script, fallback to backend script
+                candidates = [
+                    project_root / "switch_to_local.py",
+                    backend_dir / "switch_to_local.py",
+                ]
+            else:  # render
+                candidates = [
+                    project_root / "switch_to_cloud.py",
+                    backend_dir / "switch_to_cloud.py",
+                ]
+
+            script_path = next((p for p in candidates if p.exists()), None)
+
+            if script_path is not None:
+                completed = subprocess.run(
+                    [sys.executable, str(script_path)],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(project_root),
+                )
+                stdout_text = (completed.stdout or "").strip()
+                stderr_text = (completed.stderr or "").strip()
+                ran_script = completed.returncode == 0
+            else:
+                stdout_text = "No switch script found; falling back to manual instructions."
+
+        except Exception as e:
+            stderr_text = f"Failed to execute switch script: {e}"
+            ran_script = False
+
         if request.target == "local":
             return {
                 "success": True,
                 "message": "Switching to local backend - configuration updated",
                 "requires_restart": True,
+                "log": stdout_text,
+                "error": stderr_text or None,
+                "ran_script": ran_script,
                 "instructions": {
-                    "automated": "✅ Automated: Run 'python switch_to_local.py' from the project root directory",
+                    "automated": "✅ Automated: Run 'python switch_to_local.py' from the project root if not already applied",
                     "manual_backend": "✅ Manual Backend: Run 'python backend/switch_to_local.py' then 'python backend/.\\run.py'",
                     "manual_frontend": "✅ Manual Frontend: Update frontend/.env.local with:\nVITE_API_URL=http://localhost:8000\nVITE_FRONTEND_URL=http://localhost:5173\nVITE_DEPLOYMENT_PLATFORM=local",
                     "restart": "🔄 Restart both servers: backend (python .\\run.py) and frontend (npm run dev)",
@@ -515,8 +569,11 @@ async def switch_backend_environment(
                 "success": True,
                 "message": "Switching to Render backend - configuration updated",
                 "requires_restart": True,
+                "log": stdout_text,
+                "error": stderr_text or None,
+                "ran_script": ran_script,
                 "instructions": {
-                    "automated": "✅ Automated: Run 'python switch_to_cloud.py' from the project root directory",
+                    "automated": "✅ Automated: Run 'python switch_to_cloud.py' from the project root if not already applied",
                     "manual_backend": "✅ Manual Backend: Run 'python backend/switch_to_cloud.py' then 'python backend/.\\run.py'",
                     "manual_frontend": "✅ Manual Frontend: Update frontend/.env.local with:\nVITE_API_URL=https://riskworks.onrender.com\nVITE_FRONTEND_URL=http://localhost:5173\nVITE_DEPLOYMENT_PLATFORM=local",
                     "restart": "🔄 Restart both servers: backend (python .\\run.py) and frontend (npm run dev)",

@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import axios from "axios";
 
 export interface EnvironmentConfig {
   frontend: {
@@ -120,16 +121,73 @@ class EnvironmentSwitchService {
         };
       }
 
-      // Call backend switch endpoint
-      const response = await apiClient.post("/system/switch-environment", {
-        target: targetPlatform,
-      });
+      // Helper: call local backend explicitly to ensure local scripts run
+      const callLocalBackend = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const localApi = axios.create({ baseURL: "http://localhost:8000" });
+          const headers: Record<string, string> = {};
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+          const res = await localApi.post(
+            "/system/switch-environment",
+            { target: targetPlatform },
+            { headers, timeout: 3000 }
+          );
+          return res.data as any;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      // Call current backend (Render or Local) and local backend in parallel
+      const [localResult, currentResult] = await Promise.all([
+        callLocalBackend(),
+        apiClient
+          .post("/system/switch-environment", { target: targetPlatform })
+          .then((r) => r.data)
+          .catch(() => null),
+      ]);
+
+      const anySuccess = (localResult?.success || currentResult?.success) ?? false;
+      const requiresRestart =
+        localResult?.requires_restart || currentResult?.requires_restart || false;
+
+      if (!anySuccess) {
+        return {
+          success: false,
+          message:
+            "Failed to apply switch via backend. Try running the local script manually.",
+          requiresRestart: false,
+        };
+      }
+
+      // Prefer local logs if available, then current backend
+      const logs: string[] = [];
+      if (localResult?.log) logs.push(String(localResult.log));
+      if (localResult?.error) logs.push(String(localResult.error));
+      if (currentResult?.log) logs.push(String(currentResult.log));
+      if (currentResult?.error) logs.push(String(currentResult.error));
+
+      const instructionsBlocks: string[] = [];
+      const addInstr = (obj: any) =>
+        obj?.instructions &&
+        instructionsBlocks.push(
+          Object.values(obj.instructions as Record<string, string>).join("\n")
+        );
+      addInstr(localResult);
+      addInstr(currentResult);
 
       return {
-        success: response.data.success,
-        message: response.data.message,
-        requiresRestart: response.data.requires_restart,
-        newConfig: response.data.new_config,
+        success: true,
+        message:
+          (localResult?.message || currentResult?.message ||
+            "Environment switch applied.") +
+          (logs.length ? `\n\nLogs:\n${logs.join("\n")}` : ""),
+        requiresRestart,
+        newConfig: localResult?.new_config || currentResult?.new_config,
+        instructions: instructionsBlocks.length
+          ? { combined: instructionsBlocks.join("\n\n") }
+          : undefined,
       };
     } catch (error) {
       console.error("Backend switch error:", error);
