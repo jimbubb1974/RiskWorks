@@ -224,7 +224,7 @@ def get_configuration(
     # Determine if we're running in cloud environment
     is_cloud = settings.is_cloud
     environment = settings.environment
-    cloud_provider = settings.cloud_provider
+    cloud_provider = settings.effective_cloud_provider
     
     # Get effective URLs from settings
     frontend_url = settings.effective_frontend_url

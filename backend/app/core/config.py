@@ -22,8 +22,8 @@ class Settings(BaseSettings):
 	# Cloud Configuration
 	cloud_provider: Literal["local", "cloud", "railway", "render", "aws", "custom"] = "local"
 	cloud_database_url: str | None = None
-	cloud_frontend_url: str | None = None
-	cloud_backend_url: str | None = None
+	cloud_frontend_url: str | None = "https://riskworks.netlify.app"
+	cloud_backend_url: str | None = "https://riskworks.onrender.com"
 	
 	# Environment identification fields (from simple_env_switch.py)
 	env_identifier: str | None = None
@@ -39,6 +39,13 @@ class Settings(BaseSettings):
 	def is_cloud(self) -> bool:
 		"""Check if running in cloud environment"""
 		return self.environment in ["staging", "production"] or self.cloud_provider != "local"
+	
+	@property
+	def effective_cloud_provider(self) -> str:
+		"""Get the effective cloud provider based on environment"""
+		if self.environment == "production":
+			return "render"
+		return self.cloud_provider
 	
 	@property
 	def effective_database_url(self) -> str:
