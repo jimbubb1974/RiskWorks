@@ -16,6 +16,12 @@ export default defineConfig({
         if (warning.code === "UNRESOLVED_IMPORT") return;
         warn(warning);
       },
-    },
+      // Add timestamp to force cache busting
+      output: {
+        entryFileNames: `assets/[name]-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`
+      }
+    }
   },
 });
