@@ -469,21 +469,12 @@ export default function Settings() {
       );
 
       if (result.success) {
-        if (result.requiresRestart) {
-          const instructions = result.instructions
-            ? Object.values(result.instructions).join("\n\n")
-            : result.message;
-          const msg = `${result.message}\n\nInstructions:\n${instructions}`;
-          setSwitchMessage(msg);
-          try {
-            localStorage.setItem("pendingSwitchMessage", msg);
-          } catch {}
-        } else {
-          setSwitchMessage(result.message);
-          try {
-            localStorage.setItem("pendingSwitchMessage", result.message);
-          } catch {}
-        }
+        const msg =
+          "Switch applied. Please restart your frontend dev server:\n- Frontend: cd frontend && npm run dev";
+        setSwitchMessage(msg);
+        try {
+          localStorage.setItem("pendingSwitchMessage", msg);
+        } catch {}
       } else {
         setSwitchMessage(result.message);
       }
@@ -508,18 +499,12 @@ export default function Settings() {
       );
 
       if (result.success) {
-        if (result.requiresRestart) {
-          // Show detailed instructions in the status message area
-          const instructions = result.instructions
-            ? Object.values(result.instructions).join("\n\n")
-            : result.message;
-          const msg = `${result.message}\n\nInstructions:\n${instructions}`;
-          setSwitchMessage(msg);
-          try { localStorage.setItem("pendingSwitchMessage", msg); } catch {}
-        } else {
-          setSwitchMessage(result.message);
-          try { localStorage.setItem("pendingSwitchMessage", result.message); } catch {}
-        }
+        const msg =
+          "Switch applied. Please restart both services:\n- Backend: cd backend && python .\\run.py\n- Frontend: cd frontend && npm run dev";
+        setSwitchMessage(msg);
+        try {
+          localStorage.setItem("pendingSwitchMessage", msg);
+        } catch {}
         // Do not auto-refresh; keep instructions visible until user acts
       } else {
         setSwitchMessage(result.message);
