@@ -267,6 +267,98 @@ def get_configuration(
     }
 
 
+@router.get("/deployment")
+def get_deployment_info(
+    user_id: int = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """Get deployment information including version, commit, and deployment time"""
+    
+    import subprocess
+    import os
+    from datetime import datetime
+    
+    try:
+        # Get git commit info
+        commit_hash = "unknown"
+        commit_message = "unknown"
+        commit_date = "unknown"
+        
+        try:
+            # Try to get git info if available
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"], 
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            if result.returncode == 0:
+                commit_hash = result.stdout.strip()[:8]  # Short hash
+                
+            # Get commit message
+            result = subprocess.run(
+                ["git", "log", "-1", "--pretty=format:%s"], 
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            if result.returncode == 0:
+                commit_message = result.stdout.strip()
+                
+            # Get commit date
+            result = subprocess.run(
+                ["git", "log", "-1", "--pretty=format:%ci"], 
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            if result.returncode == 0:
+                commit_date = result.stdout.strip()
+                
+        except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+            # Git not available or error, use fallback
+            pass
+        
+        # Get environment info
+        environment = os.getenv("ENVIRONMENT", "production")
+        render_service_id = os.getenv("RENDER_SERVICE_ID", "unknown")
+        render_deploy_id = os.getenv("RENDER_DEPLOY_ID", "unknown")
+        
+        # Get deployment time (when the service started)
+        deployment_time = datetime.utcnow().isoformat()
+        
+        # Try to get actual deployment time from environment
+        if "RENDER" in os.environ:
+            # Running on Render
+            deployment_time = os.getenv("RENDER_DEPLOY_TIME", deployment_time)
+        
+        return {
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": {
+                "commit_hash": commit_hash,
+                "commit_message": commit_message,
+                "commit_date": commit_date,
+                "short_hash": commit_hash[:8] if commit_hash != "unknown" else "unknown"
+            },
+            "deployment": {
+                "environment": environment,
+                "service_id": render_service_id,
+                "deploy_id": render_deploy_id,
+                "deployment_time": deployment_time,
+                "platform": "render" if "RENDER" in os.environ else "local"
+            },
+            "build": {
+                "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+                "platform": os.sys.platform
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get deployment info: {str(e)}"
+        )
+
+
 @router.post("/switch-env")
 def switch_environment(
     request: EnvironmentSwitchRequest,

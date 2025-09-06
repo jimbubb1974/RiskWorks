@@ -80,6 +80,7 @@ export default function Settings() {
     ports: [],
     lastUpdated: new Date(),
   });
+  const [deploymentInfo, setDeploymentInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"status" | "preferences">(
     "status"
@@ -340,6 +341,18 @@ export default function Settings() {
     }
   };
 
+  // Fetch deployment information
+  const fetchDeploymentInfo = async () => {
+    try {
+      const response = await apiClient.get("/system/deployment");
+      if (response.status === 200) {
+        setDeploymentInfo(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to get deployment info:", error);
+    }
+  };
+
   // Refresh all status checks
   const refreshStatus = async () => {
     setIsLoading(true);
@@ -361,6 +374,8 @@ export default function Settings() {
           .catch((error) => {
             console.error("Failed to get environment config:", error);
           }),
+        // Get deployment information
+        fetchDeploymentInfo(),
       ]);
     } catch (error) {
       console.error("Error refreshing status:", error);
@@ -1040,7 +1055,7 @@ export default function Settings() {
             </button>
 
             {expandedSections.system && (
-              <div className="mt-4">
+              <div className="mt-4 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
                     <Globe className="w-5 h-5 text-secondary-500" />
@@ -1097,6 +1112,63 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
+
+                {/* Deployment Information */}
+                {deploymentInfo && (
+                  <div className="p-4 rounded-lg bg-secondary-50 border">
+                    <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
+                      <Cloud className="w-4 h-4" />
+                      Deployment Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">Version</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-mono text-secondary-900">
+                            {deploymentInfo.version?.short_hash || "Unknown"}
+                          </p>
+                          <p className="text-xs text-secondary-500 truncate">
+                            {deploymentInfo.version?.commit_message || "No message"}
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">Platform</p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {deploymentInfo.deployment?.platform || "Unknown"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">Environment</p>
+                        <p className="text-sm text-secondary-900 capitalize">
+                          {deploymentInfo.deployment?.environment || "Unknown"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">Deployed</p>
+                        <p className="text-sm text-secondary-900">
+                          {deploymentInfo.deployment?.deployment_time 
+                            ? new Date(deploymentInfo.deployment.deployment_time).toLocaleString()
+                            : "Unknown"}
+                        </p>
+                      </div>
+                      {deploymentInfo.deployment?.service_id && deploymentInfo.deployment.service_id !== "unknown" && (
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">Service ID</p>
+                          <p className="text-sm font-mono text-secondary-900">
+                            {deploymentInfo.deployment.service_id}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs text-secondary-600 mb-1">Python</p>
+                        <p className="text-sm text-secondary-900">
+                          {deploymentInfo.build?.python_version || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
