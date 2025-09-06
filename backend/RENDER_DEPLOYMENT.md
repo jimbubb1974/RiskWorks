@@ -72,3 +72,4 @@ Once deployed, update your frontend to use the new backend URL.
 - Free tier has limitations (sleeps after inactivity)
 - Consider upgrading for production use
 - Monitor resource usage in dashboard
+

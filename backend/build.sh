@@ -8,3 +8,4 @@ echo "🗄️ Running database migrations..."
 python -m alembic upgrade head
 
 echo "✅ Build complete!"
+
