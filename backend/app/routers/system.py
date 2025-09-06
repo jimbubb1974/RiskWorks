@@ -333,22 +333,42 @@ def get_deployment_info(
         
         return {
             "timestamp": datetime.utcnow().isoformat(),
-            "version": {
-                "commit_hash": commit_hash,
-                "commit_message": commit_message,
-                "commit_date": commit_date,
-                "short_hash": commit_hash[:8] if commit_hash != "unknown" else "unknown"
+            "backend": {
+                "version": {
+                    "commit_hash": commit_hash,
+                    "commit_message": commit_message,
+                    "commit_date": commit_date,
+                    "short_hash": commit_hash[:8] if commit_hash != "unknown" else "unknown"
+                },
+                "deployment": {
+                    "environment": environment,
+                    "service_id": render_service_id,
+                    "deploy_id": render_deploy_id,
+                    "deployment_time": deployment_time,
+                    "platform": "render" if "RENDER" in os.environ else "local"
+                },
+                "build": {
+                    "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+                    "platform": os.sys.platform
+                }
             },
-            "deployment": {
-                "environment": environment,
-                "service_id": render_service_id,
-                "deploy_id": render_deploy_id,
-                "deployment_time": deployment_time,
-                "platform": "render" if "RENDER" in os.environ else "local"
-            },
-            "build": {
-                "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
-                "platform": os.sys.platform
+            "frontend": {
+                "version": {
+                    "commit_hash": commit_hash,  # Same as backend for now
+                    "commit_message": commit_message,
+                    "commit_date": commit_date,
+                    "short_hash": commit_hash[:8] if commit_hash != "unknown" else "unknown"
+                },
+                "deployment": {
+                    "environment": environment,
+                    "platform": "netlify",
+                    "deployment_time": deployment_time,
+                    "url": "https://riskworks.netlify.app"
+                },
+                "build": {
+                    "node_version": "22",  # From .nvmrc
+                    "build_tool": "vite"
+                }
             }
         }
         

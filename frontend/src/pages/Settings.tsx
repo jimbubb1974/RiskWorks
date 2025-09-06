@@ -1115,56 +1115,143 @@ export default function Settings() {
 
                 {/* Deployment Information */}
                 {deploymentInfo && (
-                  <div className="p-4 rounded-lg bg-secondary-50 border">
-                    <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
-                      <Cloud className="w-4 h-4" />
-                      Deployment Information
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-secondary-600 mb-1">Version</p>
-                        <div className="space-y-1">
-                          <p className="text-sm font-mono text-secondary-900">
-                            {deploymentInfo.version?.short_hash || "Unknown"}
-                          </p>
-                          <p className="text-xs text-secondary-500 truncate">
-                            {deploymentInfo.version?.commit_message || "No message"}
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-secondary-600 mb-1">Platform</p>
-                        <p className="text-sm text-secondary-900 capitalize">
-                          {deploymentInfo.deployment?.platform || "Unknown"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-secondary-600 mb-1">Environment</p>
-                        <p className="text-sm text-secondary-900 capitalize">
-                          {deploymentInfo.deployment?.environment || "Unknown"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-secondary-600 mb-1">Deployed</p>
-                        <p className="text-sm text-secondary-900">
-                          {deploymentInfo.deployment?.deployment_time 
-                            ? new Date(deploymentInfo.deployment.deployment_time).toLocaleString()
-                            : "Unknown"}
-                        </p>
-                      </div>
-                      {deploymentInfo.deployment?.service_id && deploymentInfo.deployment.service_id !== "unknown" && (
+                  <div className="space-y-4">
+                    {/* Backend Deployment Information */}
+                    <div className="p-4 rounded-lg bg-secondary-50 border">
+                      <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
+                        <Server className="w-4 h-4" />
+                        Backend Deployment
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-secondary-600 mb-1">Service ID</p>
-                          <p className="text-sm font-mono text-secondary-900">
-                            {deploymentInfo.deployment.service_id}
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Version
+                          </p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-mono text-secondary-900">
+                              {deploymentInfo.backend?.version?.short_hash || "Unknown"}
+                            </p>
+                            <p className="text-xs text-secondary-500 truncate">
+                              {deploymentInfo.backend?.version?.commit_message ||
+                                "No message"}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Platform
+                          </p>
+                          <p className="text-sm text-secondary-900 capitalize">
+                            {deploymentInfo.backend?.deployment?.platform || "Unknown"}
                           </p>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-xs text-secondary-600 mb-1">Python</p>
-                        <p className="text-sm text-secondary-900">
-                          {deploymentInfo.build?.python_version || "Unknown"}
-                        </p>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Environment
+                          </p>
+                          <p className="text-sm text-secondary-900 capitalize">
+                            {deploymentInfo.backend?.deployment?.environment || "Unknown"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Deployed
+                          </p>
+                          <p className="text-sm text-secondary-900">
+                            {deploymentInfo.backend?.deployment?.deployment_time
+                              ? new Date(
+                                  deploymentInfo.backend.deployment.deployment_time
+                                ).toLocaleString()
+                              : "Unknown"}
+                          </p>
+                        </div>
+                        {deploymentInfo.backend?.deployment?.service_id &&
+                          deploymentInfo.backend.deployment.service_id !== "unknown" && (
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Service ID
+                              </p>
+                              <p className="text-sm font-mono text-secondary-900">
+                                {deploymentInfo.backend.deployment.service_id}
+                              </p>
+                            </div>
+                          )}
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Python
+                          </p>
+                          <p className="text-sm text-secondary-900">
+                            {deploymentInfo.backend?.build?.python_version || "Unknown"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Frontend Deployment Information */}
+                    <div className="p-4 rounded-lg bg-secondary-50 border">
+                      <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        Frontend Deployment
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Version
+                          </p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-mono text-secondary-900">
+                              {deploymentInfo.frontend?.version?.short_hash || "Unknown"}
+                            </p>
+                            <p className="text-xs text-secondary-500 truncate">
+                              {deploymentInfo.frontend?.version?.commit_message ||
+                                "No message"}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Platform
+                          </p>
+                          <p className="text-sm text-secondary-900 capitalize">
+                            {deploymentInfo.frontend?.deployment?.platform || "Unknown"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Environment
+                          </p>
+                          <p className="text-sm text-secondary-900 capitalize">
+                            {deploymentInfo.frontend?.deployment?.environment || "Unknown"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Deployed
+                          </p>
+                          <p className="text-sm text-secondary-900">
+                            {deploymentInfo.frontend?.deployment?.deployment_time
+                              ? new Date(
+                                  deploymentInfo.frontend.deployment.deployment_time
+                                ).toLocaleString()
+                              : "Unknown"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            URL
+                          </p>
+                          <p className="text-sm font-mono text-secondary-900">
+                            {deploymentInfo.frontend?.deployment?.url || "Unknown"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-secondary-600 mb-1">
+                            Node.js
+                          </p>
+                          <p className="text-sm text-secondary-900">
+                            {deploymentInfo.frontend?.build?.node_version || "Unknown"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
