@@ -5,7 +5,7 @@ import os
 import socket
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 import subprocess
 import sys
 from pathlib import Path
@@ -491,10 +491,26 @@ class FrontendSwitchRequest(BaseModel):
 @router.post("/switch-environment")
 async def switch_backend_environment(
     request: BackendSwitchRequest,
-    user_id: int = Depends(get_current_user_id)
+    fastapi_request: Request,
+    authorization: str | None = Header(default=None)
 ):
     """Switch backend environment between Render and Local"""
     try:
+        # Auth: allow bearer auth if provided; otherwise allow local loopback in development
+        try:
+            if authorization:
+                token = authorization.split(" ")[-1]
+                _ = verify_token(token)
+            else:
+                # No token: only allow when running locally and caller is loopback
+                client_host = fastapi_request.client.host if fastapi_request.client else ""
+                if settings.is_cloud or client_host not in ("127.0.0.1", "::1", "localhost"):
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
         current_env = "cloud" if settings.is_cloud else "local"
         target_env = "cloud" if request.target == "render" else "local"
         
