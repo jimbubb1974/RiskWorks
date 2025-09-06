@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """
-Switch both frontend and backend to local configuration
+Switch both frontend and backend to cloud configuration
 """
 
 import shutil
 import os
 from pathlib import Path
 
-def switch_to_local():
-    """Switch both frontend and backend to local configuration"""
+def switch_to_cloud():
+    """Switch both frontend and backend to cloud configuration"""
     project_root = Path(__file__).parent
     
-    print("🔄 Switching to local development environment...")
+    print("🔄 Switching to cloud development environment...")
     print("=" * 50)
     
     # Switch backend
-    print("\n🏠 Switching backend to local...")
+    print("\n☁️ Switching backend to cloud...")
     backend_dir = project_root / "backend"
     env_file = backend_dir / ".env"
-    env_local = backend_dir / ".env.local"
+    env_cloud = backend_dir / ".env.cloud"
     env_backup = backend_dir / ".env.backup"
     
-    if not env_local.exists():
-        print("❌ Error: backend/.env.local file not found!")
+    if not env_cloud.exists():
+        print("❌ Error: backend/.env.cloud file not found!")
         return False
     
     # Backup current .env file
@@ -30,23 +30,23 @@ def switch_to_local():
         shutil.copy2(env_file, env_backup)
         print(f"✅ Backed up backend/.env to backend/.env.backup")
     
-    # Copy local config to .env
-    shutil.copy2(env_local, env_file)
-    print(f"✅ Updated backend/.env with local configuration")
+    # Copy cloud config to .env
+    shutil.copy2(env_cloud, env_file)
+    print(f"✅ Updated backend/.env with cloud configuration")
     
     # Switch frontend
-    print("\n🌐 Switching frontend to local...")
+    print("\n🌐 Switching frontend to cloud...")
     frontend_dir = project_root / "frontend"
     frontend_env = frontend_dir / ".env.local"
     
-    # Create frontend local config
-    frontend_config = """VITE_API_URL=http://localhost:8000
+    # Create frontend cloud config
+    frontend_config = """VITE_API_URL=https://riskworks.onrender.com
 VITE_FRONTEND_URL=http://localhost:5173
 VITE_DEPLOYMENT_PLATFORM=local"""
     
     with open(frontend_env, 'w') as f:
         f.write(frontend_config)
-    print(f"✅ Updated frontend/.env.local with local configuration")
+    print(f"✅ Updated frontend/.env.local with cloud configuration")
     
     # Verify the switch
     print("\n🔍 Verifying configuration...")
@@ -54,8 +54,8 @@ VITE_DEPLOYMENT_PLATFORM=local"""
     # Check backend
     with open(env_file, 'r') as f:
         backend_content = f.read()
-        if "CLOUD_PROVIDER=local" in backend_content:
-            print("✅ Backend: Successfully switched to local configuration!")
+        if "CLOUD_PROVIDER=cloud" in backend_content:
+            print("✅ Backend: Successfully switched to cloud configuration!")
         else:
             print("❌ Backend: Configuration switch failed!")
             return False
@@ -63,8 +63,8 @@ VITE_DEPLOYMENT_PLATFORM=local"""
     # Check frontend
     with open(frontend_env, 'r') as f:
         frontend_content = f.read()
-        if "VITE_API_URL=http://localhost:8000" in frontend_content:
-            print("✅ Frontend: Successfully switched to local configuration!")
+        if "VITE_API_URL=https://riskworks.onrender.com" in frontend_content:
+            print("✅ Frontend: Successfully switched to cloud configuration!")
         else:
             print("❌ Frontend: Configuration switch failed!")
             return False
@@ -77,8 +77,8 @@ VITE_DEPLOYMENT_PLATFORM=local"""
     return True
 
 if __name__ == "__main__":
-    success = switch_to_local()
+    success = switch_to_cloud()
     if success:
-        print("\n🎉 Successfully switched to local development environment!")
+        print("\n🎉 Successfully switched to cloud development environment!")
     else:
-        print("\n💥 Failed to switch to local development environment!")
+        print("\n💥 Failed to switch to cloud development environment!")
