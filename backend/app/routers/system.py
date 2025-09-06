@@ -510,11 +510,13 @@ async def switch_backend_environment(
         else:  # render
             return {
                 "success": True,
-                "message": "To switch to Render backend, deploy to Render and update your frontend configuration",
+                "message": "To switch to Render backend, update your frontend configuration",
                 "requires_restart": True,
                 "instructions": {
-                    "backend": "Deploy to Render and update environment variables",
-                    "frontend": "Update VITE_API_URL to https://riskworks.onrender.com"
+                    "backend": "Backend is already deployed on Render at https://riskworks.onrender.com",
+                    "frontend_local": "Create/update frontend/.env.local with: VITE_API_URL=https://riskworks.onrender.com",
+                    "frontend_cloud": "Update VITE_API_URL environment variable to https://riskworks.onrender.com in your deployment platform",
+                    "restart": "Restart frontend dev server (npm run dev) or redeploy cloud frontend"
                 }
             }
             

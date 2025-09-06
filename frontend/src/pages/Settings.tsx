@@ -472,9 +472,10 @@ export default function Settings() {
         setSwitchMessage(result.message);
 
         if (result.requiresRestart) {
-          // Show restart instructions
+          // Show detailed instructions
           setTimeout(() => {
-            alert(result.message);
+            const instructions = result.instructions ? Object.values(result.instructions).join('\n\n') : result.message;
+            alert(`${result.message}\n\nInstructions:\n${instructions}`);
           }, 1000);
         }
 
@@ -515,9 +516,10 @@ export default function Settings() {
         setSwitchMessage(result.message);
 
         if (result.requiresRestart) {
-          // Show restart instructions
+          // Show detailed instructions
           setTimeout(() => {
-            alert(result.message);
+            const instructions = result.instructions ? Object.values(result.instructions).join('\n\n') : result.message;
+            alert(`${result.message}\n\nInstructions:\n${instructions}`);
           }, 1000);
         }
 
