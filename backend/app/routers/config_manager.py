@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from typing import Dict, Any
@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from ..core.security import verify_token
+from ..core.config import settings
 
 router = APIRouter(prefix="/config", tags=["config"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -27,10 +28,25 @@ def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
 @router.post("/update-frontend")
 async def update_frontend_config(
     request: ConfigUpdateRequest,
-    user_id: int = Depends(get_current_user_id)
+    fastapi_request: Request,
+    authorization: str | None = Header(default=None)
 ):
     """Update frontend configuration files"""
     try:
+        # Auth: allow bearer auth if provided; otherwise allow local loopback in development
+        try:
+            if authorization:
+                token = authorization.split(" ")[-1]
+                _ = verify_token(token)
+            else:
+                client_host = fastapi_request.client.host if fastapi_request.client else ""
+                if settings.is_cloud or client_host not in ("127.0.0.1", "::1", "localhost"):
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
         # Determine the configuration based on environment and platform
         if request.environment == "local":
             config_content = f"""VITE_API_URL=http://localhost:8000
@@ -46,17 +62,34 @@ VITE_DEPLOYMENT_PLATFORM=vercel"""
 VITE_FRONTEND_URL=https://riskworks.netlify.app
 VITE_DEPLOYMENT_PLATFORM=netlify"""
 
-        # In a real implementation, we would write to the file system
-        # For security reasons, we'll return the content instead
+        # Decide target file path (use .env.local so it affects local dev immediately)
+        file_path = "frontend/.env.local"
+
+        # Attempt to write the file when running locally
+        wrote = False
+        wrote_path = None
+        error = None
+        try:
+            project_root = Path(__file__).resolve().parents[3]
+            target = project_root / file_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(config_content, encoding="utf-8")
+            wrote = True
+            wrote_path = str(target)
+        except Exception as e:
+            error = str(e)
+
         return {
             "success": True,
-            "message": f"Frontend configuration generated for {request.platform}",
+            "message": f"Frontend configuration updated for {request.platform}",
             "config_content": config_content,
-            "file_path": "frontend/.env.local" if request.environment == "local" else "frontend/.env.production",
+            "file_path": file_path,
+            "wrote": wrote,
+            "wrote_path": wrote_path,
+            "write_error": error,
             "instructions": {
-                "create_file": f"Create {config_content.split('VITE_API_URL')[0].strip() or 'frontend/.env.local'} with the provided content",
-                "restart": "Restart your frontend development server",
-                "verify": "Check that the application loads correctly"
+                "restart": "Restart your frontend dev server: cd frontend && npm run dev",
+                "verify": "Open http://localhost:5173 and verify"
             }
         }
         
