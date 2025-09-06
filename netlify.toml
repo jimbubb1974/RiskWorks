@@ -1,7 +1,10 @@
 [build]
   base = "frontend"
-  command = "npm run build"
+  command = "vite build"
   publish = "frontend/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 [[redirects]]
   from = "/*"
