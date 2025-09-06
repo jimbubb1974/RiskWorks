@@ -346,6 +346,7 @@ export default function Settings() {
     try {
       const response = await apiClient.get("/system/deployment");
       if (response.status === 200) {
+        console.log("Deployment info received:", response.data);
         setDeploymentInfo(response.data);
       }
     } catch (error) {
@@ -1129,10 +1130,13 @@ export default function Settings() {
                           </p>
                           <div className="space-y-1">
                             <p className="text-sm font-mono text-secondary-900">
-                              {deploymentInfo.backend?.version?.short_hash || "Unknown"}
+                              {deploymentInfo.backend?.version?.short_hash ||
+                                deploymentInfo.version?.short_hash ||
+                                "Unknown"}
                             </p>
                             <p className="text-xs text-secondary-500 truncate">
                               {deploymentInfo.backend?.version?.commit_message ||
+                                deploymentInfo.version?.commit_message ||
                                 "No message"}
                             </p>
                           </div>
@@ -1142,7 +1146,9 @@ export default function Settings() {
                             Platform
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.backend?.deployment?.platform || "Unknown"}
+                            {deploymentInfo.backend?.deployment?.platform ||
+                              deploymentInfo.deployment?.platform ||
+                              "Unknown"}
                           </p>
                         </div>
                         <div>
@@ -1150,7 +1156,9 @@ export default function Settings() {
                             Environment
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.backend?.deployment?.environment || "Unknown"}
+                            {deploymentInfo.backend?.deployment?.environment ||
+                              deploymentInfo.deployment?.environment ||
+                              "Unknown"}
                           </p>
                         </div>
                         <div>
@@ -1162,17 +1170,26 @@ export default function Settings() {
                               ? new Date(
                                   deploymentInfo.backend.deployment.deployment_time
                                 ).toLocaleString()
+                              : deploymentInfo.deployment?.deployment_time
+                              ? new Date(
+                                  deploymentInfo.deployment.deployment_time
+                                ).toLocaleString()
                               : "Unknown"}
                           </p>
                         </div>
-                        {deploymentInfo.backend?.deployment?.service_id &&
-                          deploymentInfo.backend.deployment.service_id !== "unknown" && (
+                        {(deploymentInfo.backend?.deployment?.service_id ||
+                          deploymentInfo.deployment?.service_id) &&
+                          (deploymentInfo.backend?.deployment?.service_id !==
+                            "unknown" ||
+                            deploymentInfo.deployment?.service_id !==
+                              "unknown") && (
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
                                 Service ID
                               </p>
                               <p className="text-sm font-mono text-secondary-900">
-                                {deploymentInfo.backend.deployment.service_id}
+                                {deploymentInfo.backend?.deployment?.service_id ||
+                                  deploymentInfo.deployment?.service_id}
                               </p>
                             </div>
                           )}
@@ -1181,7 +1198,9 @@ export default function Settings() {
                             Python
                           </p>
                           <p className="text-sm text-secondary-900">
-                            {deploymentInfo.backend?.build?.python_version || "Unknown"}
+                            {deploymentInfo.backend?.build?.python_version ||
+                              deploymentInfo.build?.python_version ||
+                              "Unknown"}
                           </p>
                         </div>
                       </div>
@@ -1200,10 +1219,13 @@ export default function Settings() {
                           </p>
                           <div className="space-y-1">
                             <p className="text-sm font-mono text-secondary-900">
-                              {deploymentInfo.frontend?.version?.short_hash || "Unknown"}
+                              {deploymentInfo.frontend?.version?.short_hash ||
+                                deploymentInfo.version?.short_hash ||
+                                "Unknown"}
                             </p>
                             <p className="text-xs text-secondary-500 truncate">
                               {deploymentInfo.frontend?.version?.commit_message ||
+                                deploymentInfo.version?.commit_message ||
                                 "No message"}
                             </p>
                           </div>
@@ -1213,7 +1235,8 @@ export default function Settings() {
                             Platform
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.frontend?.deployment?.platform || "Unknown"}
+                            {deploymentInfo.frontend?.deployment?.platform ||
+                              "netlify"}
                           </p>
                         </div>
                         <div>
@@ -1221,7 +1244,9 @@ export default function Settings() {
                             Environment
                           </p>
                           <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.frontend?.deployment?.environment || "Unknown"}
+                            {deploymentInfo.frontend?.deployment?.environment ||
+                              deploymentInfo.deployment?.environment ||
+                              "production"}
                           </p>
                         </div>
                         <div>
@@ -1233,15 +1258,18 @@ export default function Settings() {
                               ? new Date(
                                   deploymentInfo.frontend.deployment.deployment_time
                                 ).toLocaleString()
+                              : deploymentInfo.deployment?.deployment_time
+                              ? new Date(
+                                  deploymentInfo.deployment.deployment_time
+                                ).toLocaleString()
                               : "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            URL
-                          </p>
+                          <p className="text-xs text-secondary-600 mb-1">URL</p>
                           <p className="text-sm font-mono text-secondary-900">
-                            {deploymentInfo.frontend?.deployment?.url || "Unknown"}
+                            {deploymentInfo.frontend?.deployment?.url ||
+                              "https://riskworks.netlify.app"}
                           </p>
                         </div>
                         <div>
@@ -1249,7 +1277,8 @@ export default function Settings() {
                             Node.js
                           </p>
                           <p className="text-sm text-secondary-900">
-                            {deploymentInfo.frontend?.build?.node_version || "Unknown"}
+                            {deploymentInfo.frontend?.build?.node_version ||
+                              "22"}
                           </p>
                         </div>
                       </div>
