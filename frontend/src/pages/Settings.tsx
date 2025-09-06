@@ -1067,12 +1067,10 @@ export default function Settings() {
                         Frontend
                       </h4>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-secondary-600 mb-1">
-                          URL
-                        </p>
+                        <p className="text-xs text-secondary-600 mb-1">URL</p>
                         <p className="text-sm font-mono text-secondary-900">
                           {window.location.origin}
                         </p>
@@ -1082,8 +1080,8 @@ export default function Settings() {
                           Platform
                         </p>
                         <p className="text-sm text-secondary-900 capitalize">
-                          {import.meta.env.VITE_DEPLOYMENT_PLATFORM || 
-                           (import.meta.env.PROD ? "cloud" : "local")}
+                          {import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
+                            (import.meta.env.PROD ? "cloud" : "local")}
                         </p>
                       </div>
                       <div>
@@ -1105,14 +1103,13 @@ export default function Settings() {
                         Backend
                       </h4>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-secondary-600 mb-1">
-                          URL
-                        </p>
+                        <p className="text-xs text-secondary-600 mb-1">URL</p>
                         <p className="text-sm font-mono text-secondary-900">
-                          {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                          {systemStatus.environment?.services?.backend
+                            ?.effective || "Unknown"}
                         </p>
                       </div>
                       <div>
@@ -1157,7 +1154,7 @@ export default function Settings() {
                   <h4 className="text-md font-semibold text-secondary-900 mb-4">
                     Environment Controls
                   </h4>
-                  
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Frontend Toggle */}
                     <div className="space-y-3">
@@ -1167,12 +1164,12 @@ export default function Settings() {
                           Frontend Environment
                         </h5>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <button
                           className={`px-3 py-2 text-xs rounded-md border ${
-                            import.meta.env.PROD 
-                              ? "bg-blue-100 border-blue-300 text-blue-700" 
+                            import.meta.env.PROD
+                              ? "bg-blue-100 border-blue-300 text-blue-700"
                               : "bg-gray-100 border-gray-300 text-gray-600"
                           }`}
                           disabled
@@ -1189,9 +1186,12 @@ export default function Settings() {
                           Switch
                         </button>
                       </div>
-                      
+
                       <p className="text-xs text-secondary-500">
-                        Current: {import.meta.env.PROD ? "Cloud (Vercel/Netlify)" : "Local (localhost:5173)"}
+                        Current:{" "}
+                        {import.meta.env.PROD
+                          ? "Cloud (Vercel/Netlify)"
+                          : "Local (localhost:5173)"}
                       </p>
                     </div>
 
@@ -1203,17 +1203,19 @@ export default function Settings() {
                           Backend Environment
                         </h5>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <button
                           className={`px-3 py-2 text-xs rounded-md border ${
-                            systemStatus.environment?.isCloud 
-                              ? "bg-green-100 border-green-300 text-green-700" 
+                            systemStatus.environment?.isCloud
+                              ? "bg-green-100 border-green-300 text-green-700"
                               : "bg-gray-100 border-gray-300 text-gray-600"
                           }`}
                           disabled
                         >
-                          {systemStatus.environment?.isCloud ? "Cloud" : "Local"}
+                          {systemStatus.environment?.isCloud
+                            ? "Cloud"
+                            : "Local"}
                         </button>
                         <button
                           className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
@@ -1225,190 +1227,205 @@ export default function Settings() {
                           Switch
                         </button>
                       </div>
-                      
+
                       <p className="text-xs text-secondary-500">
-                        Current: {systemStatus.environment?.isCloud ? "Cloud (Render)" : "Local (localhost:8000)"}
+                        Current:{" "}
+                        {systemStatus.environment?.isCloud
+                          ? "Cloud (Render)"
+                          : "Local (localhost:8000)"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Deployment Information */}
+                {/* Deployment Information - Two Column Layout */}
                 {deploymentInfo && (
-                  <div className="space-y-4">
-                    {/* Backend Deployment Information */}
-                    <div className="p-4 rounded-lg bg-secondary-50 border">
-                      <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
-                        <Server className="w-4 h-4" />
-                        Backend Deployment
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Version
-                          </p>
-                          <div className="space-y-1">
-                            <p className="text-sm font-mono text-secondary-900">
-                              {deploymentInfo.backend?.version?.short_hash ||
-                                deploymentInfo.version?.short_hash ||
-                                "Unknown"}
-                            </p>
-                            <p className="text-xs text-secondary-500 truncate">
-                              {deploymentInfo.backend?.version
-                                ?.commit_message ||
-                                deploymentInfo.version?.commit_message ||
-                                "No message"}
-                            </p>
-                          </div>
+                  <div className="border-t pt-6">
+                    <h4 className="text-md font-semibold text-secondary-900 mb-4">
+                      Deployment Information
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Backend Deployment - Right Side */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Server className="w-5 h-5 text-green-600" />
+                          <h5 className="text-md font-semibold text-secondary-900">
+                            Backend Deployment
+                          </h5>
                         </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Platform
-                          </p>
-                          <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.backend?.deployment?.platform ||
-                              deploymentInfo.deployment?.platform ||
-                              "Unknown"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Environment
-                          </p>
-                          <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.backend?.deployment?.environment ||
-                              deploymentInfo.deployment?.environment ||
-                              "Unknown"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Deployed
-                          </p>
-                          <p className="text-sm text-secondary-900">
-                            {deploymentInfo.backend?.deployment?.deployment_time
-                              ? new Date(
-                                  deploymentInfo.backend.deployment.deployment_time
-                                ).toLocaleString()
-                              : deploymentInfo.deployment?.deployment_time
-                              ? new Date(
-                                  deploymentInfo.deployment.deployment_time
-                                ).toLocaleString()
-                              : "Unknown"}
-                          </p>
-                        </div>
-                        {(deploymentInfo.backend?.deployment?.service_id ||
-                          deploymentInfo.deployment?.service_id) &&
-                          (deploymentInfo.backend?.deployment?.service_id !==
-                            "unknown" ||
-                            deploymentInfo.deployment?.service_id !==
-                              "unknown") && (
+                        
+                        <div className="p-4 rounded-lg bg-secondary-50 border">
+                          <div className="space-y-3">
                             <div>
                               <p className="text-xs text-secondary-600 mb-1">
-                                Service ID
+                                Version
                               </p>
-                              <p className="text-sm font-mono text-secondary-900">
-                                {deploymentInfo.backend?.deployment
-                                  ?.service_id ||
-                                  deploymentInfo.deployment?.service_id}
+                              <div className="space-y-1">
+                                <p className="text-sm font-mono text-secondary-900">
+                                  {deploymentInfo.backend?.version?.short_hash ||
+                                    deploymentInfo.version?.short_hash ||
+                                    "Unknown"}
+                                </p>
+                                <p className="text-xs text-secondary-500 truncate">
+                                  {deploymentInfo.backend?.version?.commit_message ||
+                                    deploymentInfo.version?.commit_message ||
+                                    "No message"}
+                                </p>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Platform
+                              </p>
+                              <p className="text-sm text-secondary-900 capitalize">
+                                {deploymentInfo.backend?.deployment?.platform ||
+                                  deploymentInfo.deployment?.platform ||
+                                  "Unknown"}
                               </p>
                             </div>
-                          )}
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Python
-                          </p>
-                          <p className="text-sm text-secondary-900">
-                            {deploymentInfo.backend?.build?.python_version ||
-                              deploymentInfo.build?.python_version ||
-                              "Unknown"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Frontend Deployment Information */}
-                    <div className="p-4 rounded-lg bg-secondary-50 border">
-                      <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
-                        <Globe className="w-4 h-4" />
-                        Frontend Deployment
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Version
-                          </p>
-                          <div className="space-y-1">
-                            <p className="text-sm font-mono text-secondary-900">
-                              {deploymentInfo.frontend?.version?.short_hash ||
-                                deploymentInfo.version?.short_hash ||
-                                "Unknown"}
-                            </p>
-                            <p className="text-xs text-secondary-500 truncate">
-                              {deploymentInfo.frontend?.version
-                                ?.commit_message ||
-                                deploymentInfo.version?.commit_message ||
-                                "No message"}
-                            </p>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Environment
+                              </p>
+                              <p className="text-sm text-secondary-900 capitalize">
+                                {deploymentInfo.backend?.deployment?.environment ||
+                                  deploymentInfo.deployment?.environment ||
+                                  "Unknown"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Deployed
+                              </p>
+                              <p className="text-sm text-secondary-900">
+                                {deploymentInfo.backend?.deployment?.deployment_time
+                                  ? new Date(
+                                      deploymentInfo.backend.deployment.deployment_time
+                                    ).toLocaleString()
+                                  : deploymentInfo.deployment?.deployment_time
+                                  ? new Date(
+                                      deploymentInfo.deployment.deployment_time
+                                    ).toLocaleString()
+                                  : "Unknown"}
+                              </p>
+                            </div>
+                            {(deploymentInfo.backend?.deployment?.service_id ||
+                              deploymentInfo.deployment?.service_id) &&
+                              (deploymentInfo.backend?.deployment?.service_id !==
+                                "unknown" ||
+                                deploymentInfo.deployment?.service_id !==
+                                  "unknown") && (
+                                <div>
+                                  <p className="text-xs text-secondary-600 mb-1">
+                                    Service ID
+                                  </p>
+                                  <p className="text-sm font-mono text-secondary-900">
+                                    {deploymentInfo.backend?.deployment?.service_id ||
+                                      deploymentInfo.deployment?.service_id}
+                                  </p>
+                                </div>
+                              )}
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Python
+                              </p>
+                              <p className="text-sm text-secondary-900">
+                                {deploymentInfo.backend?.build?.python_version ||
+                                  deploymentInfo.build?.python_version ||
+                                  "Unknown"}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Platform
-                          </p>
-                          <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.frontend?.deployment?.platform ||
-                              import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
-                              (import.meta.env.PROD ? "netlify" : "local")}
-                          </p>
+                      </div>
+
+                      {/* Frontend Deployment - Left Side */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Globe className="w-5 h-5 text-blue-600" />
+                          <h5 className="text-md font-semibold text-secondary-900">
+                            Frontend Deployment
+                          </h5>
                         </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Environment
-                          </p>
-                          <p className="text-sm text-secondary-900 capitalize">
-                            {deploymentInfo.frontend?.deployment?.environment ||
-                              deploymentInfo.deployment?.environment ||
-                              (import.meta.env.PROD
-                                ? "production"
-                                : "development")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Deployed
-                          </p>
-                          <p className="text-sm text-secondary-900">
-                            {deploymentInfo.frontend?.deployment
-                              ?.deployment_time
-                              ? new Date(
-                                  deploymentInfo.frontend.deployment.deployment_time
-                                ).toLocaleString()
-                              : deploymentInfo.deployment?.deployment_time
-                              ? new Date(
-                                  deploymentInfo.deployment.deployment_time
-                                ).toLocaleString()
-                              : "Unknown"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">URL</p>
-                          <p className="text-sm font-mono text-secondary-900">
-                            {deploymentInfo.frontend?.deployment?.url ||
-                              import.meta.env.VITE_FRONTEND_URL ||
-                              (import.meta.env.PROD
-                                ? "https://riskworks.netlify.app"
-                                : "http://localhost:5173")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-secondary-600 mb-1">
-                            Node.js
-                          </p>
-                          <p className="text-sm text-secondary-900">
-                            {deploymentInfo.frontend?.build?.node_version ||
-                              "22"}
-                          </p>
+                        
+                        <div className="p-4 rounded-lg bg-secondary-50 border">
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Version
+                              </p>
+                              <div className="space-y-1">
+                                <p className="text-sm font-mono text-secondary-900">
+                                  {deploymentInfo.frontend?.version?.short_hash ||
+                                    deploymentInfo.version?.short_hash ||
+                                    "Unknown"}
+                                </p>
+                                <p className="text-xs text-secondary-500 truncate">
+                                  {deploymentInfo.frontend?.version?.commit_message ||
+                                    deploymentInfo.version?.commit_message ||
+                                    "No message"}
+                                </p>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Platform
+                              </p>
+                              <p className="text-sm text-secondary-900 capitalize">
+                                {deploymentInfo.frontend?.deployment?.platform ||
+                                  import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
+                                  (import.meta.env.PROD ? "netlify" : "local")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Environment
+                              </p>
+                              <p className="text-sm text-secondary-900 capitalize">
+                                {deploymentInfo.frontend?.deployment?.environment ||
+                                  deploymentInfo.deployment?.environment ||
+                                  (import.meta.env.PROD
+                                    ? "production"
+                                    : "development")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Deployed
+                              </p>
+                              <p className="text-sm text-secondary-900">
+                                {deploymentInfo.frontend?.deployment?.deployment_time
+                                  ? new Date(
+                                      deploymentInfo.frontend.deployment.deployment_time
+                                    ).toLocaleString()
+                                  : deploymentInfo.deployment?.deployment_time
+                                  ? new Date(
+                                      deploymentInfo.deployment.deployment_time
+                                    ).toLocaleString()
+                                  : "Unknown"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">URL</p>
+                              <p className="text-sm font-mono text-secondary-900">
+                                {deploymentInfo.frontend?.deployment?.url ||
+                                  import.meta.env.VITE_FRONTEND_URL ||
+                                  (import.meta.env.PROD
+                                    ? "https://riskworks.netlify.app"
+                                    : "http://localhost:5173")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-secondary-600 mb-1">
+                                Node.js
+                              </p>
+                              <p className="text-sm text-secondary-900">
+                                {deploymentInfo.frontend?.build?.node_version ||
+                                  "22"}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
