@@ -221,53 +221,50 @@ def get_configuration(
     
     from ..core.config import settings
     
-    # Determine current environment by checking the active .env file
-    backend_dir = Path(__file__).parent.parent.parent
-    active_env = backend_dir / ".env"
+    # Determine if we're running in cloud environment
+    is_cloud = settings.is_cloud
+    environment = settings.environment
+    cloud_provider = settings.cloud_provider
     
-    # Read the current environment file to determine the actual state
-    current_env = "local"  # default
-    if active_env.exists():
-        try:
-            with open(active_env, 'r') as f:
-                content = f.read()
-                # Check if this is the cloud environment file based on the markers in simple_env_switch.py
-                if "CLOUD_PROVIDER=cloud" in content or "ENV_IDENTIFIER=CLOUD_DEVELOPMENT" in content:
-                    current_env = "cloud"
-                elif "CLOUD_PROVIDER=local" in content or "ENV_IDENTIFIER=LOCAL_DEVELOPMENT" in content:
-                    current_env = "local"
-        except Exception as e:
-            print(f"Warning: Could not read .env file: {e}")
-            current_env = "local"
+    # Get effective URLs from settings
+    frontend_url = settings.effective_frontend_url
+    backend_url = settings.effective_backend_url
+    database_url = settings.effective_database_url
     
-    # Return configuration based on the actual environment file
+    # Determine database type and location
+    database_type = settings.database_type
+    is_local_db = database_url.startswith("sqlite") or "localhost" in database_url
+    
+    # Get CORS origins
+    cors_origins = settings.cors_origins
+    
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "environment": {
-            "current": "development",  # Always development for now
-            "is_cloud": current_env == "cloud",
-            "cloud_provider": current_env
+            "environment": environment,
+            "isCloud": is_cloud,
+            "cloudProvider": cloud_provider
         },
         "database": {
-            "type": settings.database_type,  # Use actual database type from settings
-            "is_local": True,  # Always local for now
-            "effective_url": "***hidden***" if current_env == "cloud" else settings.database_url
+            "type": database_type,
+            "isLocal": is_local_db,
+            "effective_url": "***hidden***" if is_cloud else database_url
         },
         "services": {
             "frontend": {
-                "local": "http://localhost:5173",
-                "cloud": "http://localhost:5173",  # Same for now
-                "effective": "http://localhost:5173"
+                "local": settings.frontend_url,
+                "cloud": settings.cloud_frontend_url,
+                "effective": frontend_url
             },
             "backend": {
-                "local": "http://localhost:8000",
-                "cloud": "http://localhost:8000",  # Same for now
-                "effective": "http://localhost:8000"
+                "local": settings.backend_url,
+                "cloud": settings.cloud_backend_url,
+                "effective": backend_url
             }
         },
         "cors": {
-            "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
-            "count": 2
+            "origins": cors_origins,
+            "count": len(cors_origins)
         }
     }
 

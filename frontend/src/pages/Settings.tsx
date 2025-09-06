@@ -18,6 +18,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { configService } from "../services/config";
+import { apiClient } from "../services/api";
 
 interface PortStatus {
   port: number;
@@ -89,23 +90,16 @@ export default function Settings() {
       const startTime = Date.now();
 
       // First check basic health
-      const healthResponse = await fetch("http://localhost:8000/health");
+      const healthResponse = await apiClient.get("/health");
       const endTime = Date.now();
 
-      if (healthResponse.ok) {
+      if (healthResponse.status === 200) {
         // Now get detailed system status
         try {
-          const systemResponse = await fetch(
-            "http://localhost:8000/system/status",
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          const systemResponse = await apiClient.get("/system/status");
 
-          if (systemResponse.ok) {
-            const systemData = await systemResponse.json();
+          if (systemResponse.status === 200) {
+            const systemData = systemResponse.data;
             setSystemStatus((prev) => ({
               ...prev,
               backend: {
@@ -178,14 +172,10 @@ export default function Settings() {
   // Check common development ports using backend endpoint
   const checkPorts = async () => {
     try {
-      const response = await fetch("http://localhost:8000/system/ports", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await apiClient.get("/system/ports");
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         setSystemStatus((prev) => ({
           ...prev,
           ports: data.ports,
@@ -334,13 +324,22 @@ export default function Settings() {
   // Refresh all status checks
   const refreshStatus = async () => {
     setIsLoading(true);
-    await Promise.all([
-      checkBackendHealth(),
-      checkPorts(),
-      configService.refreshConfig().then((config) => {
-        setSystemStatus((prev) => ({ ...prev, environment: config }));
-      }),
-    ]);
+    try {
+      await Promise.all([
+        checkBackendHealth(),
+        checkPorts(),
+        // Get environment configuration from backend
+        apiClient.get("/system/config").then((response) => {
+          if (response.status === 200) {
+            setSystemStatus((prev) => ({ ...prev, environment: response.data }));
+          }
+        }).catch((error) => {
+          console.error("Failed to get environment config:", error);
+        }),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing status:", error);
+    }
     setIsLoading(false);
   };
 
@@ -351,17 +350,10 @@ export default function Settings() {
       const token = localStorage.getItem("token");
       console.log(`🔄 Switching to ${action} environment...`);
 
-      const response = await fetch("http://localhost:8000/system/switch-env", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action }),
-      });
+      const response = await apiClient.post("/system/switch-env", { action });
 
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200) {
+        const result = response.data;
         console.log(`✅ Environment switch successful:`, result);
 
         // Show success message with restart instructions
@@ -395,7 +387,7 @@ export default function Settings() {
           }
         }, waitTime);
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = response.data || {};
         throw new Error(
           errorData.detail || `Failed to switch to ${action} environment`
         );
@@ -912,7 +904,7 @@ export default function Settings() {
                     Backend URL
                   </p>
                   <p className="text-sm text-secondary-600">
-                    http://localhost:8000
+                    {systemStatus.environment?.services?.backend?.effective || "Unknown"}
                   </p>
                 </div>
               </div>
