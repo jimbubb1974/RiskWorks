@@ -1351,7 +1351,7 @@ export default function Settings() {
                                 : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                             }`}
                             onClick={() => handleBackendSwitch("render")}
-                            disabled={switchingBackend}
+                            disabled={switchingBackend || systemStatus.environment?.isCloud}
                           >
                             {switchingBackend ? "Switching..." : "Render"}
                           </button>
@@ -1362,7 +1362,7 @@ export default function Settings() {
                                 : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                             }`}
                             onClick={() => handleBackendSwitch("local")}
-                            disabled={switchingBackend}
+                            disabled={switchingBackend || !systemStatus.environment?.isCloud}
                           >
                             {switchingBackend ? "Switching..." : "Local"}
                           </button>
