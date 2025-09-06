@@ -16,6 +16,10 @@ import {
   Zap,
   ArrowLeftRight,
   RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  BarChart3,
 } from "lucide-react";
 import { apiClient } from "../services/api";
 
@@ -82,6 +86,22 @@ export default function Settings() {
   );
   const [showEnvSwitcher, setShowEnvSwitcher] = useState(false);
   const [switchingEnv, setSwitchingEnv] = useState(false);
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    environment: true,
+    services: true,
+    system: false,
+    ports: false,
+  });
+
+  // Toggle section expansion
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   // Check backend health and system status
   const checkBackendHealth = async () => {
@@ -537,12 +557,12 @@ export default function Settings() {
       {/* Content */}
       {activeTab === "status" ? (
         <div className="space-y-6">
-          {/* Backend Status */}
+          {/* System Overview */}
           <div className="card">
             <div className="flex items-center gap-3 mb-4">
-              <Server className="w-6 h-6 text-primary-600" />
+              <BarChart3 className="w-6 h-6 text-primary-600" />
               <h3 className="text-lg font-semibold text-secondary-900">
-                Backend Status
+                System Overview
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -550,7 +570,7 @@ export default function Settings() {
                 {getStatusIcon(systemStatus.backend.status)}
                 <div>
                   <p className="text-sm font-medium text-secondary-900">
-                    Status
+                    Backend
                   </p>
                   <p
                     className={`text-sm ${
@@ -562,47 +582,11 @@ export default function Settings() {
                   </p>
                 </div>
               </div>
-              {systemStatus.backend.responseTime && (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                  <Clock className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      Response Time
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      {systemStatus.backend.responseTime}ms
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Clock className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Last Checked
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {systemStatus.backend.lastChecked.toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Database Status */}
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <Database className="w-6 h-6 text-primary-600" />
-              <h3 className="text-lg font-semibold text-secondary-900">
-                Database Status
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
                 {getStatusIcon(systemStatus.database.status)}
                 <div>
                   <p className="text-sm font-medium text-secondary-900">
-                    Connection
+                    Database
                   </p>
                   <p
                     className={`text-sm ${
@@ -614,77 +598,323 @@ export default function Settings() {
                   </p>
                 </div>
               </div>
-              {systemStatus.systemInfo?.database && (
-                <>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <User className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Users
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.systemInfo.database.user_count}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                    <Activity className="w-5 h-5 text-secondary-500" />
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">
-                        Risks
-                      </p>
-                      <p className="text-sm text-secondary-600">
-                        {systemStatus.systemInfo.database.risk_count}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
               <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Clock className="w-5 h-5 text-secondary-500" />
+                <Cloud className="w-5 h-5 text-secondary-500" />
                 <div>
                   <p className="text-sm font-medium text-secondary-900">
-                    Last Checked
+                    Environment
                   </p>
                   <p className="text-sm text-secondary-600">
-                    {systemStatus.database.lastChecked.toLocaleTimeString()}
+                    {systemStatus.environment?.environment?.toUpperCase() || "Unknown"}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* DB Target Indicator */}
-            <div className="mt-4 p-4 rounded-lg bg-secondary-50 border">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <Cloud className="w-5 h-5 text-primary-600" />
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      dbLabel === "Neon Cloud"
-                        ? "bg-primary-50 text-primary-700 border-primary-200"
-                        : dbLabel.includes("Local")
-                        ? "bg-success-50 text-success-700 border-success-200"
-                        : "bg-secondary-50 text-secondary-700 border-secondary-200"
-                    }`}
-                  >
-                    {dbLabel}
-                  </span>
-                </div>
-                <code className="text-xs font-mono text-secondary-700 bg-secondary-100 px-2 py-1 rounded">
-                  {engineHost || "Unknown host"}
-                </code>
               </div>
             </div>
           </div>
 
-          {/* Port Status */}
+          {/* Environment Configuration - Collapsible */}
           <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <Globe className="w-6 h-6 text-primary-600" />
-              <h3 className="text-lg font-semibold text-secondary-900">
-                Port Status
-              </h3>
-            </div>
+            <button
+              onClick={() => toggleSection('environment')}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Cloud className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-semibold text-secondary-900">
+                  Environment Configuration
+                </h3>
+              </div>
+              {expandedSections.environment ? (
+                <ChevronDown className="w-5 h-5 text-secondary-500" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-secondary-500" />
+              )}
+            </button>
+            
+            {expandedSections.environment && (
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Monitor className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Environment
+                      </p>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                          systemStatus.environment?.isCloud
+                            ? "bg-danger-50 text-danger-700 border-danger-200"
+                            : "bg-success-50 text-success-700 border-success-200"
+                        }`}
+                      >
+                        {systemStatus.environment?.environment?.toUpperCase() || "UNKNOWN"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Zap className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Cloud Provider
+                      </p>
+                      <p className="text-sm text-secondary-600 capitalize">
+                        {systemStatus.environment?.cloudProvider || "Unknown"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Database className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Database
+                      </p>
+                      <p className="text-sm text-secondary-600">
+                        {systemStatus.environment?.database?.type?.toUpperCase() || "UNKNOWN"}
+                        {systemStatus.environment?.database?.isLocal
+                          ? " (Local)"
+                          : " (Cloud)"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Globe className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        CORS Origins
+                      </p>
+                      <p className="text-sm text-secondary-600">
+                        {systemStatus.environment?.cors?.count || 0} origins
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service URLs */}
+                <div className="p-4 rounded-lg bg-secondary-50">
+                  <h4 className="text-sm font-medium text-secondary-900 mb-3">
+                    Service URLs
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-secondary-600 mb-1">Frontend</p>
+                      <p className="text-sm font-mono text-secondary-900">
+                        {systemStatus.environment?.services?.frontend?.effective || "Unknown"}
+                      </p>
+                      {systemStatus.environment?.services?.frontend?.cloud && (
+                        <p className="text-xs text-secondary-500">
+                          Cloud:{" "}
+                          {systemStatus.environment.services.frontend.cloud}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-secondary-600 mb-1">Backend</p>
+                      <p className="text-sm font-mono text-secondary-900">
+                        {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                      </p>
+                      {systemStatus.environment?.services?.backend?.cloud && (
+                        <p className="text-xs text-secondary-500">
+                          Cloud: {systemStatus.environment.services.backend.cloud}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowEnvSwitcher(true)}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <ArrowLeftRight className="w-4 h-4" />
+                    Switch Environment
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Service Status - Collapsible */}
+          <div className="card">
+            <button
+              onClick={() => toggleSection('services')}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Server className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-semibold text-secondary-900">
+                  Service Status
+                </h3>
+              </div>
+              {expandedSections.services ? (
+                <ChevronDown className="w-5 h-5 text-secondary-500" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-secondary-500" />
+              )}
+            </button>
+            
+            {expandedSections.services && (
+              <div className="mt-4 space-y-4">
+                {/* Backend Details */}
+                <div className="p-4 rounded-lg bg-secondary-50">
+                  <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
+                    <Server className="w-4 h-4" />
+                    Backend Service
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(systemStatus.backend.status)}
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Status
+                        </p>
+                        <p
+                          className={`text-sm ${
+                            getStatusColor(systemStatus.backend.status).split(" ")[0]
+                          }`}
+                        >
+                          {systemStatus.backend.status.charAt(0).toUpperCase() +
+                            systemStatus.backend.status.slice(1)}
+                        </p>
+                      </div>
+                    </div>
+                    {systemStatus.backend.responseTime && (
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-secondary-500" />
+                        <div>
+                          <p className="text-sm font-medium text-secondary-900">
+                            Response Time
+                          </p>
+                          <p className="text-sm text-secondary-600">
+                            {systemStatus.backend.responseTime}ms
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-secondary-500" />
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Last Checked
+                        </p>
+                        <p className="text-sm text-secondary-600">
+                          {systemStatus.backend.lastChecked.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Database Details */}
+                <div className="p-4 rounded-lg bg-secondary-50">
+                  <h4 className="text-sm font-medium text-secondary-900 mb-3 flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    Database Service
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(systemStatus.database.status)}
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Connection
+                        </p>
+                        <p
+                          className={`text-sm ${
+                            getStatusColor(systemStatus.database.status).split(" ")[0]
+                          }`}
+                        >
+                          {systemStatus.database.status.charAt(0).toUpperCase() +
+                            systemStatus.database.status.slice(1)}
+                        </p>
+                      </div>
+                    </div>
+                    {systemStatus.systemInfo?.database && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <User className="w-5 h-5 text-secondary-500" />
+                          <div>
+                            <p className="text-sm font-medium text-secondary-900">
+                              Users
+                            </p>
+                            <p className="text-sm text-secondary-600">
+                              {systemStatus.systemInfo.database.user_count}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Activity className="w-5 h-5 text-secondary-500" />
+                          <div>
+                            <p className="text-sm font-medium text-secondary-900">
+                              Risks
+                            </p>
+                            <p className="text-sm text-secondary-600">
+                              {systemStatus.systemInfo.database.risk_count}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-secondary-500" />
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900">
+                          Last Checked
+                        </p>
+                        <p className="text-sm text-secondary-600">
+                          {systemStatus.database.lastChecked.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DB Target Indicator */}
+                  <div className="mt-4 p-3 rounded-lg bg-white border">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <Cloud className="w-4 h-4 text-primary-600" />
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                            dbLabel === "Neon Cloud"
+                              ? "bg-primary-50 text-primary-700 border-primary-200"
+                              : dbLabel.includes("Local")
+                              ? "bg-success-50 text-success-700 border-success-200"
+                              : "bg-secondary-50 text-secondary-700 border-secondary-200"
+                          }`}
+                        >
+                          {dbLabel}
+                        </span>
+                      </div>
+                      <code className="text-xs font-mono text-secondary-700 bg-secondary-100 px-2 py-1 rounded">
+                        {engineHost || "Unknown host"}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Port Status - Collapsible */}
+          <div className="card">
+            <button
+              onClick={() => toggleSection('ports')}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-semibold text-secondary-900">
+                  Port Status
+                </h3>
+              </div>
+              {expandedSections.ports ? (
+                <ChevronDown className="w-5 h-5 text-secondary-500" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-secondary-500" />
+              )}
+            </button>
+            
+            {expandedSections.ports && (
+              <div className="mt-4">
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -774,177 +1004,84 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Environment Configuration */}
-          {systemStatus.environment && (
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Cloud className="w-6 h-6 text-primary-600" />
-                  <h3 className="text-lg font-semibold text-secondary-900">
-                    Environment Configuration
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setShowEnvSwitcher(true)}
-                  className="btn-secondary flex items-center gap-2"
-                >
-                  <ArrowLeftRight className="w-4 h-4" />
-                  Switch Environment
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                  <Monitor className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      Environment
-                    </p>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        systemStatus.environment.isCloud
-                          ? "bg-danger-50 text-danger-700 border-danger-200"
-                          : "bg-success-50 text-success-700 border-success-200"
-                      }`}
-                    >
-                      {systemStatus.environment.environment?.toUpperCase() || "UNKNOWN"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                  <Zap className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      Cloud Provider
-                    </p>
-                    <p className="text-sm text-secondary-600 capitalize">
-                      {systemStatus.environment.cloudProvider || "Unknown"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                  <Database className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      Database
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      {systemStatus.environment.database?.type?.toUpperCase() || "UNKNOWN"}
-                      {systemStatus.environment.database?.isLocal
-                        ? " (Local)"
-                        : " (Cloud)"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                  <Globe className="w-5 h-5 text-secondary-500" />
-                  <div>
-                    <p className="text-sm font-medium text-secondary-900">
-                      CORS Origins
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      {systemStatus.environment.cors?.count || 0} origins
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Service URLs */}
-              <div className="mt-4 p-4 rounded-lg bg-secondary-50">
-                <h4 className="text-sm font-medium text-secondary-900 mb-3">
-                  Service URLs
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-secondary-600 mb-1">Frontend</p>
-                    <p className="text-sm font-mono text-secondary-900">
-                      {systemStatus.environment.services?.frontend?.effective || "Unknown"}
-                    </p>
-                    {systemStatus.environment.services?.frontend?.cloud && (
-                      <p className="text-xs text-secondary-500">
-                        Cloud:{" "}
-                        {systemStatus.environment.services.frontend.cloud}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-secondary-600 mb-1">Backend</p>
-                    <p className="text-sm font-mono text-secondary-900">
-                      {systemStatus.environment.services?.backend?.effective || "Unknown"}
-                    </p>
-                    {systemStatus.environment.services?.backend?.cloud && (
-                      <p className="text-xs text-secondary-500">
-                        Cloud: {systemStatus.environment.services.backend.cloud}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* System Info */}
+          {/* System Information - Collapsible */}
           <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <SettingsIcon className="w-6 h-6 text-primary-600" />
-              <h3 className="text-lg font-semibold text-secondary-900">
-                System Information
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Globe className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Frontend URL
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {window.location.origin}
-                  </p>
+            <button
+              onClick={() => toggleSection('system')}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Info className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-semibold text-secondary-900">
+                  System Information
+                </h3>
+              </div>
+              {expandedSections.system ? (
+                <ChevronDown className="w-5 h-5 text-secondary-500" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-secondary-500" />
+              )}
+            </button>
+            
+            {expandedSections.system && (
+              <div className="mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Globe className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Frontend URL
+                      </p>
+                      <p className="text-sm text-secondary-600">
+                        {window.location.origin}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Server className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Backend URL
+                      </p>
+                      <p className="text-sm text-secondary-600">
+                        {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Database className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Database
+                      </p>
+                      <p className="text-sm text-secondary-600">
+                        {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
+                          "Unknown"}
+                        {systemStatus.systemInfo?.database?.engine
+                          ? ` (${
+                              systemStatus.systemInfo.database.engine
+                                .split("://")[1]
+                                ?.split("/")
+                                .pop() || "Unknown"
+                            })`
+                          : " (Unknown)"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
+                    <Activity className="w-5 h-5 text-secondary-500" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Auto-refresh
+                      </p>
+                      <p className="text-sm text-secondary-600">Every 30 seconds</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Server className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Backend URL
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {systemStatus.environment?.services?.backend?.effective ||
-                      "Unknown"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Database className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Database
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {systemStatus.systemInfo?.database?.type?.toUpperCase() ||
-                      "Unknown"}
-                    {systemStatus.systemInfo?.database?.engine
-                      ? ` (${
-                          systemStatus.systemInfo.database.engine
-                            .split("://")[1]
-                            ?.split("/")
-                            .pop() || "Unknown"
-                        })`
-                      : " (Unknown)"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary-50">
-                <Activity className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Auto-refresh
-                  </p>
-                  <p className="text-sm text-secondary-600">Every 30 seconds</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
+
         </div>
       ) : (
         <div className="card">
