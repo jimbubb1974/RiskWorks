@@ -86,20 +86,20 @@ export default function Settings() {
   );
   const [showEnvSwitcher, setShowEnvSwitcher] = useState(false);
   const [switchingEnv, setSwitchingEnv] = useState(false);
-  
+
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
-    environment: true,
-    services: true,
+    environment: false,
+    services: false,
     system: false,
     ports: false,
   });
 
   // Toggle section expansion
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -605,7 +605,8 @@ export default function Settings() {
                     Environment
                   </p>
                   <p className="text-sm text-secondary-600">
-                    {systemStatus.environment?.environment?.toUpperCase() || "Unknown"}
+                    {systemStatus.environment?.environment?.toUpperCase() ||
+                      "Unknown"}
                   </p>
                 </div>
               </div>
@@ -615,7 +616,7 @@ export default function Settings() {
           {/* Environment Configuration - Collapsible */}
           <div className="card">
             <button
-              onClick={() => toggleSection('environment')}
+              onClick={() => toggleSection("environment")}
               className="flex items-center justify-between w-full text-left"
             >
               <div className="flex items-center gap-3">
@@ -630,7 +631,7 @@ export default function Settings() {
                 <ChevronRight className="w-5 h-5 text-secondary-500" />
               )}
             </button>
-            
+
             {expandedSections.environment && (
               <div className="mt-4 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -647,7 +648,8 @@ export default function Settings() {
                             : "bg-success-50 text-success-700 border-success-200"
                         }`}
                       >
-                        {systemStatus.environment?.environment?.toUpperCase() || "UNKNOWN"}
+                        {systemStatus.environment?.environment?.toUpperCase() ||
+                          "UNKNOWN"}
                       </span>
                     </div>
                   </div>
@@ -669,7 +671,8 @@ export default function Settings() {
                         Database
                       </p>
                       <p className="text-sm text-secondary-600">
-                        {systemStatus.environment?.database?.type?.toUpperCase() || "UNKNOWN"}
+                        {systemStatus.environment?.database?.type?.toUpperCase() ||
+                          "UNKNOWN"}
                         {systemStatus.environment?.database?.isLocal
                           ? " (Local)"
                           : " (Cloud)"}
@@ -696,9 +699,12 @@ export default function Settings() {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-secondary-600 mb-1">Frontend</p>
+                      <p className="text-xs text-secondary-600 mb-1">
+                        Frontend
+                      </p>
                       <p className="text-sm font-mono text-secondary-900">
-                        {systemStatus.environment?.services?.frontend?.effective || "Unknown"}
+                        {systemStatus.environment?.services?.frontend
+                          ?.effective || "Unknown"}
                       </p>
                       {systemStatus.environment?.services?.frontend?.cloud && (
                         <p className="text-xs text-secondary-500">
@@ -710,11 +716,13 @@ export default function Settings() {
                     <div>
                       <p className="text-xs text-secondary-600 mb-1">Backend</p>
                       <p className="text-sm font-mono text-secondary-900">
-                        {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                        {systemStatus.environment?.services?.backend
+                          ?.effective || "Unknown"}
                       </p>
                       {systemStatus.environment?.services?.backend?.cloud && (
                         <p className="text-xs text-secondary-500">
-                          Cloud: {systemStatus.environment.services.backend.cloud}
+                          Cloud:{" "}
+                          {systemStatus.environment.services.backend.cloud}
                         </p>
                       )}
                     </div>
@@ -737,7 +745,7 @@ export default function Settings() {
           {/* Service Status - Collapsible */}
           <div className="card">
             <button
-              onClick={() => toggleSection('services')}
+              onClick={() => toggleSection("services")}
               className="flex items-center justify-between w-full text-left"
             >
               <div className="flex items-center gap-3">
@@ -752,7 +760,7 @@ export default function Settings() {
                 <ChevronRight className="w-5 h-5 text-secondary-500" />
               )}
             </button>
-            
+
             {expandedSections.services && (
               <div className="mt-4 space-y-4">
                 {/* Backend Details */}
@@ -770,7 +778,9 @@ export default function Settings() {
                         </p>
                         <p
                           className={`text-sm ${
-                            getStatusColor(systemStatus.backend.status).split(" ")[0]
+                            getStatusColor(systemStatus.backend.status).split(
+                              " "
+                            )[0]
                           }`}
                         >
                           {systemStatus.backend.status.charAt(0).toUpperCase() +
@@ -820,10 +830,14 @@ export default function Settings() {
                         </p>
                         <p
                           className={`text-sm ${
-                            getStatusColor(systemStatus.database.status).split(" ")[0]
+                            getStatusColor(systemStatus.database.status).split(
+                              " "
+                            )[0]
                           }`}
                         >
-                          {systemStatus.database.status.charAt(0).toUpperCase() +
+                          {systemStatus.database.status
+                            .charAt(0)
+                            .toUpperCase() +
                             systemStatus.database.status.slice(1)}
                         </p>
                       </div>
@@ -897,7 +911,7 @@ export default function Settings() {
           {/* Port Status - Collapsible */}
           <div className="card">
             <button
-              onClick={() => toggleSection('ports')}
+              onClick={() => toggleSection("ports")}
               className="flex items-center justify-between w-full text-left"
             >
               <div className="flex items-center gap-3">
@@ -912,93 +926,93 @@ export default function Settings() {
                 <ChevronRight className="w-5 h-5 text-secondary-500" />
               )}
             </button>
-            
+
             {expandedSections.ports && (
               <div className="mt-4">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-secondary-200">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Port
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Service
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Process Info
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
-                      Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-secondary-100">
-                  {systemStatus.ports.map((port) => (
-                    <tr key={port.port} className="hover:bg-secondary-50">
-                      <td className="px-4 py-3">
-                        <code className="text-sm font-mono text-secondary-900 bg-secondary-100 px-2 py-1 rounded">
-                          {port.port}
-                        </code>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-secondary-900">
-                        {port.service}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                            port.status
-                          )}`}
-                        >
-                          {getStatusIcon(port.status)}
-                          {port.status.charAt(0).toUpperCase() +
-                            port.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-secondary-600">
-                        {(port as any).process ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                                PID: {(port as any).process.pid}
-                              </span>
-                              <span className="text-xs text-secondary-500">
-                                {(port as any).process.name}
-                              </span>
-                            </div>
-                            {(port as any).process.cmdline && (
-                              <div className="text-xs text-secondary-400 font-mono truncate max-w-xs">
-                                {(port as any).process.cmdline}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-secondary-200">
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Port
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Service
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Process Info
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-secondary-600">
+                          Description
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-secondary-100">
+                      {systemStatus.ports.map((port) => (
+                        <tr key={port.port} className="hover:bg-secondary-50">
+                          <td className="px-4 py-3">
+                            <code className="text-sm font-mono text-secondary-900 bg-secondary-100 px-2 py-1 rounded">
+                              {port.port}
+                            </code>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-secondary-900">
+                            {port.service}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
+                                port.status
+                              )}`}
+                            >
+                              {getStatusIcon(port.status)}
+                              {port.status.charAt(0).toUpperCase() +
+                                port.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-secondary-600">
+                            {(port as any).process ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                    PID: {(port as any).process.pid}
+                                  </span>
+                                  <span className="text-xs text-secondary-500">
+                                    {(port as any).process.name}
+                                  </span>
+                                </div>
+                                {(port as any).process.cmdline && (
+                                  <div className="text-xs text-secondary-400 font-mono truncate max-w-xs">
+                                    {(port as any).process.cmdline}
+                                  </div>
+                                )}
+                                <div className="flex gap-3 text-xs text-secondary-500">
+                                  <span>
+                                    CPU: {(port as any).process.cpu_percent}%
+                                  </span>
+                                  <span>
+                                    RAM: {(port as any).process.memory_mb}MB
+                                  </span>
+                                </div>
                               </div>
+                            ) : (
+                              <span className="text-xs text-secondary-400 italic">
+                                {port.status === "active"
+                                  ? "Process info unavailable"
+                                  : "Not running"}
+                              </span>
                             )}
-                            <div className="flex gap-3 text-xs text-secondary-500">
-                              <span>
-                                CPU: {(port as any).process.cpu_percent}%
-                              </span>
-                              <span>
-                                RAM: {(port as any).process.memory_mb}MB
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-secondary-400 italic">
-                            {port.status === "active"
-                              ? "Process info unavailable"
-                              : "Not running"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-secondary-600">
-                        {port.description}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-secondary-600">
+                            {port.description}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 <div className="mt-4 text-xs text-secondary-500">
                   Last updated: {systemStatus.lastUpdated.toLocaleTimeString()}
                 </div>
@@ -1009,7 +1023,7 @@ export default function Settings() {
           {/* System Information - Collapsible */}
           <div className="card">
             <button
-              onClick={() => toggleSection('system')}
+              onClick={() => toggleSection("system")}
               className="flex items-center justify-between w-full text-left"
             >
               <div className="flex items-center gap-3">
@@ -1024,7 +1038,7 @@ export default function Settings() {
                 <ChevronRight className="w-5 h-5 text-secondary-500" />
               )}
             </button>
-            
+
             {expandedSections.system && (
               <div className="mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1046,7 +1060,8 @@ export default function Settings() {
                         Backend URL
                       </p>
                       <p className="text-sm text-secondary-600">
-                        {systemStatus.environment?.services?.backend?.effective || "Unknown"}
+                        {systemStatus.environment?.services?.backend
+                          ?.effective || "Unknown"}
                       </p>
                     </div>
                   </div>
@@ -1076,14 +1091,15 @@ export default function Settings() {
                       <p className="text-sm font-medium text-secondary-900">
                         Auto-refresh
                       </p>
-                      <p className="text-sm text-secondary-600">Every 30 seconds</p>
+                      <p className="text-sm text-secondary-600">
+                        Every 30 seconds
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
-
         </div>
       ) : (
         <div className="card">
