@@ -1245,49 +1245,34 @@ export default function Settings() {
                         </h5>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {/* Current Frontend State - Not a button */}
                         <div className="px-3 py-2 text-xs rounded-md bg-blue-50 border border-blue-200 text-blue-800">
                           Current: {import.meta.env.PROD ? "Cloud" : "Local"}
                         </div>
 
-                        {/* Frontend Platform Options */}
-                        {import.meta.env.PROD ? (
-                          <div className="flex gap-1">
-                            <button
-                              className={`px-2 py-1 text-xs rounded border ${
-                                import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
-                                "vercel"
-                                  ? "bg-blue-100 border-blue-300 text-blue-700"
-                                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                              }`}
-                              onClick={() => handleFrontendSwitch("vercel")}
-                              disabled={switchingFrontend}
-                            >
-                              Vercel
-                            </button>
-                            <button
-                              className={`px-2 py-1 text-xs rounded border ${
-                                import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
-                                "netlify"
-                                  ? "bg-blue-100 border-blue-300 text-blue-700"
-                                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                              }`}
-                              onClick={() => handleFrontendSwitch("netlify")}
-                              disabled={switchingFrontend}
-                            >
-                              Netlify
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="px-3 py-2 text-xs rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
-                            onClick={() => handleFrontendSwitch("local")}
-                            disabled={switchingFrontend}
-                          >
-                            {switchingFrontend ? "Switching..." : "Local"}
-                          </button>
-                        )}
+                        {/* Frontend Platform Options - always visible */}
+                        <button
+                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          onClick={() => handleFrontendSwitch("local")}
+                          disabled={switchingFrontend}
+                        >
+                          {switchingFrontend ? "Switching..." : "Local"}
+                        </button>
+                        <button
+                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          onClick={() => handleFrontendSwitch("vercel")}
+                          disabled={switchingFrontend}
+                        >
+                          Vercel
+                        </button>
+                        <button
+                          className="px-2 py-1 text-xs rounded border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          onClick={() => handleFrontendSwitch("netlify")}
+                          disabled={switchingFrontend}
+                        >
+                          Netlify
+                        </button>
                       </div>
 
                       <p className="text-xs text-secondary-500">
@@ -1330,7 +1315,9 @@ export default function Settings() {
                               systemStatus.environment?.isCloud
                             }
                           >
-                            {switchingBackend ? "Switching..." : "Cloud (Render)"}
+                            {switchingBackend
+                              ? "Switching..."
+                              : "Cloud (Render)"}
                           </button>
                           <button
                             className={`px-2 py-1 text-xs rounded border ${

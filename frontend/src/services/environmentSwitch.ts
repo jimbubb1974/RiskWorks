@@ -69,31 +69,14 @@ class EnvironmentSwitchService {
         };
       }
 
-      // For local development, we can't actually switch to cloud platforms
-      if (targetPlatform !== "local" && !import.meta.env.PROD) {
-        return {
-          success: false,
-          message:
-            "Cannot switch to cloud platforms from local development. Deploy to cloud first.",
-          requiresRestart: false,
-        };
-      }
-
-      // For cloud platforms, we need to trigger a redeploy
-      if (targetPlatform !== "local" && import.meta.env.PROD) {
-        return await this.switchCloudFrontend(targetPlatform);
-      }
-
-      // For switching to local (from cloud)
+      // Allow switching in both dev and prod:
+      // - local => write .env.local for local
+      // - vercel/netlify => write .env.local pointing to cloud backend and platform URL
       if (targetPlatform === "local") {
         return await this.switchToLocalFrontend();
+      } else {
+        return await this.switchCloudFrontend(targetPlatform);
       }
-
-      return {
-        success: false,
-        message: "Invalid switch operation",
-        requiresRestart: false,
-      };
     } catch (error) {
       console.error("Frontend switch error:", error);
       return {
