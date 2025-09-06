@@ -17,6 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [loginError, setLoginError] = useState<string>("");
+  const [switchNotice, setSwitchNotice] = useState<string>("");
   const {
     register,
     handleSubmit,
@@ -39,6 +40,14 @@ export default function Login() {
     }
   }
 
+  // Load any pending switch instructions persisted by Settings
+  if (!switchNotice) {
+    try {
+      const pending = localStorage.getItem("pendingSwitchMessage");
+      if (pending) setSwitchNotice(pending);
+    } catch {}
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary-50 via-primary-50 to-accent-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -57,6 +66,21 @@ export default function Login() {
 
         {/* Login form */}
         <div className="card-glass animate-slide-up">
+          {switchNotice && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="text-sm text-blue-800 whitespace-pre-line">
+                {switchNotice}
+              </div>
+              <div className="mt-2 text-right">
+                <button
+                  className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+                  onClick={() => { try { localStorage.removeItem("pendingSwitchMessage"); } catch {}; setSwitchNotice(""); }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-2">

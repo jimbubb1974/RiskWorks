@@ -470,21 +470,16 @@ export default function Settings() {
 
       if (result.success) {
         if (result.requiresRestart) {
-          // Show detailed instructions in the status message area
           const instructions = result.instructions
             ? Object.values(result.instructions).join("\n\n")
             : result.message;
-          setSwitchMessage(
-            `${result.message}\n\nInstructions:\n${instructions}`
-          );
+          const msg = `${result.message}\n\nInstructions:\n${instructions}`;
+          setSwitchMessage(msg);
+          try { localStorage.setItem("pendingSwitchMessage", msg); } catch {}
         } else {
           setSwitchMessage(result.message);
+          try { localStorage.setItem("pendingSwitchMessage", result.message); } catch {}
         }
-
-        // Refresh status after a delay
-        setTimeout(() => {
-          refreshStatus();
-        }, 2000);
       } else {
         setSwitchMessage(result.message);
       }
