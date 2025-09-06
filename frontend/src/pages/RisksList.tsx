@@ -134,10 +134,10 @@ export default function RisksList() {
             type="number"
             min={1}
             max={5}
-            placeholder="Min severity"
-            value={minSeverity}
+            placeholder="Min likelihood"
+            value={minLikelihood}
             onChange={(e) =>
-              setMinSeverity(e.target.value ? Number(e.target.value) : "")
+              setMinLikelihood(e.target.value ? Number(e.target.value) : "")
             }
             className="input"
           />
@@ -150,8 +150,8 @@ export default function RisksList() {
           >
             <option value="created_at">Created Date</option>
             <option value="updated_at">Updated Date</option>
-            <option value="severity">Severity</option>
-            <option value="probability">Probability</option>
+            <option value="likelihood">Likelihood</option>
+            <option value="impact">Impact</option>
             <option value="title">Title</option>
             <option value="status">Status</option>
           </select>
@@ -305,7 +305,7 @@ export default function RisksList() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <RiskSeverityIndicator severity={risk.severity} />
+                        <RiskSeverityIndicator severity={risk.likelihood} />
                         <div>
                           <h4 className="font-medium text-secondary-900 truncate max-w-xs">
                             {risk.title}
@@ -319,7 +319,7 @@ export default function RisksList() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <SeverityBadge severity={risk.likelihood} />
+                      <SeverityBadge severity={risk.impact} />
                     </td>
                     <td className="px-6 py-4">
                       <ProbabilityBadge probability={risk.impact} />
@@ -425,7 +425,7 @@ function RiskScoreBadge({ score }: { score: number }) {
 }
 
 function RiskCard({ risk }: { risk: any }) {
-  const riskScore = risk.severity * risk.probability;
+  const riskScore = risk.likelihood * risk.impact;
 
   return (
     <div className="group bg-white rounded-xl border border-secondary-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
@@ -443,7 +443,7 @@ function RiskCard({ risk }: { risk: any }) {
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <RiskSeverityIndicator severity={risk.severity} />
+              <RiskSeverityIndicator severity={risk.likelihood} />
               <StatusBadge status={risk.status} />
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -483,7 +483,7 @@ function RiskCard({ risk }: { risk: any }) {
             <div className="text-xs text-secondary-500 mb-2 font-medium">
               Severity
             </div>
-            <SeverityBadge severity={risk.severity} />
+            <SeverityBadge severity={risk.likelihood} />
           </div>
           <div className="text-center p-3 bg-secondary-50 rounded-lg">
             <div className="text-xs text-secondary-500 mb-2 font-medium">

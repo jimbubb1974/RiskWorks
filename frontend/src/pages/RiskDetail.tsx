@@ -77,7 +77,7 @@ export default function RiskDetail() {
     );
   }
 
-  const riskScore = risk.severity * risk.probability;
+  const riskScore = risk.likelihood * risk.impact;
   const getRiskLevel = () => {
     if (riskScore >= 16)
       return {
@@ -168,7 +168,7 @@ export default function RiskDetail() {
               </h3>
               <p className="text-sm text-secondary-600">Risk Score</p>
               <div className="mt-3 text-xs text-secondary-500">
-                Severity: {risk.severity} × Probability: {risk.probability}
+                Likelihood: {risk.likelihood} × Impact: {risk.impact}
               </div>
             </div>
           </div>
@@ -180,11 +180,11 @@ export default function RiskDetail() {
                 <AlertTriangle className="w-8 h-8 text-warning-600" />
               </div>
               <h3 className="text-2xl font-bold text-secondary-900 mb-2">
-                {risk.severity}
+                {risk.likelihood}
               </h3>
               <p className="text-sm text-secondary-600">Severity</p>
               <div className="mt-3">
-                <SeverityBadge severity={risk.severity} />
+                <SeverityBadge severity={risk.likelihood} />
               </div>
             </div>
           </div>
