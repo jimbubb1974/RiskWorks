@@ -76,7 +76,7 @@ export default function RiskDetail() {
     );
   }
 
-  const riskScore = risk.likelihood * risk.impact;
+  const riskScore = risk.probability * risk.impact;
   const getRiskLevel = () => {
     if (riskScore >= 16)
       return {
@@ -133,11 +133,11 @@ export default function RiskDetail() {
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-secondary-900 mb-2">
-                {risk.title}
+                {risk.risk_name}
               </h1>
-              {risk.description && (
+              {risk.risk_description && (
                 <p className="text-lg text-secondary-600 leading-relaxed">
-                  {risk.description}
+                  {risk.risk_description}
                 </p>
               )}
             </div>
@@ -167,7 +167,7 @@ export default function RiskDetail() {
               </h3>
               <p className="text-sm text-secondary-600">Risk Score</p>
               <div className="mt-3 text-xs text-secondary-500">
-                Likelihood: {risk.likelihood} × Impact: {risk.impact}
+                Probability: {risk.probability} × Impact: {risk.impact}
               </div>
             </div>
           </div>
@@ -179,11 +179,11 @@ export default function RiskDetail() {
                 <AlertTriangle className="w-8 h-8 text-warning-600" />
               </div>
               <h3 className="text-2xl font-bold text-secondary-900 mb-2">
-                {risk.likelihood}
+                {risk.impact}
               </h3>
-              <p className="text-sm text-secondary-600">Severity</p>
+              <p className="text-sm text-secondary-600">Impact</p>
               <div className="mt-3">
-                <SeverityBadge severity={risk.likelihood} />
+                <SeverityBadge severity={risk.impact} />
               </div>
             </div>
           </div>
@@ -230,33 +230,21 @@ export default function RiskDetail() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-accent-600" />
+                {risk.latest_reviewed_date && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-accent-600" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                        Latest Reviewed
+                      </label>
+                      <p className="text-secondary-900">
+                        {new Date(risk.latest_reviewed_date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Department
-                    </label>
-                    <p className="text-secondary-900">
-                      {risk.department || "Not specified"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-secondary-600" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Location
-                    </label>
-                    <p className="text-secondary-900">
-                      {risk.location || "Not specified"}
-                    </p>
-                  </div>
-                </div>
+                )}
 
                 {risk.category && (
                   <div className="flex items-center gap-3">
@@ -276,15 +264,28 @@ export default function RiskDetail() {
               </div>
             </div>
 
-            {/* Root Cause Analysis */}
-            {risk.root_cause && (
+            {/* Probability Basis */}
+            {risk.probability_basis && (
               <div className="card-glass">
                 <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-warning-600" />
-                  Root Cause Analysis
+                  Probability Basis
                 </h3>
                 <p className="text-secondary-700 leading-relaxed">
-                  {risk.root_cause}
+                  {risk.probability_basis}
+                </p>
+              </div>
+            )}
+
+            {/* Impact Basis */}
+            {risk.impact_basis && (
+              <div className="card-glass">
+                <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-danger-600" />
+                  Impact Basis
+                </h3>
+                <p className="text-secondary-700 leading-relaxed">
+                  {risk.impact_basis}
                 </p>
               </div>
             )}
@@ -292,72 +293,56 @@ export default function RiskDetail() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Timeline */}
+            {/* Risk Assessment Details */}
             <div className="card-glass">
               <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary-600" />
-                Timeline
+                <TrendingUp className="w-5 h-5 text-primary-600" />
+                Risk Assessment
               </h3>
               <div className="space-y-4">
-                {risk.target_date && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-warning-100 flex items-center justify-center">
-                      <Target className="w-4 h-4 text-warning-600" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                        Target Date
-                      </label>
-                      <p className="text-secondary-900">
-                        {new Date(risk.target_date).toLocaleDateString()}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <AlertCircle className="w-4 h-4 text-purple-600" />
                   </div>
-                )}
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Probability
+                    </label>
+                    <p className="text-secondary-900">
+                      {risk.probability}/5
+                    </p>
+                  </div>
+                </div>
 
-                {risk.review_date && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-info-100 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-info-600" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                        Review Date
-                      </label>
-                      <p className="text-secondary-900">
-                        {new Date(risk.review_date).toLocaleDateString()}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-warning-100 flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 text-warning-600" />
                   </div>
-                )}
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Impact
+                    </label>
+                    <p className="text-secondary-900">
+                      {risk.impact}/5
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Risk Score
+                    </label>
+                    <p className="text-secondary-900 font-semibold">
+                      {riskScore}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Mitigation Strategy */}
-            {risk.mitigation_strategy && (
-              <div className="card-glass">
-                <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-success-600" />
-                  Mitigation Strategy
-                </h3>
-                <p className="text-secondary-700 leading-relaxed">
-                  {risk.mitigation_strategy}
-                </p>
-              </div>
-            )}
-
-            {/* Contingency Plan */}
-            {risk.contingency_plan && (
-              <div className="card-glass">
-                <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-danger-600" />
-                  Contingency Plan
-                </h3>
-                <p className="text-secondary-700 leading-relaxed">
-                  {risk.contingency_plan}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -395,8 +380,8 @@ function StatusBadge({ status }: { status: string }) {
     switch (status) {
       case "open":
         return <Clock className="w-3 h-3" />;
-      case "mitigated":
-        return <Shield className="w-3 h-3" />;
+      case "draft":
+        return <FileText className="w-3 h-3" />;
       case "closed":
         return <CheckCircle className="w-3 h-3" />;
       default:
@@ -408,8 +393,8 @@ function StatusBadge({ status }: { status: string }) {
     switch (status) {
       case "open":
         return "bg-warning-100 text-warning-800";
-      case "mitigated":
-        return "bg-primary-100 text-primary-800";
+      case "draft":
+        return "bg-secondary-100 text-secondary-800";
       case "closed":
         return "bg-success-100 text-success-800";
       default:
