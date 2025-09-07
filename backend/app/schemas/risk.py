@@ -4,40 +4,28 @@ from typing import Literal, Optional, List
 from pydantic import BaseModel, Field
 
 
-Status = Literal["open", "in_progress", "mitigated", "closed", "escalated"]
+Status = Literal["open", "closed", "draft"]
 Category = Literal["operational", "financial", "strategic", "technical", "compliance", "security", "environmental", "reputational"]
 
 
 class RiskBase(BaseModel):
-	title: str = Field(min_length=1, max_length=255)
-	description: Optional[str] = None
+	risk_name: str = Field(min_length=1, max_length=255, description="Name of the risk")
+	risk_description: Optional[str] = Field(None, description="Detailed description of the risk")
 	
-	# Risk Assessment
-	likelihood: int = Field(ge=1, le=5, description="Likelihood of risk occurring (1-5 scale)", default=3)
+	# Risk Assessment (1-5 scale)
+	probability: int = Field(ge=1, le=5, description="Probability of risk occurring (1-5 scale)", default=3)
 	impact: int = Field(ge=1, le=5, description="Impact if risk occurs (1-5 scale)", default=3)
 	
-	# Legacy fields for backward compatibility
-	severity: Optional[int] = Field(default=None, ge=1, le=5)
-	probability: Optional[int] = Field(default=None, ge=1, le=5)
-	
-	# Enhanced fields
-	category: Optional[Category] = Field(default="operational")
-	risk_owner: Optional[str] = Field(default="Unassigned", max_length=100)
-	department: Optional[str] = Field(default="General", max_length=100)
-	location: Optional[str] = Field(default="Unspecified", max_length=100)
-	
 	# Risk details
-	root_cause: Optional[str] = None
-	mitigation_strategy: Optional[str] = None
-	contingency_plan: Optional[str] = None
-	
-	# Dates
-	target_date: Optional[datetime] = None
-	review_date: Optional[datetime] = None
+	category: Optional[Category] = Field(default="operational", description="Risk category")
+	risk_owner: Optional[str] = Field(default="Unassigned", max_length=100, description="Person responsible for the risk")
+	latest_reviewed_date: Optional[datetime] = Field(None, description="Date when risk was last reviewed")
+	probability_basis: Optional[str] = Field(None, description="Justification for the probability rating")
+	impact_basis: Optional[str] = Field(None, description="Justification for the impact rating")
 	
 	# Status and ownership
-	status: Status = "open"
-	assigned_to: Optional[int] = None
+	status: Status = Field(default="open", description="Current status of the risk")
+	assigned_to: Optional[int] = Field(None, description="User ID of person assigned to manage this risk")
 
 
 class RiskCreate(RiskBase):
@@ -45,21 +33,15 @@ class RiskCreate(RiskBase):
 
 
 class RiskUpdate(BaseModel):
-	title: Optional[str] = Field(default=None, min_length=1, max_length=255)
-	description: Optional[str] = None
-	likelihood: Optional[int] = Field(default=None, ge=1, le=5)
-	impact: Optional[int] = Field(default=None, ge=1, le=5)
-	severity: Optional[int] = Field(default=None, ge=1, le=5)
+	risk_name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+	risk_description: Optional[str] = None
 	probability: Optional[int] = Field(default=None, ge=1, le=5)
+	impact: Optional[int] = Field(default=None, ge=1, le=5)
 	category: Optional[Category] = None
 	risk_owner: Optional[str] = Field(default=None, max_length=100)
-	department: Optional[str] = Field(default=None, max_length=100)
-	location: Optional[str] = Field(default=None, max_length=100)
-	root_cause: Optional[str] = None
-	mitigation_strategy: Optional[str] = None
-	contingency_plan: Optional[str] = None
-	target_date: Optional[datetime] = None
-	review_date: Optional[datetime] = None
+	latest_reviewed_date: Optional[datetime] = None
+	probability_basis: Optional[str] = None
+	impact_basis: Optional[str] = None
 	status: Optional[Status] = None
 	assigned_to: Optional[int] = None
 
