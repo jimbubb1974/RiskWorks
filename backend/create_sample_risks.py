@@ -1,297 +1,165 @@
 #!/usr/bin/env python3
 """
-Script to create sample risks for development and testing
+Script to create sample risks with fake data for testing reports
 """
 
 import sys
-from pathlib import Path
+import os
 from datetime import datetime, timedelta
 import random
 
-# Add the backend directory to Python path
-sys.path.append(str(Path(__file__).parent))
+# Add the backend directory to the Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.database import get_db
+from app.database import get_engine, get_session_local
 from app.models.risk import Risk
 from app.models.user import User
+from app.core.config import settings
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
 
 # Sample risk data
 SAMPLE_RISKS = [
     {
-        "title": "Data Breach - Customer Information",
-        "description": "Risk of unauthorized access to customer personal and financial data, potentially leading to identity theft and regulatory penalties.",
-        "likelihood": 4,
-        "impact": 5,
+        "risk_name": "Data Breach - Customer Information",
+        "risk_description": "Potential unauthorized access to customer personal and financial data stored in our systems.",
+        "probability": 3,
+        "impact": 4,
         "category": "security",
         "risk_owner": "Sarah Johnson",
-        "department": "IT Security",
-        "location": "Headquarters",
-        "root_cause": "Outdated security protocols and insufficient access controls",
-        "mitigation_strategy": "Implement multi-factor authentication, regular security audits, and employee training",
-        "contingency_plan": "Immediate incident response team activation, customer notification procedures",
         "status": "open",
-        "target_date": datetime.now() + timedelta(days=30),
-        "review_date": datetime.now() + timedelta(days=7)
+        "probability_basis": "Recent security assessments and vulnerability scans revealed potential exposure in our customer database systems. Industry threat landscape and attack frequency data suggest possible occurrence.",
+        "impact_basis": "Data breach impact assessment and security incident cost analysis indicates significant reputational damage and customer trust impact. Regulatory compliance impact and legal liability assessment shows moderate to high severity.",
+        "notes": "This risk requires ongoing monitoring and regular review of mitigation controls. Consider implementing additional safeguards if conditions change. Security team has been assigned and mitigation plan is in development."
     },
     {
-        "title": "Supply Chain Disruption",
-        "description": "Critical supplier experiencing financial difficulties may cause production delays and increased costs.",
-        "likelihood": 3,
-        "impact": 4,
+        "risk_name": "Supply Chain Disruption",
+        "risk_description": "Risk of disruption to critical suppliers affecting production and delivery schedules.",
+        "probability": 4,
+        "impact": 3,
         "category": "operational",
-        "risk_owner": "Mike Chen",
-        "department": "Operations",
-        "location": "Manufacturing Plant",
-        "root_cause": "Over-reliance on single supplier, lack of backup options",
-        "mitigation_strategy": "Develop multiple supplier relationships, increase inventory buffer",
-        "contingency_plan": "Activate backup suppliers, adjust production schedules",
-        "status": "in_progress",
-        "target_date": datetime.now() + timedelta(days=45),
-        "review_date": datetime.now() + timedelta(days=14)
+        "risk_owner": "Michael Chen",
+        "status": "open",
+        "probability_basis": "Analysis of current process controls indicates moderate vulnerability due to dependency on single-source suppliers. Recent geopolitical events and supply chain monitoring data suggest increased likelihood.",
+        "impact_basis": "Impact assessment based on business continuity analysis and operational dependency mapping. Financial modeling indicates moderate operational disruption with potential revenue impact of 15-25%.",
+        "notes": "Stakeholder communication plan has been developed to address potential impacts. Regular updates will be provided to management. Cross-functional team has been assembled to address this risk."
     },
     {
-        "title": "Regulatory Compliance Changes",
-        "description": "New industry regulations requiring significant system modifications and process updates.",
-        "likelihood": 5,
+        "risk_name": "Regulatory Compliance Violation",
+        "risk_description": "Risk of non-compliance with new data protection regulations and industry standards.",
+        "probability": 2,
         "impact": 4,
         "category": "compliance",
-        "risk_owner": "Lisa Rodriguez",
-        "department": "Legal & Compliance",
-        "location": "All Locations",
-        "root_cause": "Evolving regulatory landscape, industry-wide changes",
-        "mitigation_strategy": "Regular regulatory monitoring, proactive compliance planning",
-        "contingency_plan": "Regulatory liaison engagement, compliance audit preparation",
+        "risk_owner": "Jennifer Martinez",
         "status": "open",
-        "target_date": datetime.now() + timedelta(days=90),
-        "review_date": datetime.now() + timedelta(days=21)
+        "probability_basis": "Regulatory landscape analysis indicates moderate probability of compliance issues. Recent audit findings and control testing results suggest some vulnerability in current processes.",
+        "impact_basis": "Regulatory fine potential and compliance cost analysis indicate moderate impact. Reputational damage assessment and stakeholder confidence impact evaluation shows significant severity.",
+        "notes": "Risk owner has been assigned and mitigation plan is in development. Next review scheduled for next quarter. External expert consultation has been obtained for compliance guidance."
     },
     {
-        "title": "Key Employee Departure",
-        "description": "Risk of losing critical technical expertise and institutional knowledge if key personnel leave.",
-        "likelihood": 3,
+        "risk_name": "Technology System Failure",
+        "risk_description": "Risk of critical system downtime affecting business operations and customer service.",
+        "probability": 3,
         "impact": 3,
-        "category": "operational",
-        "risk_owner": "David Thompson",
-        "department": "Human Resources",
-        "location": "Headquarters",
-        "root_cause": "Competitive job market, lack of succession planning",
-        "mitigation_strategy": "Knowledge transfer programs, cross-training initiatives",
-        "contingency_plan": "External consultant engagement, accelerated hiring process",
-        "status": "mitigated",
-        "target_date": datetime.now() + timedelta(days=60),
-        "review_date": datetime.now() + timedelta(days=30)
-    },
-    {
-        "title": "Natural Disaster - Facility Damage",
-        "description": "Risk of facility damage from earthquakes, floods, or severe weather events.",
-        "likelihood": 2,
-        "impact": 5,
-        "category": "environmental",
-        "risk_owner": "Jennifer Park",
-        "department": "Facilities Management",
-        "location": "West Coast Facility",
-        "root_cause": "Geographic location in seismic zone, climate change effects",
-        "mitigation_strategy": "Facility hardening, disaster recovery planning",
-        "contingency_plan": "Backup facility activation, business continuity procedures",
-        "status": "open",
-        "target_date": datetime.now() + timedelta(days=120),
-        "review_date": datetime.now() + timedelta(days=30)
-    },
-    {
-        "title": "Market Competition - New Entrant",
-        "description": "New competitor entering market with disruptive technology or pricing model.",
-        "likelihood": 4,
-        "impact": 4,
-        "category": "strategic",
-        "risk_owner": "Robert Kim",
-        "department": "Strategy",
-        "location": "Market-wide",
-        "root_cause": "Low barriers to entry, rapid technological advancement",
-        "mitigation_strategy": "Innovation investment, customer relationship strengthening",
-        "contingency_plan": "Pricing strategy adjustment, product differentiation",
-        "status": "in_progress",
-        "target_date": datetime.now() + timedelta(days=75),
-        "review_date": datetime.now() + timedelta(days=14)
-    },
-    {
-        "title": "Software System Failure",
-        "description": "Critical business system experiencing downtime or data corruption.",
-        "likelihood": 3,
-        "impact": 4,
         "category": "technical",
-        "risk_owner": "Alex Turner",
-        "department": "IT Infrastructure",
-        "location": "Data Center",
-        "root_cause": "Aging infrastructure, insufficient redundancy",
-        "mitigation_strategy": "System modernization, backup and recovery improvements",
-        "contingency_plan": "Manual process activation, cloud backup restoration",
+        "risk_owner": "David Kim",
         "status": "open",
-        "target_date": datetime.now() + timedelta(days=60),
-        "review_date": datetime.now() + timedelta(days=7)
+        "probability_basis": "System architecture review and code quality assessments indicate moderate technical risk. Infrastructure monitoring data shows intermittent issues that could escalate with increased load.",
+        "impact_basis": "System availability impact and technical debt analysis suggest moderate severity. Infrastructure cost analysis and technology replacement impact assessment indicates moderate financial exposure.",
+        "notes": "Current controls appear adequate but should be tested regularly. Consider stress testing scenarios. Technology roadmap impact and innovation capability assessment completed."
     },
     {
-        "title": "Financial Market Volatility",
-        "description": "Economic uncertainty affecting investment returns and funding availability.",
-        "likelihood": 4,
+        "risk_name": "Market Competition Risk",
+        "risk_description": "Risk of losing market share to new competitors with disruptive business models.",
+        "probability": 4,
+        "impact": 3,
+        "category": "strategic",
+        "risk_owner": "Lisa Thompson",
+        "status": "open",
+        "probability_basis": "Market analysis and competitive intelligence suggest moderate strategic risk. Business environment assessment and stakeholder feedback indicate possible occurrence based on industry trends.",
+        "impact_basis": "Strategic objective impact and business goal achievement assessment shows moderate severity. Market position impact and competitive advantage evaluation indicates potential revenue impact.",
+        "notes": "Risk has been escalated to senior management for additional resource allocation and strategic guidance. Strategic planning assumptions and scenario analysis completed."
+    },
+    {
+        "risk_name": "Financial Market Volatility",
+        "risk_description": "Risk of adverse financial market conditions affecting investment returns and funding costs.",
+        "probability": 3,
         "impact": 3,
         "category": "financial",
-        "risk_owner": "Maria Garcia",
-        "department": "Finance",
-        "location": "Global",
-        "root_cause": "Geopolitical tensions, economic policy changes",
-        "mitigation_strategy": "Portfolio diversification, hedging strategies",
-        "contingency_plan": "Cost reduction measures, alternative funding sources",
+        "risk_owner": "Robert Wilson",
         "status": "open",
-        "target_date": datetime.now() + timedelta(days=45),
-        "review_date": datetime.now() + timedelta(days=14)
-    },
-    {
-        "title": "Reputation Damage - Social Media",
-        "description": "Negative social media campaign or viral content damaging brand reputation.",
-        "likelihood": 3,
-        "impact": 4,
-        "category": "reputational",
-        "risk_owner": "Chris Wilson",
-        "department": "Marketing",
-        "location": "Online",
-        "root_cause": "Social media amplification, rapid information spread",
-        "mitigation_strategy": "Social media monitoring, crisis communication planning",
-        "contingency_plan": "PR firm engagement, customer outreach campaigns",
-        "status": "mitigated",
-        "target_date": datetime.now() + timedelta(days=30),
-        "review_date": datetime.now() + timedelta(days=7)
-    },
-    {
-        "title": "Intellectual Property Theft",
-        "description": "Risk of trade secrets or proprietary information being stolen by competitors.",
-        "likelihood": 2,
-        "impact": 5,
-        "category": "security",
-        "risk_owner": "Patricia Lee",
-        "department": "Legal",
-        "location": "All Locations",
-        "root_cause": "Insider threats, inadequate security measures",
-        "mitigation_strategy": "Access controls, employee background checks",
-        "contingency_plan": "Legal action, competitive intelligence monitoring",
-        "status": "open",
-        "target_date": datetime.now() + timedelta(days=90),
-        "review_date": datetime.now() + timedelta(days=21)
-    },
-    {
-        "title": "Product Quality Issues",
-        "description": "Manufacturing defects or quality control failures leading to product recalls.",
-        "likelihood": 2,
-        "impact": 4,
-        "category": "operational",
-        "risk_owner": "Kevin O'Brien",
-        "department": "Quality Assurance",
-        "location": "Manufacturing",
-        "root_cause": "Equipment malfunction, human error in quality checks",
-        "mitigation_strategy": "Automated quality control, employee training",
-        "contingency_plan": "Product recall procedures, customer compensation",
-        "status": "closed",
-        "target_date": datetime.now() + timedelta(days=30),
-        "review_date": datetime.now() + timedelta(days=7)
-    },
-    {
-        "title": "Cybersecurity Attack - Ransomware",
-        "description": "Malicious software encrypting company data and demanding payment for decryption.",
-        "likelihood": 3,
-        "impact": 5,
-        "category": "security",
-        "risk_owner": "Rachel Green",
-        "department": "IT Security",
-        "location": "Network-wide",
-        "root_cause": "Phishing attacks, unpatched vulnerabilities",
-        "mitigation_strategy": "Regular security updates, employee awareness training",
-        "contingency_plan": "Backup restoration, incident response procedures",
-        "status": "escalated",
-        "target_date": datetime.now() + timedelta(days=15),
-        "review_date": datetime.now() + timedelta(days=1)
+        "probability_basis": "Market volatility analysis and economic indicators suggest moderate probability of occurrence. Historical financial data shows similar events have occurred in 15-20% of comparable periods.",
+        "impact_basis": "Financial impact modeling and budget variance analysis indicate moderate monetary exposure. Revenue impact assessment and cost-benefit analysis suggest moderate financial severity.",
+        "notes": "Risk tolerance level has been established. Monitoring will continue with monthly status updates. Investment portfolio analysis and financial risk exposure assessment completed."
     }
 ]
 
 def create_sample_risks():
-    """Create sample risks in the database"""
+    """Create sample risks with fake data"""
+    
+    # Force PostgreSQL connection - use the same URL as the backend
+    print(f"Connecting to database: {settings.effective_database_url}")
+    
+    # Create engine directly with PostgreSQL URL
+    db_url = settings.effective_database_url
+    if db_url.startswith("postgresql://") and "+" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+pg8000://", 1)
+    
+    engine = create_engine(db_url)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
     
     try:
-        # Get database session
-        db = next(get_db())
+        # Get the first user (assuming there's at least one user)
+        user = db.query(User).first()
         
-        # Get existing users to assign as owners
-        users = db.query(User).all()
-        if not users:
-            print("❌ No users found in database. Please create users first.")
+        if not user:
+            print("No users found in the database. Please create a user first.")
             return
         
-        # Check if risks already exist
-        existing_risks = db.query(Risk).count()
-        if existing_risks > 0:
-            print(f"✅ {existing_risks} risks already exist in database.")
-            print("To recreate sample risks, delete existing ones first.")
-            return
+        print(f"Creating sample risks for user: {user.email}")
         
-        print("🚀 Creating sample risks...")
+        created_count = 0
         
-        created_risks = []
-        for i, risk_data in enumerate(SAMPLE_RISKS, 1):
-            # Randomly assign a user as owner
-            owner = random.choice(users)
+        for risk_data in SAMPLE_RISKS:
+            # Check if risk already exists
+            existing_risk = db.query(Risk).filter(
+                Risk.risk_name == risk_data["risk_name"],
+                Risk.owner_id == user.id
+            ).first()
             
-            # Create risk with legacy field compatibility
+            if existing_risk:
+                print(f"Risk '{risk_data['risk_name']}' already exists, skipping...")
+                continue
+            
+            # Create new risk
             risk = Risk(
-                title=risk_data["title"],
-                description=risk_data["description"],
-                likelihood=risk_data["likelihood"],
-                impact=risk_data["impact"],
-                severity=risk_data["likelihood"],  # Map likelihood to severity
-                probability=risk_data["impact"],   # Map impact to probability
-                category=risk_data["category"],
-                risk_owner=risk_data["risk_owner"],
-                department=risk_data["department"],
-                location=risk_data["location"],
-                root_cause=risk_data["root_cause"],
-                mitigation_strategy=risk_data["mitigation_strategy"],
-                contingency_plan=risk_data["contingency_plan"],
-                status=risk_data["status"],
-                owner_id=owner.id,
-                target_date=risk_data["target_date"],
-                review_date=risk_data["review_date"]
+                owner_id=user.id,
+                **risk_data
             )
             
             db.add(risk)
-            created_risks.append(risk)
-            print(f"  ✅ Created risk {i}: {risk.title}")
+            created_count += 1
         
-        # Commit all risks
+        # Commit all changes
         db.commit()
         
-        print(f"\n🎉 Successfully created {len(created_risks)} sample risks!")
-        print("\n📊 Risk Categories Created:")
-        categories = set(risk.category for risk in created_risks)
-        for category in sorted(categories):
-            count = sum(1 for risk in created_risks if risk.category == category)
-            print(f"  • {category.title()}: {count} risks")
-        
-        print("\n🔍 Sample risks include:")
-        print("  • Data Breach - Customer Information")
-        print("  • Supply Chain Disruption")
-        print("  • Regulatory Compliance Changes")
-        print("  • Key Employee Departure")
-        print("  • Natural Disaster - Facility Damage")
-        print("  • Market Competition - New Entrant")
-        print("  • Software System Failure")
-        print("  • Financial Market Volatility")
-        print("  • Reputation Damage - Social Media")
-        print("  • Intellectual Property Theft")
-        print("  • Product Quality Issues")
-        print("  • Cybersecurity Attack - Ransomware")
+        print(f"Successfully created {created_count} sample risks with fake data:")
+        print("- Data Breach - Customer Information")
+        print("- Supply Chain Disruption") 
+        print("- Regulatory Compliance Violation")
+        print("- Technology System Failure")
+        print("- Market Competition Risk")
+        print("- Financial Market Volatility")
         
     except Exception as e:
-        print(f"❌ Error creating sample risks: {e}")
+        print(f"Error creating sample risks: {e}")
         db.rollback()
+        raise
     finally:
         db.close()
 
 if __name__ == "__main__":
+    print("Creating sample risks with fake data...")
     create_sample_risks()
+    print("Done!")

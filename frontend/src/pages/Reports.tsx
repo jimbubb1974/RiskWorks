@@ -10,14 +10,18 @@ import {
 } from "lucide-react";
 import type { Risk } from "../types/risk";
 import { api } from "../services/api";
-import jsPDF from "jspdf";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+// Set up PDFMake fonts
+pdfMake.vfs = pdfFonts;
 
 export default function Reports() {
   const [selectedFormat, setSelectedFormat] = useState<
     "pdf" | "excel" | "word"
   >("pdf");
   const [selectedReportType, setSelectedReportType] = useState<
-    "summary" | "detailed"
+    "summary" | "risk-detail"
   >("summary");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -39,431 +43,1001 @@ export default function Reports() {
   const generatePDF = () => {
     if (!filteredRisks.length) return;
 
-    if (selectedReportType === "detailed") {
-      generateDetailedPDF();
+    if (selectedReportType === "risk-detail") {
+      generateRiskDetailPDFKit();
     } else {
       generateSummaryPDF();
     }
   };
 
   const generateSummaryPDF = () => {
-    const doc = new jsPDF();
+    // Prepare table data
+    const tableBody = [
+      // Header row
+      [
+        { text: "Title", style: "tableHeader" },
+        { text: "Category", style: "tableHeader" },
+        { text: "Risk Level", style: "tableHeader" },
+        { text: "Status", style: "tableHeader" },
+        { text: "Owner", style: "tableHeader" },
+        { text: "Score", style: "tableHeader" },
+      ],
+      // Data rows
+      ...filteredRisks.map((risk) => [
+        { text: risk.risk_name, style: "tableCell" },
+        { text: risk.category || "N/A", style: "tableCell" },
+        {
+          text: risk.risk_level,
+          style: "tableCell",
+          color:
+            risk.risk_level === "High"
+              ? "#dc2626"
+              : risk.risk_level === "Medium"
+              ? "#f59e0b"
+              : "#22c55e",
+        },
+        {
+          text: risk.status
+            .replace("_", " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
+          style: "tableCell",
+        },
+        { text: risk.risk_owner || "Unassigned", style: "tableCell" },
+        { text: risk.score.toString(), style: "tableCell" },
+      ]),
+    ];
 
-    // Header
-    doc.setFontSize(18);
-    doc.setTextColor(59, 130, 246); // Blue color
-    doc.text("RiskWorks - Risk Summary Report", 20, 15);
-
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 25);
-    doc.text(`Total Risks: ${filteredRisks.length}`, 20, 32);
-
-    // Filters applied
-    let tableStartY = 40;
-    if (selectedCategory !== "all" || selectedStatus !== "all") {
-      doc.text("Filters Applied:", 20, 40);
-      let yPos = 47;
-      if (selectedCategory !== "all") {
-        doc.text(`Category: ${selectedCategory}`, 30, yPos);
-        yPos += 8;
-      }
-      if (selectedStatus !== "all") {
-        doc.text(`Status: ${selectedStatus}`, 30, yPos);
-        yPos += 8;
-      }
-      tableStartY = yPos + 5;
+    // Build filters text
+    const filtersText = [];
+    if (selectedCategory !== "all") {
+      filtersText.push(`Category: ${selectedCategory}`);
+    }
+    if (selectedStatus !== "all") {
+      filtersText.push(`Status: ${selectedStatus}`);
     }
 
-    // Risk table
-    let yPos = tableStartY;
-    const startX = 20;
-    const tableWidth = 160; // Adjusted: 30+30+20+20+30+30=160
-    const colWidths = [30, 30, 20, 20, 30, 30]; // Test: Reduced title column from 50 to 30 to force wrapping
+    // PDFMake document definition
+    const docDefinition = {
+      fonts: {
+        Roboto: {
+          normal: "Roboto-Regular.ttf",
+          bold: "Roboto-Medium.ttf",
+          italics: "Roboto-Italic.ttf",
+          bolditalics: "Roboto-MediumItalic.ttf",
+        },
+      },
+      content: [
+        // Header
+        {
+          text: "RiskWorks - Risk Summary Report",
+          style: "header",
+        },
+        {
+          text: `Generated on: ${new Date().toLocaleDateString()}`,
+          style: "subheader",
+        },
+        {
+          text: `Total Risks: ${filteredRisks.length}`,
+          style: "subheader",
+        },
+        // Filters (if any)
+        ...(filtersText.length > 0
+          ? [
+              { text: "Filters Applied:", style: "subheader" },
+              ...filtersText.map((filter) => ({
+                text: filter,
+                style: "filterText",
+              })),
+            ]
+          : []),
+        // Spacing
+        { text: "", margin: [0, 10, 0, 0] },
+        // Table
+        {
+          table: {
+            headerRows: 1,
+            widths: ["*", "auto", "auto", "auto", "auto", "auto"],
+            body: tableBody,
+          },
+          layout: {
+            fillColor: (rowIndex: number) => {
+              if (rowIndex === 0) return "#3b82f6"; // Header row
+              return rowIndex % 2 === 0 ? "#f8fafc" : null; // Alternating rows
+            },
+            hLineWidth: () => 0,
+            vLineWidth: () => 0,
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6,
+          },
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          color: "#3b82f6",
+          margin: [0, 0, 0, 10],
+        },
+        subheader: {
+          fontSize: 10,
+          color: "#64748b",
+          margin: [0, 0, 0, 5],
+        },
+        filterText: {
+          fontSize: 10,
+          color: "#64748b",
+          margin: [20, 0, 0, 5],
+        },
+        tableHeader: {
+          fontSize: 10,
+          bold: true,
+          color: "white",
+        },
+        tableCell: {
+          fontSize: 9,
+          color: "#1e293b",
+        },
+      },
+      defaultStyle: {
+        font: "Roboto",
+      },
+    };
 
-    // Table headers
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.setFillColor(59, 130, 246);
-    doc.rect(startX, yPos - 5, tableWidth, 8, "F");
-
-    doc.text("Title", startX + 2, yPos);
-    doc.text("Category", startX + colWidths[0] + 2, yPos);
-    doc.text("Risk Level", startX + colWidths[0] + colWidths[1] + 2, yPos);
-    doc.text(
-      "Status",
-      startX + colWidths[0] + colWidths[1] + colWidths[2] + 2,
-      yPos
-    );
-    doc.text(
-      "Owner",
-      startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 2,
-      yPos
-    );
-    doc.text(
-      "Score",
-      startX +
-        colWidths[0] +
-        colWidths[1] +
-        colWidths[2] +
-        colWidths[3] +
-        colWidths[4] +
-        2,
-      yPos
-    );
-
-    yPos += 15;
-
-    // Risk rows
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-
-    filteredRisks.forEach((risk, index) => {
-      if (yPos > 280) {
-        doc.addPage();
-        yPos = 15; // Reduced from 20 to match new header position
-      }
-
-      // Alternate row colors
-      if (index % 2 === 0) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(startX, yPos - 3, tableWidth, 16, "F"); // Increased height from 8 to 16 for two lines
-      }
-
-      // Risk level color coding
-      let riskColor = [0, 0, 0];
-      if (risk.risk_level === "High") riskColor = [220, 38, 38]; // Red
-      else if (risk.risk_level === "Medium")
-        riskColor = [245, 158, 11]; // Yellow
-      else if (risk.risk_level === "Low") riskColor = [34, 197, 94]; // Green
-
-      doc.setTextColor(riskColor[0], riskColor[1], riskColor[2]);
-      doc.text(risk.risk_level, startX + colWidths[0] + colWidths[1] + 2, yPos);
-
-      // Reset color for other text
-      doc.setTextColor(0, 0, 0);
-
-      // Handle text with two-line support
-      const title = risk.risk_name;
-      const category = risk.category || "N/A";
-      const status = risk.status
-        .replace("_", " ")
-        .replace(/\b\w/g, (l) => l.toUpperCase());
-      const owner = risk.risk_owner || "Unassigned";
-
-      // Function to split text into two lines using actual text width measurement
-      const splitText = (text: string, maxWidthPixels: number) => {
-        if (doc.getTextWidth(text) <= maxWidthPixels) return [text];
-
-        const words = text.split(" ");
-        const lines = [];
-        let currentLine = "";
-
-        for (const word of words) {
-          const testLine = currentLine + (currentLine ? " " : "") + word;
-          if (doc.getTextWidth(testLine) <= maxWidthPixels) {
-            currentLine = testLine;
-          } else {
-            if (currentLine) {
-              lines.push(currentLine);
-              currentLine = word;
-            } else {
-              // Single word is too long, truncate it
-              let truncated = word;
-              while (
-                doc.getTextWidth(truncated + "...") > maxWidthPixels &&
-                truncated.length > 0
-              ) {
-                truncated = truncated.substring(0, truncated.length - 1);
-              }
-              lines.push(truncated + "...");
-              currentLine = "";
-            }
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-        return lines.slice(0, 2); // Limit to 2 lines
-      };
-
-      // Title (first column) - allow two lines (30px column width minus 4px padding)
-      const titleLines = splitText(title, 26);
-      doc.text(titleLines[0], startX + 2, yPos);
-      if (titleLines[1]) {
-        doc.text(titleLines[1], startX + 2, yPos + 6);
-      }
-
-      // Category (second column)
-      doc.text(category, startX + colWidths[0] + 2, yPos);
-
-      // Risk Level (third column)
-      doc.text(risk.risk_level, startX + colWidths[0] + colWidths[1] + 2, yPos);
-
-      // Status (fourth column)
-      doc.text(
-        status,
-        startX + colWidths[0] + colWidths[1] + colWidths[2] + 2,
-        yPos
-      );
-
-      // Owner (fifth column) - allow two lines (30px column width minus 4px padding)
-      const ownerLines = splitText(owner, 26);
-      doc.text(
-        ownerLines[0],
-        startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 2,
-        yPos
-      );
-      if (ownerLines[1]) {
-        doc.text(
-          ownerLines[1],
-          startX +
-            colWidths[0] +
-            colWidths[1] +
-            colWidths[2] +
-            colWidths[3] +
-            2,
-          yPos + 6
-        );
-      }
-
-      // Score (sixth column)
-      doc.text(
-        risk.score.toString(),
-        startX +
-          colWidths[0] +
-          colWidths[1] +
-          colWidths[2] +
-          colWidths[3] +
-          colWidths[4] +
-          2,
-        yPos
-      );
-
-      yPos += 16; // Increased from 10 to 16 to accommodate two-line rows
-    });
-
-    // Save the PDF
-    doc.save(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
+    // Generate and download PDF
+    pdfMake
+      .createPdf(docDefinition)
+      .download(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
-  const generateDetailedPDF = () => {
-    const doc = new jsPDF();
+  // Removed generateDetailedPDF function - no longer used
 
-    filteredRisks.forEach((risk, index) => {
-      if (index > 0) {
-        doc.addPage();
-      }
 
-      // Header with company branding
-      doc.setFillColor(59, 130, 246);
-      doc.rect(0, 0, 210, 30, "F");
+          // Basic Information Grid
+          {
+            columns: [
+              // Left column
+              {
+                stack: [
+                  { text: "Category:", style: "fieldLabel" },
+                  {
+                    text: risk.category || "Not specified",
+                    style: "fieldValue",
+                  },
+                  { text: "Status:", style: "fieldLabel" },
+                  {
+                    text: risk.status
+                      .replace("_", " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()),
+                    style: "fieldValue",
+                  },
+                  { text: "Owner:", style: "fieldLabel" },
+                  {
+                    text: risk.risk_owner || "Unassigned",
+                    style: "fieldValue",
+                  },
+                  { text: "Department:", style: "fieldLabel" },
+                  {
+                    text: risk.category || "Not specified",
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+              // Right column
+              {
+                stack: [
+                  { text: "Risk Score:", style: "fieldLabel" },
+                  { text: risk.score.toString(), style: "riskScore" },
+                  { text: "Probability:", style: "fieldLabel" },
+                  { text: risk.probability.toString(), style: "fieldValue" },
+                  { text: "Impact:", style: "fieldLabel" },
+                  { text: risk.impact.toString(), style: "fieldValue" },
+                  { text: "Location:", style: "fieldLabel" },
+                  {
+                    text: risk.risk_owner || "Not specified",
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
 
-      doc.setFontSize(18);
-      doc.setTextColor(255, 255, 255);
-      doc.text("RiskWorks", 20, 20);
+          // Description
+          { text: "Description:", style: "sectionHeader" },
+          {
+            text: risk.risk_description || "No description provided",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
 
-      doc.setFontSize(12);
-      doc.text("Risk Assessment Form", 20, 30);
+          // Probability Basis
+          { text: "Probability Basis:", style: "sectionHeader" },
+          {
+            text: risk.probability_basis || "Not specified",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
 
-      // Risk level indicator (right side of header)
-      const riskLevelColor =
-        risk.risk_level === "High"
-          ? [220, 38, 38]
-          : risk.risk_level === "Medium"
-          ? [245, 158, 11]
-          : [34, 197, 94];
+          // Impact Basis
+          { text: "Impact Basis:", style: "sectionHeader" },
+          {
+            text: risk.impact_basis || "Not specified",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
 
-      doc.setFillColor(riskLevelColor[0], riskLevelColor[1], riskLevelColor[2]);
-      doc.rect(150, 10, 50, 15, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(14);
-      doc.text(risk.risk_level, 175, 20);
+          // Dates
+          {
+            columns: [
+              {
+                stack: [
+                  { text: "Target Date:", style: "fieldLabel" },
+                  {
+                    text: risk.latest_reviewed_date
+                      ? new Date(risk.latest_reviewed_date).toLocaleDateString()
+                      : "Not specified",
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+              {
+                stack: [
+                  { text: "Review Date:", style: "fieldLabel" },
+                  {
+                    text: risk.updated_at
+                      ? new Date(risk.updated_at).toLocaleDateString()
+                      : "Not specified",
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
 
-      // Main content area
-      let yPos = 50;
-
-      // Title section
-      doc.setFontSize(16);
-      doc.setTextColor(59, 130, 246);
-      doc.text("Risk Title", 20, yPos);
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.risk_name, 20, yPos + 10);
-
-      yPos += 25;
-
-      // Basic Information Grid
-      const leftCol = 20;
-      const rightCol = 120;
-
-      // Left column
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Category:", leftCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.category || "Not specified", leftCol + 30, yPos);
-
-      yPos += 15;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Status:", leftCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(
-        risk.status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-        leftCol + 30,
-        yPos
-      );
-
-      yPos += 15;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Owner:", leftCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.risk_owner || "Unassigned", leftCol + 30, yPos);
-
-      yPos += 15;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Department:", leftCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.category || "Not specified", leftCol + 30, yPos);
-
-      // Right column
-      yPos = 75;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Risk Score:", rightCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(16);
-      doc.text(risk.score.toString(), rightCol + 35, yPos);
-
-      yPos += 15;
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Likelihood:", rightCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.probability.toString(), rightCol + 35, yPos);
-
-      yPos += 15;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Impact:", rightCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.impact.toString(), rightCol + 35, yPos);
-
-      yPos += 15;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Location:", rightCol, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(risk.risk_owner || "Not specified", rightCol + 35, yPos);
-
-      // Description section
-      yPos = 140;
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Description:", 20, yPos);
-      doc.setTextColor(0, 0, 0);
-
-      // Handle long descriptions with word wrapping
-      const description = risk.risk_description || "No description provided";
-      const maxWidth = 170;
-      const words = description.split(" ");
-      let line = "";
-      let lineY = yPos + 10;
-
-      for (let i = 0; i < words.length; i++) {
-        const testLine = line + words[i] + " ";
-        if (doc.getTextWidth(testLine) > maxWidth && line !== "") {
-          doc.text(line, 20, lineY);
-          line = words[i] + " ";
-          lineY += 7;
-        } else {
-          line = testLine;
-        }
-      }
-      doc.text(line, 20, lineY);
-
-      // Root Cause section
-      yPos = Math.max(180, lineY + 15);
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Root Cause:", 20, yPos);
-      doc.setTextColor(0, 0, 0);
-
-      const rootCause = risk.probability_basis || "Not specified";
-      const rootCauseWords = rootCause.split(" ");
-      line = "";
-      lineY = yPos + 10;
-
-      for (let i = 0; i < rootCauseWords.length; i++) {
-        const testLine = line + rootCauseWords[i] + " ";
-        if (doc.getTextWidth(testLine) > maxWidth && line !== "") {
-          doc.text(line, 20, lineY);
-          line = rootCauseWords[i] + " ";
-          lineY += 7;
-        } else {
-          line = testLine;
-        }
-      }
-      doc.text(line, 20, lineY);
-
-      // Mitigation Strategy section
-      yPos = Math.max(220, lineY + 15);
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Mitigation Strategy:", 20, yPos);
-      doc.setTextColor(0, 0, 0);
-
-      const mitigation = risk.impact_basis || "Not specified";
-      const mitigationWords = mitigation.split(" ");
-      line = "";
-      lineY = yPos + 10;
-
-      for (let i = 0; i < rootCauseWords.length; i++) {
-        const testLine = line + mitigationWords[i] + " ";
-        if (line !== "" && doc.getTextWidth(testLine) > maxWidth) {
-          doc.text(line, 20, lineY);
-          line = mitigationWords[i] + " ";
-          lineY += 7;
-        } else {
-          line = testLine;
-        }
-      }
-      doc.text(line, 20, lineY);
-
-      // Dates section
-      yPos = Math.max(260, lineY + 15);
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Target Date:", 20, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(
-        risk.latest_reviewed_date
-          ? new Date(risk.latest_reviewed_date).toLocaleDateString()
-          : "Not specified",
-        20,
-        yPos + 10
-      );
-
-      doc.setTextColor(100, 100, 100);
-      doc.text("Review Date:", 120, yPos);
-      doc.setTextColor(0, 0, 0);
-      doc.text(
-        risk.updated_at
-          ? new Date(risk.updated_at).toLocaleDateString()
-          : "Not specified",
-        120,
-        yPos + 10
-      );
-
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(
-        `Generated on: ${new Date().toLocaleDateString()} | Risk ID: ${
-          risk.id
-        }`,
-        20,
-        290
-      );
+          // Footer
+          {
+            text: `Generated on: ${new Date().toLocaleDateString()} | Risk ID: ${
+              risk.id
+            }`,
+            style: "footer",
+            margin: [0, 20, 0, 0],
+          },
+        ],
+      };
     });
 
-    // Save the PDF
-    doc.save(`risk-detailed-${new Date().toISOString().split("T")[0]}.pdf`);
+    // PDFMake document definition
+    const docDefinition = {
+      fonts: {
+        Roboto: {
+          normal: "Roboto-Regular.ttf",
+          bold: "Roboto-Medium.ttf",
+          italics: "Roboto-Italic.ttf",
+          bolditalics: "Roboto-MediumItalic.ttf",
+        },
+      },
+      content: riskPages,
+      styles: {
+        companyHeader: {
+          fontSize: 18,
+          bold: true,
+          color: "white",
+        },
+        formHeader: {
+          fontSize: 12,
+          color: "white",
+        },
+        riskLevelBadge: {
+          fontSize: 14,
+          bold: true,
+          alignment: "center",
+          margin: [10, 5, 10, 5],
+        },
+        sectionHeader: {
+          fontSize: 12,
+          bold: true,
+          color: "#3b82f6",
+          margin: [0, 10, 0, 5],
+        },
+        riskTitle: {
+          fontSize: 14,
+          bold: true,
+          color: "#1e293b",
+        },
+        fieldLabel: {
+          fontSize: 10,
+          color: "#64748b",
+          margin: [0, 5, 0, 2],
+        },
+        fieldValue: {
+          fontSize: 10,
+          color: "#1e293b",
+          margin: [0, 0, 0, 10],
+        },
+        riskScore: {
+          fontSize: 16,
+          bold: true,
+          color: "#1e293b",
+          margin: [0, 0, 0, 10],
+        },
+        description: {
+          fontSize: 10,
+          color: "#1e293b",
+          lineHeight: 1.4,
+        },
+        footer: {
+          fontSize: 10,
+          color: "#64748b",
+          alignment: "center",
+        },
+      },
+      defaultStyle: {
+        font: "Roboto",
+      },
+      pageMargins: [40, 60, 40, 60],
+    };
+
+    // Generate and download PDF
+    pdfMake
+      .createPdf(docDefinition)
+      .download(`risk-detailed-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
+  const generateRiskDetailPDF = () => {
+    // Create content for each risk with comprehensive field layout
+    const riskPages = filteredRisks.flatMap((risk, index) => {
+      const riskLevelColor =
+        risk.risk_level === "High"
+          ? "#dc2626"
+          : risk.risk_level === "Medium"
+          ? "#f59e0b"
+          : "#22c55e";
+      const riskScore = risk.probability * risk.impact;
+
+      return {
+        stack: [
+          // Header
+          {
+            stack: [
+              { text: "RiskWorks", style: "companyHeader" },
+              { text: "Risk Detail Report", style: "formHeader" },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Title Section with Risk ID and Status
+          {
+            columns: [
+              {
+                stack: [
+                  { text: "Title", style: "sectionHeader" },
+                  { text: risk.risk_name, style: "riskTitle" },
+                ],
+                width: "90%",
+              },
+              {
+                stack: [
+                  { text: `ID: ${risk.id}`, style: "riskId" },
+                  {
+                    text: risk.status
+                      .replace("_", " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()),
+                    style: "statusBadge",
+                  },
+                ],
+                width: "10%",
+                alignment: "right",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+          {
+            text: "Description",
+            style: "sectionHeader",
+          },
+          {
+            text: risk.risk_description || "No description provided",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
+
+          // Risk Level Badge
+          {
+            text: risk.risk_level,
+            style: "riskLevelBadge",
+            color: "white",
+            fillColor: riskLevelColor,
+            margin: [0, 0, 0, 20],
+          },
+
+          // Two Column Layout for Main Information
+          {
+            columns: [
+              // Left Column - Basic Information
+              {
+                stack: [
+                  { text: "Basic Information", style: "subsectionHeader" },
+                  { text: "", margin: [0, 5, 0, 0] }, // Spacing
+
+                  { text: "Risk Owner:", style: "fieldLabel" },
+                  {
+                    text: risk.risk_owner || "Not specified",
+                    style: "fieldValue",
+                  },
+
+                  { text: "Latest Reviewed:", style: "fieldLabel" },
+                  {
+                    text: risk.latest_reviewed_date
+                      ? new Date(risk.latest_reviewed_date).toLocaleDateString()
+                      : "Never reviewed",
+                    style: "fieldValue",
+                  },
+
+                  { text: "Category:", style: "fieldLabel" },
+                  {
+                    text: risk.category || "Not specified",
+                    style: "fieldValue",
+                  },
+
+                  { text: "Created By (Owner ID):", style: "fieldLabel" },
+                  { text: `User ID: ${risk.owner_id}`, style: "fieldValue" },
+
+                  { text: "Assigned To:", style: "fieldLabel" },
+                  {
+                    text: risk.assigned_to
+                      ? `User ID: ${risk.assigned_to}`
+                      : "Not assigned",
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+              // Right Column - Risk Assessment
+              {
+                stack: [
+                  { text: "Risk Assessment", style: "subsectionHeader" },
+                  { text: "", margin: [0, 5, 0, 0] }, // Spacing
+
+                  { text: "Probability:", style: "fieldLabel" },
+                  { text: `${risk.probability}/5`, style: "fieldValue" },
+
+                  { text: "Impact:", style: "fieldLabel" },
+                  { text: `${risk.impact}/5`, style: "fieldValue" },
+
+                  { text: "Risk Score:", style: "fieldLabel" },
+                  { text: riskScore.toString(), style: "riskScore" },
+
+                  { text: "Risk Level:", style: "fieldLabel" },
+                  { text: risk.risk_level, style: "fieldValue" },
+                ],
+                width: "*",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Probability Basis (Full Width)
+          { text: "Probability Basis", style: "sectionHeader" },
+          {
+            text:
+              risk.probability_basis || "No probability justification provided",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
+
+          // Impact Basis (Full Width)
+          { text: "Impact Basis", style: "sectionHeader" },
+          {
+            text: risk.impact_basis || "No impact justification provided",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
+
+          // Notes (Full Width)
+          { text: "Notes", style: "sectionHeader" },
+          {
+            text: risk.notes || "No notes provided",
+            style: "description",
+            margin: [0, 0, 0, 20],
+          },
+
+          // Audit Information (Two Column)
+          {
+            columns: [
+              {
+                stack: [
+                  { text: "Created At:", style: "fieldLabel" },
+                  {
+                    text: new Date(risk.created_at).toLocaleString(),
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+              {
+                stack: [
+                  { text: "Last Updated:", style: "fieldLabel" },
+                  {
+                    text: new Date(risk.updated_at).toLocaleString(),
+                    style: "fieldValue",
+                  },
+                ],
+                width: "*",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Footer
+          {
+            text: `Generated on: ${new Date().toLocaleDateString()} | Risk ID: ${
+              risk.id
+            }`,
+            style: "footer",
+            margin: [0, 20, 0, 0],
+          },
+        ],
+      };
+    });
+
+    // PDFMake document definition
+    const docDefinition = {
+      fonts: {
+        Roboto: {
+          normal: "Roboto-Regular.ttf",
+          bold: "Roboto-Medium.ttf",
+          italics: "Roboto-Italic.ttf",
+          bolditalics: "Roboto-MediumItalic.ttf",
+        },
+      },
+      content: riskPages,
+      styles: {
+        companyHeader: {
+          fontSize: 18,
+          bold: true,
+          color: "white",
+        },
+        formHeader: {
+          fontSize: 12,
+          color: "white",
+        },
+        riskId: {
+          fontSize: 10,
+          color: "#64748b",
+          margin: [0, 0, 0, 5],
+        },
+        statusBadge: {
+          fontSize: 10,
+          bold: true,
+          color: "#3b82f6",
+        },
+        sectionHeader: {
+          fontSize: 12,
+          bold: true,
+          color: "#3b82f6",
+          margin: [0, 10, 0, 5],
+        },
+        subsectionHeader: {
+          fontSize: 11,
+          bold: true,
+          color: "#1e293b",
+          margin: [0, 10, 0, 5],
+        },
+        riskTitle: {
+          fontSize: 16,
+          bold: true,
+          color: "#1e293b",
+        },
+        riskLevelBadge: {
+          fontSize: 14,
+          bold: true,
+          alignment: "center",
+          margin: [10, 5, 10, 5],
+        },
+        fieldLabel: {
+          fontSize: 9,
+          color: "#64748b",
+          margin: [0, 5, 0, 2],
+        },
+        fieldValue: {
+          fontSize: 10,
+          color: "#1e293b",
+          margin: [0, 0, 0, 8],
+        },
+        riskScore: {
+          fontSize: 14,
+          bold: true,
+          color: "#1e293b",
+          margin: [0, 0, 0, 8],
+        },
+        description: {
+          fontSize: 10,
+          color: "#1e293b",
+          lineHeight: 1.4,
+        },
+        footer: {
+          fontSize: 10,
+          color: "#64748b",
+          alignment: "center",
+        },
+      },
+      defaultStyle: {
+        font: "Roboto",
+      },
+      pageSize: "A4",
+      pageMargins: [40, 10, 40, 20],
+    };
+
+    // Generate and download PDF
+    pdfMake
+      .createPdf(docDefinition)
+      .download(
+        `risk-detail-report-${new Date().toISOString().split("T")[0]}.pdf`
+      );
+  };
+
+  const generateRiskDetailPDFKit = () => {
+    // Create individual pages for each risk with consistent margins
+    const riskPages = filteredRisks.map((risk, index) => {
+      const riskScore = risk.probability * risk.impact;
+      const riskLevelColor =
+        risk.risk_level === "High"
+          ? "#dc2626"
+          : risk.risk_level === "Medium"
+          ? "#f59e0b"
+          : "#22c55e";
+
+      return {
+        // Force page break for each risk except the first
+        pageBreak: index > 0 ? "before" : undefined,
+        stack: [
+          // Title Section (90% / 10% split)
+          {
+            columns: [
+              {
+                width: "90%",
+                stack: [
+                  { text: "Title", style: "fieldLabel" },
+                  { text: risk.risk_name, style: "titleText" },
+                ],
+              },
+              {
+                width: "10%",
+                stack: [
+                  { text: `ID: ${risk.id}`, style: "infoText" },
+                  {
+                    text: risk.status
+                      .replace("_", " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()),
+                    style: "statusText",
+                  },
+                ],
+                alignment: "right",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Description
+          {
+            stack: [
+              { text: "Description", style: "fieldLabel" },
+              {
+                text: risk.risk_description || "No description provided",
+                style: "fieldValue",
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Two Column Layout
+          {
+            columns: [
+              // Left Column - Basic Information
+              {
+                width: "48%",
+                stack: [
+                  { text: "Basic Information", style: "sectionHeader" },
+                  {
+                    table: {
+                      widths: ["*"],
+                      body: [
+                        [
+                          {
+                            stack: [
+                              { text: "Risk Owner:", style: "fieldLabel" },
+                              {
+                                text: risk.risk_owner || "Not specified",
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Latest Reviewed:", style: "fieldLabel" },
+                              {
+                                text: risk.latest_reviewed_date
+                                  ? new Date(
+                                      risk.latest_reviewed_date
+                                    ).toLocaleDateString()
+                                  : "Never reviewed",
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Category:", style: "fieldLabel" },
+                              {
+                                text: risk.category || "Not specified",
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              {
+                                text: "Created By (Owner ID):",
+                                style: "fieldLabel",
+                              },
+                              {
+                                text: `User ID: ${risk.owner_id}`,
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Assigned To:", style: "fieldLabel" },
+                              {
+                                text: risk.assigned_to
+                                  ? `User ID: ${risk.assigned_to}`
+                                  : "Not assigned",
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                      ],
+                    },
+                    layout: "noBorders",
+                  },
+                ],
+              },
+              // Right Column - Risk Assessment
+              {
+                width: "48%",
+                stack: [
+                  { text: "Risk Assessment", style: "sectionHeader" },
+                  {
+                    table: {
+                      widths: ["*"],
+                      body: [
+                        [
+                          {
+                            stack: [
+                              { text: "Probability:", style: "fieldLabel" },
+                              {
+                                text: `${risk.probability}/5`,
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Impact:", style: "fieldLabel" },
+                              {
+                                text: `${risk.impact}/5`,
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Risk Score:", style: "fieldLabel" },
+                              {
+                                text: riskScore.toString(),
+                                style: "riskScoreText",
+                              },
+                            ],
+                          },
+                        ],
+                        [
+                          {
+                            stack: [
+                              { text: "Risk Level:", style: "fieldLabel" },
+                              {
+                                text: risk.risk_level,
+                                style: "fieldValue",
+                              },
+                            ],
+                          },
+                        ],
+                      ],
+                    },
+                    layout: "noBorders",
+                  },
+                ],
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Full Width Sections
+          {
+            stack: [
+              {
+                stack: [
+                  { text: "Probability Basis", style: "fieldLabel" },
+                  {
+                    text:
+                      risk.probability_basis ||
+                      "No probability justification provided",
+                    style: "fieldValue",
+                  },
+                ],
+                margin: [0, 0, 0, 15],
+              },
+              {
+                stack: [
+                  { text: "Impact Basis", style: "fieldLabel" },
+                  {
+                    text:
+                      risk.impact_basis || "No impact justification provided",
+                    style: "fieldValue",
+                  },
+                ],
+                margin: [0, 0, 0, 15],
+              },
+              {
+                stack: [
+                  { text: "Notes", style: "fieldLabel" },
+                  {
+                    text: risk.notes || "No notes provided",
+                    style: "fieldValue",
+                  },
+                ],
+                margin: [0, 0, 0, 15],
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Audit Information
+          {
+            columns: [
+              {
+                width: "48%",
+                stack: [
+                  { text: "Created At:", style: "fieldLabel" },
+                  {
+                    text: new Date(risk.created_at).toLocaleString(),
+                    style: "fieldValue",
+                  },
+                ],
+              },
+              {
+                width: "48%",
+                stack: [
+                  { text: "Last Updated:", style: "fieldLabel" },
+                  {
+                    text: new Date(risk.updated_at).toLocaleString(),
+                    style: "fieldValue",
+                  },
+                ],
+              },
+            ],
+            margin: [0, 0, 0, 20],
+          },
+
+          // Footer - Push to bottom of page
+          {
+            text: `Generated on: ${new Date().toLocaleDateString()}`,
+            style: "footer",
+            margin: [0, 0, 0, 0],
+            absolutePosition: { x: 40, y: 750 }, // Position at bottom of US Letter page
+          },
+        ],
+      };
+    });
+
+    // PDFMake document definition with consistent margins
+    const docDefinition = {
+      fonts: {
+        Roboto: {
+          normal: "Roboto-Regular.ttf",
+          bold: "Roboto-Medium.ttf",
+          italics: "Roboto-Italic.ttf",
+          bolditalics: "Roboto-MediumItalic.ttf",
+        },
+      },
+      content: riskPages,
+      defaultStyle: {
+        font: "Roboto",
+        fontSize: 10,
+      },
+      styles: {
+        companyHeader: {
+          fontSize: 18,
+          color: "#3b82f6",
+          bold: true,
+        },
+        formHeader: {
+          fontSize: 12,
+          color: "#3b82f6",
+          margin: [0, 5, 0, 0],
+        },
+        fieldLabel: {
+          fontSize: 12,
+          color: "#3b82f6",
+          bold: true,
+          margin: [0, 0, 0, 5],
+        },
+        titleText: {
+          fontSize: 16,
+          color: "#1e293b",
+          bold: true,
+        },
+        infoText: {
+          fontSize: 10,
+          color: "#64748b",
+        },
+        statusText: {
+          fontSize: 10,
+          color: "#3b82f6",
+          bold: true,
+        },
+        sectionHeader: {
+          fontSize: 11,
+          color: "#1e293b",
+          bold: true,
+          margin: [0, 0, 0, 10],
+        },
+        fieldValue: {
+          fontSize: 10,
+          color: "#1e293b",
+          margin: [0, 0, 0, 8],
+        },
+        riskScoreText: {
+          fontSize: 14,
+          color: "#1e293b",
+          bold: true,
+          margin: [0, 0, 0, 8],
+        },
+        footer: {
+          fontSize: 10,
+          color: "#64748b",
+          alignment: "center",
+        },
+      },
+      pageMargins: [40, 20, 40, 20], // Consistent margins for all pages
+      pageSize: "LETTER",
+    };
+
+    pdfMake
+      .createPdf(docDefinition)
+      .download(
+        `risk-detail-report-${new Date().toISOString().split("T")[0]}.pdf`
+      );
   };
 
   const getStatusIcon = (status: string) => {
@@ -524,13 +1098,15 @@ export default function Reports() {
                   value={selectedReportType}
                   onChange={(e) =>
                     setSelectedReportType(
-                      e.target.value as "summary" | "detailed"
+                      e.target.value as "summary" | "risk-detail"
                     )
                   }
                   className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="summary">Summary Table</option>
-                  <option value="detailed">Detailed Forms (1 per risk)</option>
+                  <option value="risk-detail">
+                    Risk Detail Report (All Fields)
+                  </option>
                 </select>
               </div>
               <div>
