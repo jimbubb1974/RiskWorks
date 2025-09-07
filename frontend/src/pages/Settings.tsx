@@ -1445,13 +1445,24 @@ export default function Settings() {
                                 Platform
                               </p>
                               <p className="text-sm text-secondary-900 capitalize">
-                                {deploymentInfo.frontend?.deployment?.platform ||
-                                  import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
-                                  (typeof window !== "undefined" && window.location.host.includes("vercel.app")) ||
-                                  import.meta.env.VITE_FRONTEND_URL?.includes("vercel.app")
+                                {deploymentInfo.frontend?.deployment
+                                  ?.platform ||
+                                import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
+                                (typeof window !== "undefined" &&
+                                  window.location.host.includes(
+                                    "vercel.app"
+                                  )) ||
+                                import.meta.env.VITE_FRONTEND_URL?.includes(
+                                  "vercel.app"
+                                )
                                   ? "vercel"
-                                  : (typeof window !== "undefined" && window.location.host.includes("netlify.app")) ||
-                                    import.meta.env.VITE_FRONTEND_URL?.includes("netlify.app")
+                                  : (typeof window !== "undefined" &&
+                                      window.location.host.includes(
+                                        "netlify.app"
+                                      )) ||
+                                    import.meta.env.VITE_FRONTEND_URL?.includes(
+                                      "netlify.app"
+                                    )
                                   ? "netlify"
                                   : import.meta.env.PROD
                                   ? "cloud"
@@ -1493,11 +1504,12 @@ export default function Settings() {
                                 URL
                               </p>
                               <p className="text-sm font-mono text-secondary-900">
-                                {deploymentInfo.frontend?.deployment?.url ||
-                                  (typeof window !== "undefined"
-                                    ? window.location.origin
-                                    : import.meta.env.VITE_FRONTEND_URL ||
-                                      "http://localhost:5173")}
+                                {
+                                  (typeof window !== "undefined" && window.location.origin) ||
+                                  import.meta.env.VITE_FRONTEND_URL ||
+                                  deploymentInfo.frontend?.deployment?.url ||
+                                  "http://localhost:5173"
+                                }
                               </p>
                             </div>
                             <div>
