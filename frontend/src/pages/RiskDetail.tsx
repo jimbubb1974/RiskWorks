@@ -159,56 +159,6 @@ export default function RiskDetail() {
           </div>
         </div>
 
-        {/* Risk Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Risk Score */}
-          <div className="card-glass text-center">
-            <div className="p-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-100 to-accent-100 flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-secondary-900 mb-2">
-                {riskScore}
-              </h3>
-              <p className="text-sm text-secondary-600">Risk Score</p>
-              <div className="mt-3 text-xs text-secondary-500">
-                Probability: {risk.probability} × Impact: {risk.impact}
-              </div>
-            </div>
-          </div>
-
-          {/* Severity */}
-          <div className="card-glass text-center">
-            <div className="p-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-warning-100 to-danger-100 flex items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-warning-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-secondary-900 mb-2">
-                {risk.impact}
-              </h3>
-              <p className="text-sm text-secondary-600">Impact</p>
-              <div className="mt-3">
-                <SeverityBadge severity={risk.impact} />
-              </div>
-            </div>
-          </div>
-
-          {/* Probability */}
-          <div className="card-glass text-center">
-            <div className="p-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-secondary-900 mb-2">
-                {risk.probability}
-              </h3>
-              <p className="text-sm text-secondary-600">Probability</p>
-              <div className="mt-3">
-                <ProbabilityBadge probability={risk.probability} />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Risk Details Form-like Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -244,10 +194,11 @@ export default function RiskDetail() {
                       Latest Reviewed
                     </label>
                     <p className="text-secondary-900">
-                      {risk.latest_reviewed_date 
-                        ? new Date(risk.latest_reviewed_date).toLocaleDateString()
-                        : "Never reviewed"
-                      }
+                      {risk.latest_reviewed_date
+                        ? new Date(
+                            risk.latest_reviewed_date
+                          ).toLocaleDateString()
+                        : "Never reviewed"}
                     </p>
                   </div>
                 </div>
@@ -289,7 +240,9 @@ export default function RiskDetail() {
                       Assigned To
                     </label>
                     <p className="text-secondary-900">
-                      {risk.assigned_to ? `User ID: ${risk.assigned_to}` : "Not assigned"}
+                      {risk.assigned_to
+                        ? `User ID: ${risk.assigned_to}`
+                        : "Not assigned"}
                     </p>
                   </div>
                 </div>
