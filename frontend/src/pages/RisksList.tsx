@@ -189,7 +189,7 @@ export default function RisksList() {
               No risks found
             </h3>
             <p className="text-secondary-600 mb-6">
-              {search || status || minSeverity
+              {search || status || minProbability
                 ? "Try adjusting your filters to see more results."
                 : "Get started by creating your first risk assessment."}
             </p>
