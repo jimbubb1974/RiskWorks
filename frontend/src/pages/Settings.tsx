@@ -1287,7 +1287,7 @@ export default function Settings() {
                           onClick={() => handleFrontendSwitch("vercel")}
                           disabled={switchingFrontend}
                         >
-                          Vercel
+                          Cloud (Vercel)
                         </button>
                         <button
                           className={`px-2 py-1 text-xs rounded border ${
@@ -1301,7 +1301,7 @@ export default function Settings() {
                           onClick={() => handleFrontendSwitch("netlify")}
                           disabled={switchingFrontend}
                         >
-                          Netlify
+                          Cloud (Netlify)
                         </button>
                       </div>
 
@@ -1427,7 +1427,8 @@ export default function Settings() {
                               </p>
                               <div className="space-y-1">
                                 <p className="text-sm font-mono text-secondary-900">
-                                  {deploymentInfo.frontend?.version?.short_hash ||
+                                  {deploymentInfo.frontend?.version
+                                    ?.short_hash ||
                                     deploymentInfo.version?.short_hash ||
                                     "Unknown"}
                                 </p>
@@ -1534,7 +1535,8 @@ export default function Settings() {
                               </p>
                               <div className="space-y-1">
                                 <p className="text-sm font-mono text-secondary-900">
-                                  {deploymentInfo.backend?.version?.short_hash ||
+                                  {deploymentInfo.backend?.version
+                                    ?.short_hash ||
                                     deploymentInfo.version?.short_hash ||
                                     "Unknown"}
                                 </p>
