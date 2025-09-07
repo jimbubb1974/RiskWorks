@@ -12,6 +12,8 @@ import {
   History,
   Trash2,
   RotateCcw,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import type { Risk } from "../types/risk";
 import type { ActionItem } from "../types/actionItem";
@@ -44,6 +46,169 @@ import {
 // Set up PDFMake fonts
 pdfMake.vfs = pdfFonts;
 
+// Utility function to create diff highlighting
+const createDiffHighlight = (existingText: string, newText: string) => {
+  if (!existingText && !newText) return null;
+  if (!existingText) return { new: newText, changed: true };
+  if (!newText) return { existing: existingText, changed: true };
+  if (existingText === newText) return { text: existingText, changed: false };
+
+  // Simple word-by-word comparison for highlighting changes
+  const existingWords = existingText.split(/(\s+)/);
+  const newWords = newText.split(/(\s+)/);
+
+  const result: Array<{ text: string; isChanged: boolean; isNew?: boolean }> =
+    [];
+  let existingIndex = 0;
+  let newIndex = 0;
+
+  while (existingIndex < existingWords.length || newIndex < newWords.length) {
+    const existingWord = existingWords[existingIndex];
+    const newWord = newWords[newIndex];
+
+    if (existingWord === newWord) {
+      // Words match, no change
+      result.push({ text: existingWord, isChanged: false });
+      existingIndex++;
+      newIndex++;
+    } else if (!existingWord) {
+      // New word added
+      result.push({ text: newWord, isChanged: true, isNew: true });
+      newIndex++;
+    } else if (!newWord) {
+      // Word removed
+      result.push({ text: existingWord, isChanged: true, isNew: false });
+      existingIndex++;
+    } else {
+      // Word changed
+      result.push({ text: existingWord, isChanged: true, isNew: false });
+      result.push({ text: newWord, isChanged: true, isNew: true });
+      existingIndex++;
+      newIndex++;
+    }
+  }
+
+  return result;
+};
+
+// Component to render existing data with highlighting for removed/changed parts
+const ExistingDataText = ({
+  existingText,
+  newText,
+  label,
+}: {
+  existingText: string;
+  newText: string;
+  label: string;
+}) => {
+  const diff = createDiffHighlight(existingText || "", newText || "");
+
+  if (!diff) return null;
+
+  if (typeof diff === "object" && "text" in diff && !diff.changed) {
+    // No changes
+    return (
+      <p>
+        <strong>{label}:</strong> {diff.text}
+      </p>
+    );
+  }
+
+  if (typeof diff === "object" && "existing" in diff) {
+    // Only existing text (will be deleted)
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        <span className="text-red-600 line-through bg-red-50 px-1 rounded">
+          {diff.existing}
+        </span>
+      </p>
+    );
+  }
+
+  if (Array.isArray(diff)) {
+    // Word-by-word changes - show existing text with removed parts highlighted
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        {diff.map((part, index) => (
+          <span
+            key={index}
+            className={
+              part.isChanged && !part.isNew
+                ? "text-red-600 line-through bg-red-50 px-1 rounded"
+                : ""
+            }
+          >
+            {part.text}
+          </span>
+        ))}
+      </p>
+    );
+  }
+
+  return null;
+};
+
+// Component to render new data with highlighting for added/changed parts
+const NewDataText = ({
+  existingText,
+  newText,
+  label,
+}: {
+  existingText: string;
+  newText: string;
+  label: string;
+}) => {
+  const diff = createDiffHighlight(existingText || "", newText || "");
+
+  if (!diff) return null;
+
+  if (typeof diff === "object" && "text" in diff && !diff.changed) {
+    // No changes
+    return (
+      <p>
+        <strong>{label}:</strong> {diff.text}
+      </p>
+    );
+  }
+
+  if (typeof diff === "object" && "new" in diff) {
+    // Only new text
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        <span className="text-red-600 font-medium bg-red-50 px-1 rounded">
+          {diff.new}
+        </span>
+      </p>
+    );
+  }
+
+  if (Array.isArray(diff)) {
+    // Word-by-word changes - show new text with added parts highlighted
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        {diff.map((part, index) => (
+          <span
+            key={index}
+            className={
+              part.isChanged && part.isNew
+                ? "text-red-600 font-medium bg-red-50 px-1 rounded"
+                : ""
+            }
+          >
+            {part.text}
+          </span>
+        ))}
+      </p>
+    );
+  }
+
+  return null;
+};
+
 export default function Reports() {
   const [selectedFormat, setSelectedFormat] = useState<
     "pdf" | "excel" | "word"
@@ -73,6 +238,9 @@ export default function Reports() {
     newActionItems: [],
     showConflictResolution: false,
   });
+  const [conflictResolutions, setConflictResolutions] = useState<{
+    [key: number]: "keep_existing" | "replace_with_excel" | null;
+  }>({});
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotDescription, setSnapshotDescription] = useState("");
   const [showCreateSnapshot, setShowCreateSnapshot] = useState(false);
@@ -83,6 +251,56 @@ export default function Reports() {
   const [snapshotImportFile, setSnapshotImportFile] = useState<File | null>(
     null
   );
+  const [snapshotsExpanded, setSnapshotsExpanded] = useState(false);
+
+  // Handle individual conflict resolution
+  const handleConflictResolution = (
+    conflictIndex: number,
+    resolution: "keep_existing" | "replace_with_excel"
+  ) => {
+    setConflictResolutions((prev) => ({
+      ...prev,
+      [conflictIndex]: resolution,
+    }));
+  };
+
+  // Check if all conflicts are resolved
+  const allConflictsResolved = importConflicts.conflicts.every(
+    (_, index) =>
+      conflictResolutions[index] !== null &&
+      conflictResolutions[index] !== undefined
+  );
+
+  // Apply individual conflict resolutions
+  const applyIndividualResolutions = () => {
+    const resolvedConflicts = importConflicts.conflicts
+      .map((conflict, index) => {
+        const resolution = conflictResolutions[index];
+        if (resolution === "keep_existing") {
+          // Keep existing - create new risk with Excel data but without ID
+          return {
+            ...conflict.excelRisk,
+            id: undefined,
+          };
+        } else if (resolution === "replace_with_excel") {
+          // Replace with Excel data
+          return conflict.excelRisk;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    executeImport(
+      importConflicts.newRisks,
+      resolvedConflicts,
+      importConflicts.newActionItems
+    );
+  };
+
+  // Reset conflict resolutions when starting new import
+  const resetConflictResolutions = () => {
+    setConflictResolutions({});
+  };
 
   const { data: risks, isLoading } = useQuery({
     queryKey: ["risks"],
@@ -142,6 +360,9 @@ export default function Reports() {
       });
       return;
     }
+
+    // Reset conflict resolutions for new import
+    resetConflictResolutions();
 
     try {
       setImportStatus({ type: "info", message: "Creating backup snapshot..." });
@@ -2828,66 +3049,79 @@ export default function Reports() {
         {/* Snapshots List */}
         {snapshots && snapshots.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-md font-medium text-secondary-900 flex items-center gap-2">
+            <button
+              onClick={() => setSnapshotsExpanded(!snapshotsExpanded)}
+              className="flex items-center gap-2 text-md font-medium text-secondary-900 hover:text-secondary-700 transition-colors"
+            >
               <History className="h-4 w-4" />
               Available Snapshots ({snapshots.length})
-            </h4>
-            <div className="grid gap-3">
-              {snapshots.map((snapshot) => (
-                <div
-                  key={snapshot.id}
-                  className="border border-secondary-200 rounded-lg p-4 bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-secondary-900">
-                        {snapshot.name}
-                      </h5>
-                      {snapshot.description && (
-                        <p className="text-sm text-secondary-600 mt-1">
-                          {snapshot.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-secondary-500">
-                        <span>
-                          {new Date(snapshot.created_at).toLocaleString()}
-                        </span>
-                        <span>{snapshot.risk_count} risks</span>
-                        <span>{snapshot.action_items_count} action items</span>
+              {snapshotsExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+
+            {snapshotsExpanded && (
+              <div className="grid gap-3">
+                {snapshots.map((snapshot) => (
+                  <div
+                    key={snapshot.id}
+                    className="border border-secondary-200 rounded-lg p-4 bg-white"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h5 className="font-medium text-secondary-900">
+                          {snapshot.name}
+                        </h5>
+                        {snapshot.description && (
+                          <p className="text-sm text-secondary-600 mt-1">
+                            {snapshot.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2 text-xs text-secondary-500">
+                          <span>
+                            {new Date(snapshot.created_at).toLocaleString()}
+                          </span>
+                          <span>{snapshot.risk_count} risks</span>
+                          <span>
+                            {snapshot.action_items_count} action items
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() =>
+                            handleExportSnapshot(snapshot.id, snapshot.name)
+                          }
+                          className="btn-primary text-xs"
+                          title="Export this snapshot as a file"
+                        >
+                          <Download className="h-3 w-3" />
+                          Export
+                        </button>
+                        <button
+                          onClick={() => handleRestoreSnapshot(snapshot.id)}
+                          className="btn-secondary text-xs"
+                          title="Restore this snapshot"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Restore
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSnapshot(snapshot.id)}
+                          className="btn-danger text-xs"
+                          title="Delete this snapshot"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() =>
-                          handleExportSnapshot(snapshot.id, snapshot.name)
-                        }
-                        className="btn-primary text-xs"
-                        title="Export this snapshot as a file"
-                      >
-                        <Download className="h-3 w-3" />
-                        Export
-                      </button>
-                      <button
-                        onClick={() => handleRestoreSnapshot(snapshot.id)}
-                        className="btn-secondary text-xs"
-                        title="Restore this snapshot"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        Restore
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSnapshot(snapshot.id)}
-                        className="btn-danger text-xs"
-                        title="Delete this snapshot"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -3038,22 +3272,28 @@ export default function Reports() {
                         <p>
                           <strong>ID:</strong> {conflict.existingRisk.id}
                         </p>
-                        <p>
-                          <strong>Name:</strong>{" "}
-                          {conflict.existingRisk.risk_name}
-                        </p>
-                        <p>
-                          <strong>Description:</strong>{" "}
-                          {conflict.existingRisk.risk_description || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Category:</strong>{" "}
-                          {conflict.existingRisk.category}
-                        </p>
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          {conflict.existingRisk.status}
-                        </p>
+                        <ExistingDataText
+                          existingText={conflict.existingRisk.risk_name}
+                          newText={conflict.excelRisk.risk_name}
+                          label="Name"
+                        />
+                        <ExistingDataText
+                          existingText={
+                            conflict.existingRisk.risk_description || "N/A"
+                          }
+                          newText={conflict.excelRisk.risk_description || "N/A"}
+                          label="Description"
+                        />
+                        <ExistingDataText
+                          existingText={conflict.existingRisk.category}
+                          newText={conflict.excelRisk.category}
+                          label="Category"
+                        />
+                        <ExistingDataText
+                          existingText={conflict.existingRisk.status}
+                          newText={conflict.excelRisk.status}
+                          label="Status"
+                        />
                       </div>
                     </div>
 
@@ -3066,53 +3306,86 @@ export default function Reports() {
                         <p>
                           <strong>ID:</strong> {conflict.excelRisk.id || "N/A"}
                         </p>
-                        <p>
-                          <strong>Name:</strong> {conflict.excelRisk.risk_name}
-                        </p>
-                        <p>
-                          <strong>Description:</strong>{" "}
-                          {conflict.excelRisk.risk_description || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Category:</strong>{" "}
-                          {conflict.excelRisk.category}
-                        </p>
-                        <p>
-                          <strong>Status:</strong> {conflict.excelRisk.status}
-                        </p>
+                        <NewDataText
+                          existingText={conflict.existingRisk.risk_name}
+                          newText={conflict.excelRisk.risk_name}
+                          label="Name"
+                        />
+                        <NewDataText
+                          existingText={
+                            conflict.existingRisk.risk_description || "N/A"
+                          }
+                          newText={conflict.excelRisk.risk_description || "N/A"}
+                          label="Description"
+                        />
+                        <NewDataText
+                          existingText={conflict.existingRisk.category}
+                          newText={conflict.excelRisk.category}
+                          label="Category"
+                        />
+                        <NewDataText
+                          existingText={conflict.existingRisk.status}
+                          newText={conflict.excelRisk.status}
+                          label="Status"
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <button
-                      onClick={() => {
-                        // Keep existing, skip this risk
-                        console.log("Keep existing for conflict", index);
-                      }}
-                      className="btn-secondary text-sm flex items-center justify-center"
+                      onClick={() =>
+                        handleConflictResolution(index, "keep_existing")
+                      }
+                      className={`text-sm flex items-center justify-center ${
+                        conflictResolutions[index] === "keep_existing"
+                          ? "btn-primary"
+                          : "btn-secondary"
+                      }`}
                     >
                       <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                       Keep Existing
+                      {conflictResolutions[index] === "keep_existing" && (
+                        <span className="ml-2 text-xs">✓</span>
+                      )}
                     </button>
                     <button
-                      onClick={() => {
-                        // Replace with Excel data
-                        console.log("Replace with Excel for conflict", index);
-                      }}
-                      className="btn-primary text-sm flex items-center justify-center"
+                      onClick={() =>
+                        handleConflictResolution(index, "replace_with_excel")
+                      }
+                      className={`text-sm flex items-center justify-center ${
+                        conflictResolutions[index] === "replace_with_excel"
+                          ? "btn-primary"
+                          : "btn-secondary"
+                      }`}
                     >
                       <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                       Replace with Excel
+                      {conflictResolutions[index] === "replace_with_excel" && (
+                        <span className="ml-2 text-xs">✓</span>
+                      )}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
+              {/* Individual Resolution Button */}
+              {allConflictsResolved && (
+                <button
+                  onClick={applyIndividualResolutions}
+                  className="btn-primary"
+                >
+                  Apply Individual Resolutions
+                </button>
+              )}
+
+              {/* Bulk Action Buttons */}
               <button
                 onClick={() => {
+                  // Reset individual resolutions
+                  setConflictResolutions({});
                   // Apply "Keep Existing" to all conflicts
                   const resolvedConflicts = importConflicts.conflicts.map(
                     (c) => ({
@@ -3132,6 +3405,8 @@ export default function Reports() {
               </button>
               <button
                 onClick={() => {
+                  // Reset individual resolutions
+                  setConflictResolutions({});
                   // Apply "Replace with Excel" to all conflicts
                   const resolvedConflicts = importConflicts.conflicts.map(
                     (c) => c.excelRisk
@@ -3148,6 +3423,8 @@ export default function Reports() {
               </button>
               <button
                 onClick={() => {
+                  // Reset individual resolutions
+                  setConflictResolutions({});
                   // Skip all conflicts, only import new risks
                   executeImport(
                     importConflicts.newRisks,
