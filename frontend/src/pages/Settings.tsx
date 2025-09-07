@@ -1261,11 +1261,12 @@ export default function Settings() {
                         {/* Frontend Platform Options - always visible */}
                         <button
                           className={`px-2 py-1 text-xs rounded border ${
-                            (!import.meta.env.PROD ||
-                              import.meta.env.VITE_DEPLOYMENT_PLATFORM === "local" ||
-                              (typeof window !== "undefined" &&
-                                !window.location.host.includes("vercel.app") &&
-                                !window.location.host.includes("netlify.app")))
+                            !import.meta.env.PROD ||
+                            import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
+                              "local" ||
+                            (typeof window !== "undefined" &&
+                              !window.location.host.includes("vercel.app") &&
+                              !window.location.host.includes("netlify.app"))
                               ? "bg-blue-100 border-blue-300 text-blue-700"
                               : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                           }`}
@@ -1276,9 +1277,10 @@ export default function Settings() {
                         </button>
                         <button
                           className={`px-2 py-1 text-xs rounded border ${
-                            (import.meta.env.VITE_DEPLOYMENT_PLATFORM === "vercel" ||
-                              (typeof window !== "undefined" &&
-                                window.location.host.includes("vercel.app")))
+                            import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
+                              "vercel" ||
+                            (typeof window !== "undefined" &&
+                              window.location.host.includes("vercel.app"))
                               ? "bg-blue-100 border-blue-300 text-blue-700"
                               : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                           }`}
@@ -1289,9 +1291,10 @@ export default function Settings() {
                         </button>
                         <button
                           className={`px-2 py-1 text-xs rounded border ${
-                            (import.meta.env.VITE_DEPLOYMENT_PLATFORM === "netlify" ||
-                              (typeof window !== "undefined" &&
-                                window.location.host.includes("netlify.app")))
+                            import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
+                              "netlify" ||
+                            (typeof window !== "undefined" &&
+                              window.location.host.includes("netlify.app"))
                               ? "bg-blue-100 border-blue-300 text-blue-700"
                               : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                           }`}
@@ -1442,20 +1445,17 @@ export default function Settings() {
                                 Platform
                               </p>
                               <p className="text-sm text-secondary-900 capitalize">
-                                {deploymentInfo.frontend?.deployment
-                                  ?.platform ||
+                                {deploymentInfo.frontend?.deployment?.platform ||
                                   import.meta.env.VITE_DEPLOYMENT_PLATFORM ||
-                                  (import.meta.env.VITE_FRONTEND_URL?.includes(
-                                    "vercel.app"
-                                  )
-                                    ? "vercel"
-                                    : import.meta.env.VITE_FRONTEND_URL?.includes(
-                                        "netlify.app"
-                                      )
-                                    ? "netlify"
-                                    : import.meta.env.PROD
-                                    ? "cloud"
-                                    : "local")}
+                                  (typeof window !== "undefined" && window.location.host.includes("vercel.app")) ||
+                                  import.meta.env.VITE_FRONTEND_URL?.includes("vercel.app")
+                                  ? "vercel"
+                                  : (typeof window !== "undefined" && window.location.host.includes("netlify.app")) ||
+                                    import.meta.env.VITE_FRONTEND_URL?.includes("netlify.app")
+                                  ? "netlify"
+                                  : import.meta.env.PROD
+                                  ? "cloud"
+                                  : "local"}
                               </p>
                             </div>
                             <div>
@@ -1494,10 +1494,10 @@ export default function Settings() {
                               </p>
                               <p className="text-sm font-mono text-secondary-900">
                                 {deploymentInfo.frontend?.deployment?.url ||
-                                  import.meta.env.VITE_FRONTEND_URL ||
-                                  (import.meta.env.PROD
-                                    ? "https://riskworks.netlify.app"
-                                    : "http://localhost:5173")}
+                                  (typeof window !== "undefined"
+                                    ? window.location.origin
+                                    : import.meta.env.VITE_FRONTEND_URL ||
+                                      "http://localhost:5173")}
                               </p>
                             </div>
                             <div>
