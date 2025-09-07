@@ -9,9 +9,11 @@ import {
   Clock,
 } from "lucide-react";
 import type { Risk } from "../types/risk";
+import type { ActionItem } from "../types/actionItem";
 import { api } from "../services/api";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
+import * as XLSX from "xlsx";
 
 // Set up PDFMake fonts
 pdfMake.vfs = pdfFonts;
@@ -31,6 +33,12 @@ export default function Reports() {
     queryFn: () => api.get<Risk[]>("/risks").then((res) => res.data),
   });
 
+  const { data: actionItems, isLoading: actionItemsLoading } = useQuery({
+    queryKey: ["action-items"],
+    queryFn: () =>
+      api.get<ActionItem[]>("/action-items/").then((res) => res.data),
+  });
+
   const filteredRisks =
     risks?.filter((risk) => {
       if (selectedCategory !== "all" && risk.category !== selectedCategory)
@@ -40,10 +48,12 @@ export default function Reports() {
       return true;
     }) || [];
 
-  const generatePDF = () => {
+  const generateExport = () => {
     if (!filteredRisks.length) return;
 
-    if (selectedReportType === "risk-detail") {
+    if (selectedFormat === "excel") {
+      generateExcel();
+    } else if (selectedReportType === "risk-detail") {
       generateRiskDetailPDFKit();
     } else {
       generateSummaryPDF();
@@ -189,6 +199,193 @@ export default function Reports() {
     pdfMake
       .createPdf(docDefinition)
       .download(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
+  const generateExcel = () => {
+    // Create comprehensive Excel export with all risk fields
+    // This structure is designed to be compatible with future import functionality
+
+    const excelData = filteredRisks.map((risk) => ({
+      // Basic Information
+      "Risk ID": risk.id,
+      "Risk Name": risk.risk_name,
+      Description: risk.risk_description || "",
+      Category: risk.category || "",
+      Status: risk.status,
+      "Risk Owner": risk.risk_owner || "",
+      "Owner ID": risk.owner_id,
+      "Assigned To": risk.assigned_to || "",
+
+      // Risk Assessment
+      Probability: risk.probability,
+      Impact: risk.impact,
+      "Risk Score": risk.score,
+      "Risk Level": risk.risk_level,
+
+      // Risk Analysis
+      "Probability Basis": risk.probability_basis || "",
+      "Impact Basis": risk.impact_basis || "",
+      Notes: risk.notes || "",
+
+      // Dates
+      "Created At": risk.created_at
+        ? new Date(risk.created_at).toISOString()
+        : "",
+      "Updated At": risk.updated_at
+        ? new Date(risk.updated_at).toISOString()
+        : "",
+      "Latest Reviewed Date": risk.latest_reviewed_date
+        ? new Date(risk.latest_reviewed_date).toISOString()
+        : "",
+
+      // Additional fields for future compatibility
+      Priority: "", // For future use
+      "Mitigation Strategy": "", // For future use
+      "Contingency Plan": "", // For future use
+      "Review Frequency": "", // For future use
+      "Next Review Date": "", // For future use
+    }));
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 8 }, // Risk ID
+      { wch: 25 }, // Risk Name
+      { wch: 40 }, // Description
+      { wch: 15 }, // Category
+      { wch: 12 }, // Status
+      { wch: 20 }, // Risk Owner
+      { wch: 10 }, // Owner ID
+      { wch: 10 }, // Assigned To
+      { wch: 12 }, // Probability
+      { wch: 8 }, // Impact
+      { wch: 10 }, // Risk Score
+      { wch: 12 }, // Risk Level
+      { wch: 40 }, // Probability Basis
+      { wch: 40 }, // Impact Basis
+      { wch: 40 }, // Notes
+      { wch: 20 }, // Created At
+      { wch: 20 }, // Updated At
+      { wch: 20 }, // Latest Reviewed Date
+      { wch: 12 }, // Priority
+      { wch: 40 }, // Mitigation Strategy
+      { wch: 40 }, // Contingency Plan
+      { wch: 15 }, // Review Frequency
+      { wch: 20 }, // Next Review Date
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Add the worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Risks");
+
+    // Create Action Items worksheet
+    if (actionItems && actionItems.length > 0) {
+      const actionItemsData = actionItems.map((actionItem) => ({
+        // Basic Information
+        "Action Item ID": actionItem.id,
+        Title: actionItem.title,
+        Description: actionItem.description || "",
+        "Action Type": actionItem.action_type,
+        Priority: actionItem.priority,
+        Status: actionItem.status,
+
+        // Assignment
+        "Assigned To": actionItem.assigned_to || "",
+        "Created By": actionItem.created_by,
+        "Risk ID": actionItem.risk_id,
+
+        // Dates
+        "Due Date": actionItem.due_date
+          ? new Date(actionItem.due_date).toISOString()
+          : "",
+        "Completed Date": actionItem.completed_date
+          ? new Date(actionItem.completed_date).toISOString()
+          : "",
+        "Created At": actionItem.created_at
+          ? new Date(actionItem.created_at).toISOString()
+          : "",
+        "Updated At": actionItem.updated_at
+          ? new Date(actionItem.updated_at).toISOString()
+          : "",
+
+        // Progress
+        "Progress Percentage": actionItem.progress_percentage,
+
+        // Additional fields for future compatibility
+        "Estimated Hours": "", // For future use
+        "Actual Hours": "", // For future use
+        Cost: "", // For future use
+        "Resources Required": "", // For future use
+        Dependencies: "", // For future use
+      }));
+
+      const actionItemsWorksheet = XLSX.utils.json_to_sheet(actionItemsData);
+
+      // Set column widths for action items
+      const actionItemsColumnWidths = [
+        { wch: 12 }, // Action Item ID
+        { wch: 30 }, // Title
+        { wch: 40 }, // Description
+        { wch: 15 }, // Action Type
+        { wch: 10 }, // Priority
+        { wch: 12 }, // Status
+        { wch: 12 }, // Assigned To
+        { wch: 10 }, // Created By
+        { wch: 8 }, // Risk ID
+        { wch: 20 }, // Due Date
+        { wch: 20 }, // Completed Date
+        { wch: 20 }, // Created At
+        { wch: 20 }, // Updated At
+        { wch: 15 }, // Progress Percentage
+        { wch: 12 }, // Estimated Hours
+        { wch: 12 }, // Actual Hours
+        { wch: 10 }, // Cost
+        { wch: 20 }, // Resources Required
+        { wch: 20 }, // Dependencies
+      ];
+      actionItemsWorksheet["!cols"] = actionItemsColumnWidths;
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        actionItemsWorksheet,
+        "Action Items"
+      );
+    }
+
+    // Create a metadata sheet with export information
+    const metadata = [
+      { Field: "Export Date", Value: new Date().toISOString() },
+      { Field: "Total Risks", Value: filteredRisks.length },
+      { Field: "Total Action Items", Value: actionItems?.length || 0 },
+      {
+        Field: "Filters Applied",
+        Value:
+          selectedCategory !== "all" || selectedStatus !== "all" ? "Yes" : "No",
+      },
+      { Field: "Category Filter", Value: selectedCategory },
+      { Field: "Status Filter", Value: selectedStatus },
+      { Field: "Export Format", Value: "Excel" },
+      { Field: "Version", Value: "1.0" },
+      { Field: "Compatible with Import", Value: "Yes" },
+      {
+        Field: "Includes Action Items",
+        Value: actionItems && actionItems.length > 0 ? "Yes" : "No",
+      },
+    ];
+
+    const metadataSheet = XLSX.utils.json_to_sheet(metadata);
+    metadataSheet["!cols"] = [{ wch: 20 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(workbook, metadataSheet, "Export Info");
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split("T")[0];
+    const filename = `risk-export-${timestamp}.xlsx`;
+
+    // Write and download the file
+    XLSX.writeFile(workbook, filename);
   };
 
   // Removed generateDetailedPDF function - no longer used
@@ -873,7 +1070,7 @@ export default function Reports() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || actionItemsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
@@ -963,9 +1160,7 @@ export default function Reports() {
                   className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="pdf">PDF</option>
-                  <option value="excel" disabled>
-                    Excel (Coming Soon)
-                  </option>
+                  <option value="excel">Excel</option>
                   <option value="word" disabled>
                     Word (Coming Soon)
                   </option>
@@ -977,7 +1172,7 @@ export default function Reports() {
           {/* Actions Section */}
           <div className="flex items-center gap-3 lg:ml-4">
             <button
-              onClick={generatePDF}
+              onClick={generateExport}
               disabled={!filteredRisks.length}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
