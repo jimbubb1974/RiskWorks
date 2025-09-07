@@ -132,6 +132,12 @@ export default function RiskDetail() {
         <div className="card-glass">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-sm font-mono text-secondary-500 bg-secondary-100 px-2 py-1 rounded">
+                  ID: {risk.id}
+                </span>
+                <StatusBadge status={risk.status} />
+              </div>
               <h1 className="text-3xl font-bold text-secondary-900 mb-2">
                 {risk.risk_name}
               </h1>
@@ -142,7 +148,6 @@ export default function RiskDetail() {
               )}
             </div>
             <div className="flex flex-col items-end gap-3">
-              <StatusBadge status={risk.status} />
               <div
                 className={`px-4 py-2 rounded-lg ${riskLevel.bg} ${riskLevel.border} border`}
               >
@@ -240,7 +245,9 @@ export default function RiskDetail() {
                         Latest Reviewed
                       </label>
                       <p className="text-secondary-900">
-                        {new Date(risk.latest_reviewed_date).toLocaleDateString()}
+                        {new Date(
+                          risk.latest_reviewed_date
+                        ).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -308,9 +315,7 @@ export default function RiskDetail() {
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Probability
                     </label>
-                    <p className="text-secondary-900">
-                      {risk.probability}/5
-                    </p>
+                    <p className="text-secondary-900">{risk.probability}/5</p>
                   </div>
                 </div>
 
@@ -322,9 +327,7 @@ export default function RiskDetail() {
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Impact
                     </label>
-                    <p className="text-secondary-900">
-                      {risk.impact}/5
-                    </p>
+                    <p className="text-secondary-900">{risk.impact}/5</p>
                   </div>
                 </div>
 
@@ -338,6 +341,20 @@ export default function RiskDetail() {
                     </label>
                     <p className="text-secondary-900 font-semibold">
                       {riskScore}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-info-100 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-info-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Risk Level
+                    </label>
+                    <p className="text-secondary-900 font-semibold">
+                      {risk.risk_level}
                     </p>
                   </div>
                 </div>
