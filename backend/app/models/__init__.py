@@ -4,5 +4,6 @@
 from .risk import Risk
 from .user import User
 from .action_item import ActionItem
+from .snapshot import Snapshot
 
-__all__ = ["Risk", "User", "ActionItem"]
+__all__ = ["Risk", "User", "ActionItem", "Snapshot"]

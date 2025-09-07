@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createRisk, getRisk, updateRisk } from "../services/risks";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Save,
   Plus,
@@ -35,7 +36,7 @@ const schema = z.object({
   latest_reviewed_date: z.string().optional(),
   probability_basis: z.string().optional(),
   impact_basis: z.string().optional(),
-  // notes: z.string().optional(),  // Temporarily commented out
+  notes: z.string().optional(),
   status: z.enum(["open", "closed", "draft"]),
 });
 
@@ -44,6 +45,7 @@ type FormData = z.infer<typeof schema>;
 export default function RiskForm() {
   const navigate = useNavigate();
   const params = useParams();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(params.id);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -105,10 +107,24 @@ export default function RiskForm() {
 
   async function onSubmit(values: FormData) {
     try {
+      // Convert empty strings to null for optional fields
+      const cleanedValues = {
+        ...values,
+        risk_description: values.risk_description || null,
+        latest_reviewed_date: values.latest_reviewed_date || null,
+        probability_basis: values.probability_basis || null,
+        impact_basis: values.impact_basis || null,
+        notes: values.notes || null,
+      };
+
       if (isEdit && params.id) {
-        await updateRisk(Number(params.id), values);
+        await updateRisk(Number(params.id), cleanedValues);
+        // Invalidate risks cache to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["risks"] });
       } else {
-        await createRisk(values);
+        await createRisk(cleanedValues);
+        // Invalidate risks cache to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["risks"] });
       }
       navigate("/risks");
     } catch (error) {

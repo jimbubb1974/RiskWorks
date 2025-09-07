@@ -7,10 +7,24 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  Upload,
+  Camera,
+  History,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 import type { Risk } from "../types/risk";
 import type { ActionItem } from "../types/actionItem";
-import { api } from "../services/api";
+import type { Snapshot } from "../types/snapshot";
+import {
+  api,
+  createSnapshot,
+  getSnapshots,
+  deleteSnapshot,
+  restoreSnapshot,
+  exportSnapshot,
+  importSnapshot,
+} from "../services/api";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
@@ -39,6 +53,21 @@ export default function Reports() {
   >("summary");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importStatus, setImportStatus] = useState<{
+    type: "success" | "error" | "info" | null;
+    message: string;
+  }>({ type: null, message: "" });
+  const [snapshotName, setSnapshotName] = useState("");
+  const [snapshotDescription, setSnapshotDescription] = useState("");
+  const [showCreateSnapshot, setShowCreateSnapshot] = useState(false);
+  const [snapshotStatus, setSnapshotStatus] = useState<{
+    type: "success" | "error" | "info" | null;
+    message: string;
+  }>({ type: null, message: "" });
+  const [snapshotImportFile, setSnapshotImportFile] = useState<File | null>(
+    null
+  );
 
   const { data: risks, isLoading } = useQuery({
     queryKey: ["risks"],
@@ -51,6 +80,15 @@ export default function Reports() {
       api.get<ActionItem[]>("/action-items/").then((res) => res.data),
   });
 
+  const {
+    data: snapshots,
+    isLoading: snapshotsLoading,
+    refetch: refetchSnapshots,
+  } = useQuery({
+    queryKey: ["snapshots"],
+    queryFn: getSnapshots,
+  });
+
   const filteredRisks =
     risks?.filter((risk) => {
       if (selectedCategory !== "all" && risk.category !== selectedCategory)
@@ -59,6 +97,446 @@ export default function Reports() {
         return false;
       return true;
     }) || [];
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        file.type === "application/vnd.ms-excel" ||
+        file.name.endsWith(".xlsx") ||
+        file.name.endsWith(".xls")
+      ) {
+        setImportFile(file);
+        setImportStatus({ type: null, message: "" });
+      } else {
+        setImportStatus({
+          type: "error",
+          message: "Please select a valid Excel file (.xlsx or .xls)",
+        });
+      }
+    }
+  };
+
+  const importExcelData = async () => {
+    if (!importFile) {
+      setImportStatus({
+        type: "error",
+        message: "Please select a file first",
+      });
+      return;
+    }
+
+    try {
+      setImportStatus({ type: "info", message: "Creating backup snapshot..." });
+
+      // Auto-create snapshot before import
+      const timestamp = new Date().toISOString().split("T")[0];
+      const autoSnapshotName = `Auto-backup before import - ${timestamp}`;
+
+      try {
+        await createSnapshot({
+          name: autoSnapshotName,
+          description: `Automatic backup created before importing Excel file: ${importFile.name}`,
+        });
+        setImportStatus({
+          type: "info",
+          message: "Backup created. Processing file...",
+        });
+      } catch (snapshotError) {
+        console.warn("Failed to create auto-snapshot:", snapshotError);
+        setImportStatus({
+          type: "info",
+          message: "Processing file (backup failed)...",
+        });
+      }
+
+      const arrayBuffer = await importFile.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+      // Look for the "Risks" worksheet
+      const risksSheet = workbook.Sheets["Risks"];
+      if (!risksSheet) {
+        setImportStatus({
+          type: "error",
+          message: "No 'Risks' worksheet found in the Excel file",
+        });
+        return;
+      }
+
+      // Convert to JSON
+      const jsonData = XLSX.utils.sheet_to_json(risksSheet, { header: 1 });
+
+      if (jsonData.length < 2) {
+        setImportStatus({
+          type: "error",
+          message:
+            "Excel file must contain at least a header row and one data row",
+        });
+        return;
+      }
+
+      // Get headers (first row)
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1) as any[][];
+
+      // Map Excel columns to risk fields
+      const riskData = dataRows
+        .map((row, index) => {
+          const risk: Partial<Risk> = {};
+
+          headers.forEach((header, colIndex) => {
+            const value = row[colIndex];
+            if (value !== undefined && value !== null && value !== "") {
+              switch (header.toLowerCase()) {
+                case "risk id":
+                  risk.id = typeof value === "number" ? value : parseInt(value);
+                  break;
+                case "title":
+                case "risk name":
+                  risk.risk_name = String(value);
+                  break;
+                case "description":
+                  risk.risk_description = String(value);
+                  break;
+                case "category":
+                  risk.category = String(value);
+                  break;
+                case "status":
+                  risk.status = String(value).toLowerCase().replace(" ", "_");
+                  break;
+                case "risk level":
+                  risk.risk_level = String(value);
+                  break;
+                case "probability":
+                  risk.probability =
+                    typeof value === "number" ? value : parseInt(value);
+                  break;
+                case "impact":
+                  risk.impact =
+                    typeof value === "number" ? value : parseInt(value);
+                  break;
+                case "risk score":
+                  // Skip - this is calculated from probability * impact
+                  break;
+                case "risk owner":
+                  risk.risk_owner = String(value);
+                  break;
+                case "assigned to":
+                  risk.assigned_to = String(value);
+                  break;
+                case "probability basis":
+                  risk.probability_basis = String(value);
+                  break;
+                case "impact basis":
+                  risk.impact_basis = String(value);
+                  break;
+                case "notes":
+                  risk.notes = String(value);
+                  break;
+                case "latest reviewed date":
+                  if (value instanceof Date) {
+                    risk.latest_reviewed_date = value.toISOString();
+                  } else if (typeof value === "string") {
+                    risk.latest_reviewed_date = new Date(value).toISOString();
+                  }
+                  break;
+              }
+            }
+          });
+
+          // Set required fields with defaults if missing
+          risk.owner_id = risk.owner_id || 1; // Default to user ID 1
+          risk.probability = risk.probability || 1;
+          risk.impact = risk.impact || 1;
+          risk.status = risk.status || "open";
+          risk.risk_level = risk.risk_level || "Low";
+          risk.category = risk.category || "operational";
+
+          return risk;
+        })
+        .filter((risk) => risk.risk_name); // Only include risks with names
+
+      if (riskData.length === 0) {
+        setImportStatus({
+          type: "error",
+          message: "No valid risk data found in the Excel file",
+        });
+        return;
+      }
+
+      // Send to backend
+      setImportStatus({
+        type: "info",
+        message: `Importing ${riskData.length} risks...`,
+      });
+
+      const importPromises = riskData.map((risk) =>
+        api.post("/risks", risk).catch((error) => {
+          console.error("Error importing risk:", error);
+          return { error: error.message, risk };
+        })
+      );
+
+      const results = await Promise.all(importPromises);
+      const successful = results.filter((result) => !result.error).length;
+      const failed = results.filter((result) => result.error).length;
+
+      if (failed === 0) {
+        setImportStatus({
+          type: "success",
+          message: `Successfully imported ${successful} risks!`,
+        });
+        // Refresh snapshots to show the auto-backup
+        refetchSnapshots();
+        // Refresh the risks data
+        window.location.reload();
+      } else {
+        setImportStatus({
+          type: "error",
+          message: `Imported ${successful} risks, ${failed} failed. Check console for details.`,
+        });
+        // Still refresh snapshots to show the auto-backup
+        refetchSnapshots();
+      }
+
+      // Clear the file input
+      setImportFile(null);
+      const fileInput = document.getElementById(
+        "import-file"
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+    } catch (error) {
+      console.error("Import error:", error);
+      setImportStatus({
+        type: "error",
+        message: `Import failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    }
+  };
+
+  const createNewSnapshot = async () => {
+    if (!snapshotName.trim()) {
+      setSnapshotStatus({
+        type: "error",
+        message: "Please enter a snapshot name",
+      });
+      return;
+    }
+
+    try {
+      setSnapshotStatus({ type: "info", message: "Creating snapshot..." });
+
+      await createSnapshot({
+        name: snapshotName.trim(),
+        description: snapshotDescription.trim() || undefined,
+      });
+
+      setSnapshotStatus({
+        type: "success",
+        message: "Snapshot created successfully!",
+      });
+
+      // Clear form
+      setSnapshotName("");
+      setSnapshotDescription("");
+      setShowCreateSnapshot(false);
+
+      // Refresh snapshots
+      refetchSnapshots();
+    } catch (error) {
+      console.error("Snapshot creation error:", error);
+      setSnapshotStatus({
+        type: "error",
+        message: `Failed to create snapshot: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    }
+  };
+
+  const handleDeleteSnapshot = async (snapshotId: number) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this snapshot? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteSnapshot(snapshotId);
+      setSnapshotStatus({
+        type: "success",
+        message: "Snapshot deleted successfully!",
+      });
+      refetchSnapshots();
+    } catch (error) {
+      console.error("Snapshot deletion error:", error);
+      setSnapshotStatus({
+        type: "error",
+        message: `Failed to delete snapshot: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    }
+  };
+
+  const handleRestoreSnapshot = async (snapshotId: number) => {
+    if (
+      !confirm(
+        "Are you sure you want to restore this snapshot? This will replace ALL current risk and action item data. This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setSnapshotStatus({ type: "info", message: "Restoring snapshot..." });
+
+      const result = await restoreSnapshot(snapshotId, true);
+
+      if (result.success) {
+        setSnapshotStatus({
+          type: "success",
+          message: result.message,
+        });
+        // Refresh all data
+        window.location.reload();
+      } else {
+        setSnapshotStatus({
+          type: "error",
+          message: result.message,
+        });
+      }
+    } catch (error) {
+      console.error("Snapshot restore error:", error);
+      setSnapshotStatus({
+        type: "error",
+        message: `Failed to restore snapshot: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    }
+  };
+
+  const handleExportSnapshot = async (
+    snapshotId: number,
+    snapshotName: string
+  ) => {
+    try {
+      setSnapshotStatus({ type: "info", message: "Exporting snapshot..." });
+
+      const blob = await exportSnapshot(snapshotId);
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Create filename
+      const safeName = snapshotName.replace(/[^a-zA-Z0-9\s-_]/g, "");
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[:.]/g, "-");
+      link.download = `RiskWorks_Snapshot_${safeName}_${timestamp}.json`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSnapshotStatus({
+        type: "success",
+        message: "Snapshot exported successfully!",
+      });
+    } catch (error) {
+      console.error("Snapshot export error:", error);
+      setSnapshotStatus({
+        type: "error",
+        message: "Failed to export snapshot. Please try again.",
+      });
+    }
+  };
+
+  const handleSnapshotFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log(
+        "File selected:",
+        file.name,
+        "type:",
+        file.type,
+        "size:",
+        file.size
+      );
+      if (
+        file.type === "application/json" ||
+        file.name.endsWith(".json") ||
+        file.type === ""
+      ) {
+        setSnapshotImportFile(file);
+        setSnapshotStatus({
+          type: "info",
+          message: `Selected file: ${file.name}`,
+        });
+      } else {
+        setSnapshotStatus({
+          type: "error",
+          message: "Please select a JSON file exported from RiskWorks.",
+        });
+      }
+    }
+  };
+
+  const handleImportSnapshot = async () => {
+    if (!snapshotImportFile) {
+      setSnapshotStatus({
+        type: "error",
+        message: "Please select a snapshot file to import.",
+      });
+      return;
+    }
+
+    try {
+      setSnapshotStatus({ type: "info", message: "Importing snapshot..." });
+
+      const result = await importSnapshot(snapshotImportFile);
+
+      if (result.success) {
+        setSnapshotStatus({
+          type: "success",
+          message: result.message,
+        });
+        // Clear the file input
+        setSnapshotImportFile(null);
+        const fileInput = document.getElementById(
+          "snapshot-import-file"
+        ) as HTMLInputElement;
+        if (fileInput) fileInput.value = "";
+        // Refresh snapshots list
+        refetchSnapshots();
+      } else {
+        setSnapshotStatus({
+          type: "error",
+          message: result.message,
+        });
+      }
+    } catch (error) {
+      console.error("Snapshot import error:", error);
+      setSnapshotStatus({
+        type: "error",
+        message: "Failed to import snapshot. Please check the file format.",
+      });
+    }
+  };
 
   const generateExport = () => {
     if (!filteredRisks.length) return;
@@ -1902,6 +2380,270 @@ export default function Reports() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Snapshot Management Section */}
+      <div className="glass p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-secondary-900 flex items-center gap-2">
+          <Camera className="h-5 w-5" />
+          Risk Register Snapshots
+        </h3>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm text-secondary-600 mb-3">
+              Create snapshots of your current risk register to save the state
+              before making changes. You can restore from any snapshot if
+              needed.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCreateSnapshot(!showCreateSnapshot)}
+                className="btn-primary"
+              >
+                <Camera className="h-4 w-4" />
+                Create Snapshot
+              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  id="snapshot-import-file"
+                  type="file"
+                  accept=".json"
+                  onChange={handleSnapshotFileSelect}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="snapshot-import-file"
+                  className="btn-secondary cursor-pointer"
+                >
+                  <Upload className="h-4 w-4" />
+                  Import Snapshot
+                </label>
+                {snapshotImportFile && (
+                  <button
+                    onClick={handleImportSnapshot}
+                    className="btn-primary"
+                  >
+                    Import
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Snapshot Form */}
+        {showCreateSnapshot && (
+          <div className="border border-secondary-200 rounded-lg p-4 bg-secondary-50">
+            <h4 className="text-md font-medium text-secondary-900 mb-3">
+              Create New Snapshot
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Snapshot Name *
+                </label>
+                <input
+                  type="text"
+                  value={snapshotName}
+                  onChange={(e) => setSnapshotName(e.target.value)}
+                  placeholder="e.g., Before Import - Dec 2024"
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={snapshotDescription}
+                  onChange={(e) => setSnapshotDescription(e.target.value)}
+                  placeholder="Describe what this snapshot contains or why you're creating it..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={createNewSnapshot} className="btn-primary">
+                  <Camera className="h-4 w-4" />
+                  Create Snapshot
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreateSnapshot(false);
+                    setSnapshotName("");
+                    setSnapshotDescription("");
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Snapshots List */}
+        {snapshots && snapshots.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-md font-medium text-secondary-900 flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Available Snapshots ({snapshots.length})
+            </h4>
+            <div className="grid gap-3">
+              {snapshots.map((snapshot) => (
+                <div
+                  key={snapshot.id}
+                  className="border border-secondary-200 rounded-lg p-4 bg-white"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h5 className="font-medium text-secondary-900">
+                        {snapshot.name}
+                      </h5>
+                      {snapshot.description && (
+                        <p className="text-sm text-secondary-600 mt-1">
+                          {snapshot.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 mt-2 text-xs text-secondary-500">
+                        <span>
+                          {new Date(snapshot.created_at).toLocaleString()}
+                        </span>
+                        <span>{snapshot.risk_count} risks</span>
+                        <span>{snapshot.action_items_count} action items</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() =>
+                          handleExportSnapshot(snapshot.id, snapshot.name)
+                        }
+                        className="btn-primary text-xs"
+                        title="Export this snapshot as a file"
+                      >
+                        <Download className="h-3 w-3" />
+                        Export
+                      </button>
+                      <button
+                        onClick={() => handleRestoreSnapshot(snapshot.id)}
+                        className="btn-secondary text-xs"
+                        title="Restore this snapshot"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSnapshot(snapshot.id)}
+                        className="btn-danger text-xs"
+                        title="Delete this snapshot"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {snapshots && snapshots.length === 0 && (
+          <div className="text-center py-8">
+            <History className="h-12 w-12 text-secondary-400 mx-auto mb-4" />
+            <p className="text-secondary-600">No snapshots created yet</p>
+            <p className="text-sm text-secondary-500 mt-1">
+              Create your first snapshot to save the current state of your risk
+              register
+            </p>
+          </div>
+        )}
+
+        {/* Snapshot Status */}
+        {snapshotStatus.type && (
+          <div
+            className={`p-3 rounded-lg ${
+              snapshotStatus.type === "success"
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : snapshotStatus.type === "error"
+                ? "bg-red-50 border border-red-200 text-red-800"
+                : "bg-blue-50 border border-blue-200 text-blue-800"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {snapshotStatus.type === "success" && (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              {snapshotStatus.type === "error" && (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              {snapshotStatus.type === "info" && <Clock className="h-4 w-4" />}
+              <span className="text-sm font-medium">
+                {snapshotStatus.message}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Import Section */}
+      <div className="glass p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-secondary-900 flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Import Risks from Excel
+        </h3>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm text-secondary-600 mb-3">
+              Import risk data from an Excel file with the same structure as the
+              export format. The file should have a "Risks" worksheet with
+              columns matching the export format.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                id="import-file"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="block w-full text-sm text-secondary-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+              />
+              <button
+                onClick={importExcelData}
+                disabled={!importFile}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Import Status */}
+        {importStatus.type && (
+          <div
+            className={`p-3 rounded-lg ${
+              importStatus.type === "success"
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : importStatus.type === "error"
+                ? "bg-red-50 border border-red-200 text-red-800"
+                : "bg-blue-50 border border-blue-200 text-blue-800"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {importStatus.type === "success" && (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              {importStatus.type === "error" && (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              {importStatus.type === "info" && <Clock className="h-4 w-4" />}
+              <span className="text-sm font-medium">
+                {importStatus.message}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Preview */}

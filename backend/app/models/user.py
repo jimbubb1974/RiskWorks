@@ -18,5 +18,6 @@ class User(Base):
 	created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 	risks = relationship("Risk", back_populates="owner", foreign_keys="[Risk.owner_id]", cascade="all, delete-orphan")
+	snapshots = relationship("Snapshot", back_populates="creator", cascade="all, delete-orphan")
 
 

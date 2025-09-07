@@ -68,6 +68,12 @@ import type {
   ActionItemCreate,
   ActionItemUpdate,
 } from "../types/actionItem";
+import type {
+  Snapshot,
+  SnapshotCreate,
+  SnapshotUpdate,
+  SnapshotRestore,
+} from "../types/snapshot";
 
 export async function getActionItems(params?: {
   risk_id?: number;
@@ -122,5 +128,81 @@ export async function updateActionItemStatus(
       progress_percentage,
     }
   );
+  return data;
+}
+
+// Snapshots API
+export async function createSnapshot(
+  snapshot: SnapshotCreate
+): Promise<Snapshot> {
+  const { data } = await apiClient.post<Snapshot>("/snapshots/", snapshot);
+  return data;
+}
+
+export async function getSnapshots(): Promise<Snapshot[]> {
+  const { data } = await apiClient.get<Snapshot[]>("/snapshots/");
+  return data;
+}
+
+export async function getSnapshot(id: number): Promise<Snapshot> {
+  const { data } = await apiClient.get<Snapshot>(`/snapshots/${id}`);
+  return data;
+}
+
+export async function updateSnapshot(
+  id: number,
+  snapshot: SnapshotUpdate
+): Promise<Snapshot> {
+  const { data } = await apiClient.put<Snapshot>(`/snapshots/${id}`, snapshot);
+  return data;
+}
+
+export async function deleteSnapshot(id: number): Promise<void> {
+  await apiClient.delete(`/snapshots/${id}`);
+}
+
+export async function restoreSnapshot(
+  id: number,
+  confirm: boolean = true
+): Promise<{
+  success: boolean;
+  message: string;
+  restored_risks?: number;
+  restored_action_items?: number;
+}> {
+  const { data } = await apiClient.post(`/snapshots/${id}/restore`, {
+    snapshot_id: id,
+    confirm,
+  });
+  return data;
+}
+
+export async function exportSnapshot(id: number): Promise<Blob> {
+  const response = await apiClient.get(`/snapshots/${id}/export`, {
+    responseType: "blob",
+  });
+  return response.data;
+}
+
+export async function importSnapshot(file: File): Promise<{
+  success: boolean;
+  message: string;
+  snapshot_id?: number;
+  imported_risks?: number;
+  imported_action_items?: number;
+}> {
+  console.log(
+    "Importing file:",
+    file.name,
+    "type:",
+    file.type,
+    "size:",
+    file.size
+  );
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await apiClient.post("/snapshots/import", formData);
   return data;
 }

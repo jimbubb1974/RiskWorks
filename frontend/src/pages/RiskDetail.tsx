@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { deleteRisk, getRisk } from "../services/risks";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Risk } from "../types/risk";
 
 import type { ActionItem } from "../types/actionItem";
@@ -30,6 +31,7 @@ import {
 export default function RiskDetail() {
   const params = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [risk, setRisk] = useState<Risk | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -52,6 +54,8 @@ export default function RiskDetail() {
   async function onDelete() {
     if (!params.id) return;
     await deleteRisk(Number(params.id));
+    // Invalidate risks cache to refresh the list
+    queryClient.invalidateQueries({ queryKey: ["risks"] });
     navigate("/risks");
   }
 

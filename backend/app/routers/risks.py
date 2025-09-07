@@ -59,9 +59,9 @@ def create_risk_endpoint(payload: RiskCreate, db: Session = Depends(get_db), use
 	# Convert payload to dict and handle new fields
 	risk_data = payload.model_dump()
 	
-	# Ensure likelihood and impact are set
-	if "likelihood" not in risk_data:
-		risk_data["likelihood"] = 3
+	# Ensure probability and impact are set
+	if "probability" not in risk_data:
+		risk_data["probability"] = 3
 	if "impact" not in risk_data:
 		risk_data["impact"] = 3
 	

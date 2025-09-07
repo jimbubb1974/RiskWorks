@@ -34,18 +34,6 @@ class Risk(Base):
 	created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 	updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 	
-	# Legacy fields for backward compatibility (will be removed in future migration)
-	title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-	description: Mapped[str | None] = mapped_column(Text, nullable=True)
-	likelihood: Mapped[int | None] = mapped_column(Integer, nullable=True)
-	severity: Mapped[int | None] = mapped_column(Integer, nullable=True)
-	department: Mapped[str | None] = mapped_column(String(100), nullable=True)
-	location: Mapped[str | None] = mapped_column(String(100), nullable=True)
-	root_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
-	mitigation_strategy: Mapped[str | None] = mapped_column(Text, nullable=True)
-	contingency_plan: Mapped[str | None] = mapped_column(Text, nullable=True)
-	target_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-	review_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 	owner = relationship("User", back_populates="risks", foreign_keys=[owner_id])
 	assigned_user = relationship("User", foreign_keys=[assigned_to], back_populates=None)

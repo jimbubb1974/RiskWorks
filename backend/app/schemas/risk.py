@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 Status = Literal["open", "closed", "draft"]
@@ -19,7 +19,20 @@ class RiskBase(BaseModel):
 	# Risk details
 	category: Optional[Category] = Field(default="operational", description="Risk category")
 	risk_owner: Optional[str] = Field(default="Unassigned", max_length=100, description="Person responsible for the risk")
-	latest_reviewed_date: Optional[datetime] = Field(None, description="Date when risk was last reviewed")
+	latest_reviewed_date: Optional[Union[datetime, str]] = Field(None, description="Date when risk was last reviewed")
+	
+	@field_validator('latest_reviewed_date', mode='before')
+	@classmethod
+	def parse_latest_reviewed_date(cls, v):
+		if v is None or v == "":
+			return None
+		if isinstance(v, str):
+			try:
+				return datetime.fromisoformat(v.replace('Z', '+00:00'))
+			except ValueError:
+				# If parsing fails, return None
+				return None
+		return v
 	probability_basis: Optional[str] = Field(None, description="Justification for the probability rating")
 	impact_basis: Optional[str] = Field(None, description="Justification for the impact rating")
 	notes: Optional[str] = Field(None, description="Additional notes and comments about the risk")

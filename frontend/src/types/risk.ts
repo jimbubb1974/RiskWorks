@@ -39,7 +39,7 @@ export type RiskCreate = {
   latest_reviewed_date?: string;
   probability_basis?: string;
   impact_basis?: string;
-  // notes?: string;  // Temporarily commented out
+  notes?: string;
   status?: RiskStatus;
   assigned_to?: number;
 };
