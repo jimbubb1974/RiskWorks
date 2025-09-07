@@ -14,6 +14,18 @@ import { api } from "../services/api";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  AlignmentType,
+  HeadingLevel,
+} from "docx";
 
 // Set up PDFMake fonts
 pdfMake.vfs = pdfFonts;
@@ -53,6 +65,12 @@ export default function Reports() {
 
     if (selectedFormat === "excel") {
       generateExcel();
+    } else if (selectedFormat === "word") {
+      if (selectedReportType === "risk-detail") {
+        generateWordDetail();
+      } else {
+        generateWordSummary();
+      }
     } else if (selectedReportType === "risk-detail") {
       generateRiskDetailPDFKit();
     } else {
@@ -386,6 +404,711 @@ export default function Reports() {
 
     // Write and download the file
     XLSX.writeFile(workbook, filename);
+  };
+
+  const generateWordSummary = async () => {
+    // Build filters text
+    const filtersText = [];
+    if (selectedCategory !== "all") {
+      filtersText.push(`Category: ${selectedCategory}`);
+    }
+    if (selectedStatus !== "all") {
+      filtersText.push(`Status: ${selectedStatus}`);
+    }
+
+    // Create table rows
+    const tableRows = [
+      // Header row
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Title", bold: true })],
+              }),
+            ],
+            width: { size: 30, type: WidthType.PERCENTAGE },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Category", bold: true })],
+              }),
+            ],
+            width: { size: 15, type: WidthType.PERCENTAGE },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Risk Level", bold: true })],
+              }),
+            ],
+            width: { size: 12, type: WidthType.PERCENTAGE },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Status", bold: true })],
+              }),
+            ],
+            width: { size: 12, type: WidthType.PERCENTAGE },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Owner", bold: true })],
+              }),
+            ],
+            width: { size: 15, type: WidthType.PERCENTAGE },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Score", bold: true })],
+              }),
+            ],
+            width: { size: 10, type: WidthType.PERCENTAGE },
+          }),
+        ],
+      }),
+      // Data rows
+      ...filteredRisks.map(
+        (risk) =>
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: risk.risk_name })],
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: risk.category || "N/A" })],
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: risk.risk_level,
+                        color:
+                          risk.risk_level === "High"
+                            ? "DC2626"
+                            : risk.risk_level === "Medium"
+                            ? "F59E0B"
+                            : "22C55E",
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: risk.status
+                          .replace("_", " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase()),
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: risk.risk_owner || "Unassigned" }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: risk.score.toString() })],
+                  }),
+                ],
+              }),
+            ],
+          })
+      ),
+    ];
+
+    // Create document sections
+    const sections = [
+      // Header
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "RiskWorks - Risk Summary Report",
+            bold: true,
+            size: 32,
+            color: "3B82F6",
+          }),
+        ],
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 200 },
+      }),
+      // Generation date
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Generated on: ${new Date().toLocaleDateString()}`,
+            size: 20,
+            color: "64748B",
+          }),
+        ],
+        spacing: { after: 100 },
+      }),
+      // Total risks
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Total Risks: ${filteredRisks.length}`,
+            size: 20,
+            color: "64748B",
+          }),
+        ],
+        spacing: { after: 200 },
+      }),
+    ];
+
+    // Add filters if any
+    if (filtersText.length > 0) {
+      sections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Filters Applied:",
+              bold: true,
+              size: 20,
+              color: "64748B",
+            }),
+          ],
+          spacing: { after: 100 },
+        })
+      );
+      filtersText.forEach((filter) => {
+        sections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: filter,
+                size: 20,
+                color: "64748B",
+              }),
+            ],
+            indent: { left: 400 },
+            spacing: { after: 50 },
+          })
+        );
+      });
+      sections.push(new Paragraph({ children: [new TextRun({ text: "" })] }));
+    }
+
+    // Add table
+    sections.push(
+      new Table({
+        rows: tableRows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      })
+    );
+
+    // Create document
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Roboto",
+            },
+            paragraph: {
+              font: "Roboto",
+            },
+          },
+        },
+      },
+      sections: [
+        {
+          children: sections,
+        },
+      ],
+    });
+
+    // Generate and download
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `risk-summary-${
+      new Date().toISOString().split("T")[0]
+    }.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateWordDetail = async () => {
+    // Create sections for each risk
+    const riskSections = filteredRisks.map((risk, index) => {
+      const riskScore = risk.probability * risk.impact;
+
+      return [
+        // Page break for each risk
+        new Paragraph({
+          children: [new TextRun({ text: "", break: 1 })],
+          pageBreakBefore: true,
+        }),
+
+        // Title Section (90% / 10% split)
+        new Table({
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Title",
+                          bold: true,
+                          color: "3B82F6",
+                          size: 20,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: risk.risk_name,
+                          bold: true,
+                          size: 24,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: { size: 90, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `ID: ${risk.id}`,
+                          size: 16,
+                          color: "64748B",
+                        }),
+                      ],
+                      alignment: AlignmentType.RIGHT,
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: risk.status
+                            .replace("_", " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase()),
+                          size: 16,
+                          color: "64748B",
+                          bold: true,
+                        }),
+                      ],
+                      alignment: AlignmentType.RIGHT,
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: { size: 10, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+          ],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }),
+
+        // Description
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Description",
+              bold: true,
+              color: "3B82F6",
+              size: 18,
+            }),
+          ],
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: risk.risk_description || "No description provided",
+              size: 20,
+            }),
+          ],
+          spacing: { after: 200 },
+        }),
+
+        // Two Column Layout for Basic Information and Risk Assessment
+        new Table({
+          rows: [
+            new TableRow({
+              children: [
+                // Left Column - Basic Information
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Basic Information",
+                          bold: true,
+                          color: "1E293B",
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Risk Owner:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${risk.risk_owner || "Not specified"}`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Latest Reviewed:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${
+                            risk.latest_reviewed_date
+                              ? new Date(
+                                  risk.latest_reviewed_date
+                                ).toLocaleDateString()
+                              : "Never reviewed"
+                          }`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Category:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${risk.category || "Not specified"}`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Created By (Owner ID):",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` User ID: ${risk.owner_id}`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Assigned To:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${
+                            risk.assigned_to
+                              ? `User ID: ${risk.assigned_to}`
+                              : "Not assigned"
+                          }`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: { size: 48, type: WidthType.PERCENTAGE },
+                }),
+                // Right Column - Risk Assessment
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Risk Assessment",
+                          bold: true,
+                          color: "1E293B",
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Probability:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${risk.probability}/5`,
+                          size: 18,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Impact:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({ text: ` ${risk.impact}/5`, size: 18 }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Risk Score:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${riskScore}`,
+                          bold: true,
+                          size: 22,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Risk Level:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({ text: ` ${risk.risk_level}`, size: 18 }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: { size: 48, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+          ],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }),
+
+        // Full Width Sections
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Probability Basis",
+              bold: true,
+              color: "3B82F6",
+              size: 18,
+            }),
+          ],
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text:
+                risk.probability_basis ||
+                "No probability justification provided",
+              size: 18,
+            }),
+          ],
+          spacing: { after: 200 },
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Impact Basis",
+              bold: true,
+              color: "3B82F6",
+              size: 18,
+            }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: risk.impact_basis || "No impact justification provided",
+              size: 18,
+            }),
+          ],
+          spacing: { after: 200 },
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Notes",
+              bold: true,
+              color: "3B82F6",
+              size: 18,
+            }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: risk.notes || "No notes provided", size: 18 }),
+          ],
+          spacing: { after: 200 },
+        }),
+
+        // Audit Information
+        new Table({
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Created At:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${new Date(
+                            risk.created_at
+                          ).toLocaleString()}`,
+                          size: 18,
+                        }),
+                      ],
+                    }),
+                  ],
+                  width: { size: 48, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Last Updated:",
+                          bold: true,
+                          color: "64748B",
+                          size: 18,
+                        }),
+                        new TextRun({
+                          text: ` ${new Date(
+                            risk.updated_at
+                          ).toLocaleString()}`,
+                          size: 18,
+                        }),
+                      ],
+                    }),
+                  ],
+                  width: { size: 48, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+          ],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }),
+
+        // Footer
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated on: ${new Date().toLocaleDateString()}`,
+              size: 14,
+              color: "64748B",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 200 },
+        }),
+      ];
+    });
+
+    // Flatten all sections
+    const allSections = riskSections.flat();
+
+    // Create document
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Roboto",
+            },
+            paragraph: {
+              font: "Roboto",
+            },
+          },
+        },
+      },
+      sections: [
+        {
+          children: allSections,
+        },
+      ],
+    });
+
+    // Generate and download
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `risk-detail-report-${
+      new Date().toISOString().split("T")[0]
+    }.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Removed generateDetailedPDF function - no longer used
@@ -1161,9 +1884,7 @@ export default function Reports() {
                 >
                   <option value="pdf">PDF</option>
                   <option value="excel">Excel</option>
-                  <option value="word" disabled>
-                    Word (Coming Soon)
-                  </option>
+                  <option value="word">Word</option>
                 </select>
               </div>
             </div>
