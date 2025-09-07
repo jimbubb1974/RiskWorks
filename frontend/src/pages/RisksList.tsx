@@ -20,19 +20,19 @@ import {
 export default function RisksList() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<string>("");
-  const [minLikelihood, setMinLikelihood] = useState<number | "">("");
+  const [minProbability, setMinProbability] = useState<number | "">("");
   const [search, setSearch] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("score");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const { data: risks = [], isLoading } = useQuery({
-    queryKey: ["risks", status, minLikelihood, search, sortBy, order],
+    queryKey: ["risks", status, minProbability, search, sortBy, order],
     queryFn: () =>
       listRisks({
         status: status || undefined,
-        min_likelihood:
-          typeof minLikelihood === "number" ? minLikelihood : undefined,
+        min_probability:
+          typeof minProbability === "number" ? minProbability : undefined,
         search: search || undefined,
         sort_by: sortBy || undefined,
         order,
@@ -135,10 +135,10 @@ export default function RisksList() {
             type="number"
             min={1}
             max={5}
-            placeholder="Min likelihood"
-            value={minLikelihood}
+            placeholder="Min probability"
+            value={minProbability}
             onChange={(e) =>
-              setMinLikelihood(e.target.value ? Number(e.target.value) : "")
+              setMinProbability(e.target.value ? Number(e.target.value) : "")
             }
             className="input"
           />
@@ -151,10 +151,10 @@ export default function RisksList() {
           >
             <option value="created_at">Created Date</option>
             <option value="updated_at">Updated Date</option>
-            <option value="likelihood">Likelihood</option>
+            <option value="probability">Probability</option>
             <option value="impact">Impact</option>
             <option value="score">Risk Score</option>
-            <option value="title">Title</option>
+            <option value="risk_name">Risk Name</option>
             <option value="status">Status</option>
           </select>
 
@@ -218,12 +218,12 @@ export default function RisksList() {
                 <tr className="border-b border-secondary-200">
                   <th
                     className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
-                    onClick={() => handleSort("title")}
+                    onClick={() => handleSort("risk_name")}
                   >
                     <div className="flex items-center gap-2">
                       Risk
                       <SortIndicator
-                        field="title"
+                        field="risk_name"
                         currentSort={sortBy}
                         order={order}
                       />
@@ -231,12 +231,12 @@ export default function RisksList() {
                   </th>
                   <th
                     className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
-                    onClick={() => handleSort("likelihood")}
+                    onClick={() => handleSort("probability")}
                   >
                     <div className="flex items-center gap-2">
-                      Likelihood
+                      Probability
                       <SortIndicator
-                        field="likelihood"
+                        field="probability"
                         currentSort={sortBy}
                         order={order}
                       />
@@ -307,24 +307,24 @@ export default function RisksList() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <RiskSeverityIndicator severity={risk.likelihood} />
+                        <RiskSeverityIndicator severity={risk.probability} />
                         <div>
                           <h4 className="font-medium text-secondary-900 truncate max-w-xs">
-                            {risk.title}
+                            {risk.risk_name}
                           </h4>
-                          {risk.description && (
+                          {risk.risk_description && (
                             <p className="text-sm text-secondary-600 truncate max-w-xs">
-                              {risk.description}
+                              {risk.risk_description}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <SeverityBadge severity={risk.impact} />
+                      <ProbabilityBadge probability={risk.probability} />
                     </td>
                     <td className="px-6 py-4">
-                      <ProbabilityBadge probability={risk.impact} />
+                      <SeverityBadge severity={risk.impact} />
                     </td>
                     <td className="px-6 py-4">
                       <RiskScoreBadge score={risk.score} />
@@ -427,7 +427,7 @@ function RiskScoreBadge({ score }: { score: number }) {
 }
 
 function RiskCard({ risk }: { risk: any }) {
-  const riskScore = risk.likelihood * risk.impact;
+  const riskScore = risk.probability * risk.impact;
 
   return (
     <div className="group bg-white rounded-xl border border-secondary-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
@@ -445,7 +445,7 @@ function RiskCard({ risk }: { risk: any }) {
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <RiskSeverityIndicator severity={risk.likelihood} />
+              <RiskSeverityIndicator severity={risk.probability} />
               <StatusBadge status={risk.status} />
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -468,11 +468,11 @@ function RiskCard({ risk }: { risk: any }) {
 
           {/* Risk title and description */}
           <h3 className="font-semibold text-secondary-900 text-lg mb-2 line-clamp-2 group-hover:text-primary-700 transition-colors">
-            {risk.title}
+            {risk.risk_name}
           </h3>
-          {risk.description && (
+          {risk.risk_description && (
             <p className="text-secondary-600 text-sm line-clamp-3 mb-4">
-              {risk.description}
+              {risk.risk_description}
             </p>
           )}
         </div>
@@ -483,15 +483,15 @@ function RiskCard({ risk }: { risk: any }) {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-secondary-50 rounded-lg">
             <div className="text-xs text-secondary-500 mb-2 font-medium">
-              Severity
-            </div>
-            <SeverityBadge severity={risk.likelihood} />
-          </div>
-          <div className="text-center p-3 bg-secondary-50 rounded-lg">
-            <div className="text-xs text-secondary-500 mb-2 font-medium">
               Probability
             </div>
             <ProbabilityBadge probability={risk.probability} />
+          </div>
+          <div className="text-center p-3 bg-secondary-50 rounded-lg">
+            <div className="text-xs text-secondary-500 mb-2 font-medium">
+              Impact
+            </div>
+            <SeverityBadge severity={risk.impact} />
           </div>
           <div className="text-center p-3 bg-secondary-50 rounded-lg">
             <div className="text-xs text-secondary-500 mb-2 font-medium">
