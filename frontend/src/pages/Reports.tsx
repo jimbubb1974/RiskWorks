@@ -58,6 +58,21 @@ export default function Reports() {
     type: "success" | "error" | "info" | null;
     message: string;
   }>({ type: null, message: "" });
+  const [importConflicts, setImportConflicts] = useState<{
+    conflicts: Array<{
+      excelRisk: any;
+      existingRisk: any;
+      conflictType: "id_exists" | "name_exists" | "both";
+    }>;
+    newRisks: any[];
+    newActionItems: any[];
+    showConflictResolution: boolean;
+  }>({
+    conflicts: [],
+    newRisks: [],
+    newActionItems: [],
+    showConflictResolution: false,
+  });
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotDescription, setSnapshotDescription] = useState("");
   const [showCreateSnapshot, setShowCreateSnapshot] = useState(false);
@@ -119,7 +134,7 @@ export default function Reports() {
     }
   };
 
-  const importExcelData = async () => {
+  const analyzeExcelConflicts = async () => {
     if (!importFile) {
       setImportStatus({
         type: "error",
@@ -165,28 +180,34 @@ export default function Reports() {
         return;
       }
 
-      // Convert to JSON
-      const jsonData = XLSX.utils.sheet_to_json(risksSheet, { header: 1 });
+      // Look for the "Action Items" worksheet (optional)
+      const actionItemsSheet = workbook.Sheets["Action Items"];
 
-      if (jsonData.length < 2) {
+      // Convert to JSON
+      const risksJsonData = XLSX.utils.sheet_to_json(risksSheet, { header: 1 });
+      const actionItemsJsonData = actionItemsSheet
+        ? XLSX.utils.sheet_to_json(actionItemsSheet, { header: 1 })
+        : [];
+
+      if (risksJsonData.length < 2) {
         setImportStatus({
           type: "error",
           message:
-            "Excel file must contain at least a header row and one data row",
+            "Excel file must contain at least a header row and one data row in the Risks worksheet",
         });
         return;
       }
 
       // Get headers (first row)
-      const headers = jsonData[0] as string[];
-      const dataRows = jsonData.slice(1) as any[][];
+      const risksHeaders = risksJsonData[0] as string[];
+      const risksDataRows = risksJsonData.slice(1) as any[][];
 
       // Map Excel columns to risk fields
-      const riskData = dataRows
+      const riskData = risksDataRows
         .map((row, index) => {
           const risk: Partial<Risk> = {};
 
-          headers.forEach((header, colIndex) => {
+          risksHeaders.forEach((header, colIndex) => {
             const value = row[colIndex];
             if (value !== undefined && value !== null && value !== "") {
               switch (header.toLowerCase()) {
@@ -195,6 +216,7 @@ export default function Reports() {
                   break;
                 case "title":
                 case "risk name":
+                case "title/risk name":
                   risk.risk_name = String(value);
                   break;
                 case "description":
@@ -266,27 +288,342 @@ export default function Reports() {
         return;
       }
 
+      // Process action items if worksheet exists
+      let actionItemsData: any[] = [];
+      if (actionItemsJsonData.length >= 2) {
+        const actionItemsHeaders = actionItemsJsonData[0] as string[];
+        const actionItemsDataRows = actionItemsJsonData.slice(1) as any[][];
+
+        actionItemsData = actionItemsDataRows
+          .map((row, index) => {
+            const actionItem: Partial<any> = {};
+
+            actionItemsHeaders.forEach((header, colIndex) => {
+              const value = row[colIndex];
+              if (value !== undefined && value !== null && value !== "") {
+                switch (header.toLowerCase()) {
+                  case "id":
+                    actionItem.id =
+                      typeof value === "number" ? value : parseInt(value);
+                    break;
+                  case "title":
+                    actionItem.title = String(value);
+                    break;
+                  case "description":
+                    actionItem.description = String(value);
+                    break;
+                  case "action type":
+                    actionItem.action_type = String(value);
+                    break;
+                  case "priority":
+                    actionItem.priority = String(value);
+                    break;
+                  case "status":
+                    actionItem.status = String(value);
+                    break;
+                  case "assigned to":
+                    actionItem.assigned_to =
+                      typeof value === "number" ? value : parseInt(value);
+                    break;
+                  case "risk id":
+                    actionItem.risk_id =
+                      typeof value === "number" ? value : parseInt(value);
+                    break;
+                  case "due date":
+                    if (value instanceof Date) {
+                      actionItem.due_date = value.toISOString();
+                    } else if (typeof value === "string") {
+                      actionItem.due_date = new Date(value).toISOString();
+                    }
+                    break;
+                  case "progress percentage":
+                    actionItem.progress_percentage =
+                      typeof value === "number" ? value : parseInt(value);
+                    break;
+                }
+              }
+            });
+
+            // Set required fields with defaults if missing
+            actionItem.action_type = actionItem.action_type || "mitigation";
+            actionItem.priority = actionItem.priority || "medium";
+            actionItem.status = actionItem.status || "pending";
+            actionItem.progress_percentage =
+              actionItem.progress_percentage || 0;
+
+            return actionItem;
+          })
+          .filter((actionItem) => actionItem.title); // Only include action items with titles
+      }
+
+      // Helper function to compare risk data
+      const isRiskDataDifferent = (
+        excelRisk: any,
+        existingRisk: any
+      ): boolean => {
+        // Compare key fields that matter for conflicts
+        const fieldsToCompare = [
+          "risk_name",
+          "risk_description",
+          "category",
+          "status",
+          "probability",
+          "impact",
+          "risk_owner",
+          "assigned_to",
+          "probability_basis",
+          "impact_basis",
+          "notes",
+        ];
+
+        for (const field of fieldsToCompare) {
+          const excelValue = excelRisk[field];
+          const existingValue = existingRisk[field];
+
+          // Normalize values for comparison
+          const normalizeValue = (val: any) => {
+            if (val === null || val === undefined) return "";
+            if (typeof val === "string") {
+              const trimmed = val.trim();
+              // Convert string numbers to actual numbers for comparison
+              if (trimmed === "" || isNaN(Number(trimmed))) {
+                return trimmed;
+              }
+              return Number(trimmed);
+            }
+            return val;
+          };
+
+          const normalizedExcel = normalizeValue(excelValue);
+          const normalizedExisting = normalizeValue(existingValue);
+
+          if (normalizedExcel !== normalizedExisting) {
+            console.log(`Field '${field}' differs:`, {
+              excel: normalizedExcel,
+              existing: normalizedExisting,
+            });
+            return true;
+          }
+        }
+
+        return false;
+      };
+
+      // Analyze conflicts with existing risks
+      const conflicts: Array<{
+        excelRisk: any;
+        existingRisk: any;
+        conflictType: "id_exists" | "name_exists" | "both";
+      }> = [];
+      const newRisks: any[] = [];
+
+      for (const excelRisk of riskData) {
+        let hasConflict = false;
+        let conflictType: "id_exists" | "name_exists" | "both" = "id_exists";
+        let existingRisk = null;
+        let riskExists = false;
+
+        // Check for ID conflict
+        if (excelRisk.id) {
+          const idConflict = risks?.find((r) => r.id === excelRisk.id);
+          if (idConflict) {
+            riskExists = true;
+            // Only flag as conflict if data is actually different
+            const isDataDifferent = isRiskDataDifferent(excelRisk, idConflict);
+            if (isDataDifferent) {
+              hasConflict = true;
+              existingRisk = idConflict;
+              conflictType = "id_exists";
+            }
+          }
+        }
+
+        // Check for name conflict (if no ID conflict or ID not provided)
+        if (!riskExists || !excelRisk.id) {
+          const nameConflict = risks?.find(
+            (r) =>
+              r.risk_name?.toLowerCase() === excelRisk.risk_name?.toLowerCase()
+          );
+          if (nameConflict) {
+            riskExists = true;
+            // Only flag as conflict if data is actually different
+            const isDataDifferent = isRiskDataDifferent(
+              excelRisk,
+              nameConflict
+            );
+            if (isDataDifferent) {
+              if (hasConflict) {
+                conflictType = "both";
+              } else {
+                hasConflict = true;
+                conflictType = "name_exists";
+              }
+              existingRisk = nameConflict;
+            }
+          }
+        }
+
+        if (hasConflict) {
+          conflicts.push({
+            excelRisk,
+            existingRisk,
+            conflictType,
+          });
+        } else if (!riskExists) {
+          // Only add to newRisks if the risk doesn't already exist
+          newRisks.push(excelRisk);
+        }
+        // If riskExists but no conflict, skip it entirely (identical data)
+      }
+
+      // Analyze action items for duplicates
+      const newActionItems: any[] = [];
+      for (const excelActionItem of actionItemsData) {
+        let actionItemExists = false;
+
+        // Check if action item already exists by ID
+        if (excelActionItem.id) {
+          const existingActionItem = actionItems?.find(
+            (ai) => ai.id === excelActionItem.id
+          );
+          if (existingActionItem) {
+            actionItemExists = true;
+            // Skip if identical (no conflict detection for action items for now)
+            // Could add conflict detection here if needed
+          }
+        }
+
+        // Check if action item exists by title and risk_id combination
+        if (!actionItemExists) {
+          const existingActionItem = actionItems?.find(
+            (ai) =>
+              ai.title?.toLowerCase() ===
+                excelActionItem.title?.toLowerCase() &&
+              ai.risk_id === excelActionItem.risk_id
+          );
+          if (existingActionItem) {
+            actionItemExists = true;
+          }
+        }
+
+        // Only add to newActionItems if it doesn't already exist
+        if (!actionItemExists) {
+          newActionItems.push(excelActionItem);
+        }
+      }
+
+      // Show conflict resolution UI if there are conflicts
+      if (conflicts.length > 0) {
+        setImportConflicts({
+          conflicts,
+          newRisks,
+          newActionItems,
+          showConflictResolution: true,
+        });
+        setImportStatus({
+          type: "info",
+          message: `Found ${conflicts.length} conflicts, ${newRisks.length} new risks, and ${newActionItems.length} new action items. Please review conflicts below.`,
+        });
+      } else {
+        // No conflicts, proceed with import
+        await executeImport(newRisks, [], newActionItems);
+      }
+    } catch (error) {
+      console.error("Import error:", error);
+      setImportStatus({
+        type: "error",
+        message: `Import failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    }
+  };
+
+  const executeImport = async (
+    newRisks: any[],
+    resolvedConflicts: any[],
+    actionItems: any[] = []
+  ) => {
+    try {
+      setImportStatus({ type: "info", message: "Creating backup snapshot..." });
+
+      // Auto-create snapshot before import
+      const timestamp = new Date().toISOString().split("T")[0];
+      const autoSnapshotName = `Auto-backup before import - ${timestamp}`;
+
+      try {
+        await createSnapshot({
+          name: autoSnapshotName,
+          description: `Automatic backup created before importing Excel file: ${importFile?.name}`,
+        });
+        setImportStatus({
+          type: "info",
+          message: "Backup created. Importing risks...",
+        });
+      } catch (snapshotError) {
+        console.warn("Failed to create auto-snapshot:", snapshotError);
+        setImportStatus({
+          type: "info",
+          message: "Importing risks (backup failed)...",
+        });
+      }
+
+      const allRisksToImport = [...newRisks, ...resolvedConflicts];
+
+      if (allRisksToImport.length === 0 && actionItems.length === 0) {
+        setImportStatus({
+          type: "info",
+          message: "No data to import.",
+        });
+        return;
+      }
+
       // Send to backend
       setImportStatus({
         type: "info",
-        message: `Importing ${riskData.length} risks...`,
+        message: `Importing ${allRisksToImport.length} risks and ${actionItems.length} action items...`,
       });
 
-      const importPromises = riskData.map((risk) =>
-        api.post("/risks", risk).catch((error) => {
+      // Import risks (remove id field to let database auto-generate)
+      const riskImportPromises = allRisksToImport.map((risk) => {
+        const { id, ...riskWithoutId } = risk;
+        return api.post("/risks", riskWithoutId).catch((error) => {
           console.error("Error importing risk:", error);
           return { error: error.message, risk };
-        })
-      );
+        });
+      });
 
-      const results = await Promise.all(importPromises);
-      const successful = results.filter((result) => !result.error).length;
-      const failed = results.filter((result) => result.error).length;
+      // Import action items (remove id field to let database auto-generate)
+      const actionItemImportPromises = actionItems.map((actionItem) => {
+        const { id, ...actionItemWithoutId } = actionItem;
+        return api
+          .post("/action-items/", actionItemWithoutId)
+          .catch((error) => {
+            console.error("Error importing action item:", error);
+            return { error: error.message, actionItem };
+          });
+      });
 
-      if (failed === 0) {
+      const [riskResults, actionItemResults] = await Promise.all([
+        Promise.all(riskImportPromises),
+        Promise.all(actionItemImportPromises),
+      ]);
+
+      const successfulRisks = riskResults.filter(
+        (result) => !result.error
+      ).length;
+      const failedRisks = riskResults.filter((result) => result.error).length;
+      const successfulActionItems = actionItemResults.filter(
+        (result) => !result.error
+      ).length;
+      const failedActionItems = actionItemResults.filter(
+        (result) => result.error
+      ).length;
+
+      if (failedRisks === 0 && failedActionItems === 0) {
         setImportStatus({
           type: "success",
-          message: `Successfully imported ${successful} risks!`,
+          message: `Successfully imported ${successfulRisks} risks and ${successfulActionItems} action items!`,
         });
         // Refresh snapshots to show the auto-backup
         refetchSnapshots();
@@ -295,14 +632,20 @@ export default function Reports() {
       } else {
         setImportStatus({
           type: "error",
-          message: `Imported ${successful} risks, ${failed} failed. Check console for details.`,
+          message: `Imported ${successfulRisks} risks (${failedRisks} failed) and ${successfulActionItems} action items (${failedActionItems} failed). Check console for details.`,
         });
         // Still refresh snapshots to show the auto-backup
         refetchSnapshots();
       }
 
-      // Clear the file input
+      // Clear the file input and reset state
       setImportFile(null);
+      setImportConflicts({
+        conflicts: [],
+        newRisks: [],
+        newActionItems: [],
+        showConflictResolution: false,
+      });
       const fileInput = document.getElementById(
         "import-file"
       ) as HTMLInputElement;
@@ -2608,7 +2951,7 @@ export default function Reports() {
                 className="block w-full text-sm text-secondary-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <button
-                onClick={importExcelData}
+                onClick={analyzeExcelConflicts}
                 disabled={!importFile}
                 className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -2641,6 +2984,181 @@ export default function Reports() {
               <span className="text-sm font-medium">
                 {importStatus.message}
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Conflict Resolution UI */}
+        {importConflicts.showConflictResolution && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Import Conflicts Detected
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Found {importConflicts.conflicts.length} conflicts,{" "}
+              {importConflicts.newRisks.length} new risks, and{" "}
+              {importConflicts.newActionItems.length} action items. Please
+              review each conflict and choose how to handle it.
+            </p>
+
+            <div className="space-y-4">
+              {importConflicts.conflicts.map((conflict, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-medium text-gray-900">
+                      Conflict {index + 1}: {conflict.excelRisk.risk_name}
+                    </h4>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        conflict.conflictType === "id_exists"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : conflict.conflictType === "name_exists"
+                          ? "bg-orange-100 text-orange-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {conflict.conflictType === "id_exists"
+                        ? "ID Conflict"
+                        : conflict.conflictType === "name_exists"
+                        ? "Name Conflict"
+                        : "ID & Name Conflict"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium text-gray-700 mb-3 flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Existing Data:
+                      </h5>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>
+                          <strong>ID:</strong> {conflict.existingRisk.id}
+                        </p>
+                        <p>
+                          <strong>Name:</strong>{" "}
+                          {conflict.existingRisk.risk_name}
+                        </p>
+                        <p>
+                          <strong>Description:</strong>{" "}
+                          {conflict.existingRisk.risk_description || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Category:</strong>{" "}
+                          {conflict.existingRisk.category}
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{" "}
+                          {conflict.existingRisk.status}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium text-gray-700 mb-3 flex items-center">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Excel Data:
+                      </h5>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>
+                          <strong>ID:</strong> {conflict.excelRisk.id || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Name:</strong> {conflict.excelRisk.risk_name}
+                        </p>
+                        <p>
+                          <strong>Description:</strong>{" "}
+                          {conflict.excelRisk.risk_description || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Category:</strong>{" "}
+                          {conflict.excelRisk.category}
+                        </p>
+                        <p>
+                          <strong>Status:</strong> {conflict.excelRisk.status}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => {
+                        // Keep existing, skip this risk
+                        console.log("Keep existing for conflict", index);
+                      }}
+                      className="btn-secondary text-sm flex items-center justify-center"
+                    >
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Keep Existing
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Replace with Excel data
+                        console.log("Replace with Excel for conflict", index);
+                      }}
+                      className="btn-primary text-sm flex items-center justify-center"
+                    >
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                      Replace with Excel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => {
+                  // Apply "Keep Existing" to all conflicts
+                  const resolvedConflicts = importConflicts.conflicts.map(
+                    (c) => ({
+                      ...c.excelRisk,
+                      id: undefined, // Remove ID to create new risk
+                    })
+                  );
+                  executeImport(
+                    importConflicts.newRisks,
+                    resolvedConflicts,
+                    importConflicts.newActionItems
+                  );
+                }}
+                className="btn-secondary"
+              >
+                Keep Existing for All
+              </button>
+              <button
+                onClick={() => {
+                  // Apply "Replace with Excel" to all conflicts
+                  const resolvedConflicts = importConflicts.conflicts.map(
+                    (c) => c.excelRisk
+                  );
+                  executeImport(
+                    importConflicts.newRisks,
+                    resolvedConflicts,
+                    importConflicts.newActionItems
+                  );
+                }}
+                className="btn-primary"
+              >
+                Replace All with Excel Data
+              </button>
+              <button
+                onClick={() => {
+                  // Skip all conflicts, only import new risks
+                  executeImport(
+                    importConflicts.newRisks,
+                    [],
+                    importConflicts.newActionItems
+                  );
+                }}
+                className="btn-secondary"
+              >
+                Skip Conflicts, Import New Only
+              </button>
             </div>
           </div>
         )}
