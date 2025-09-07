@@ -22,6 +22,8 @@ import {
   FileText,
   TrendingUp,
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 export default function RiskDetail() {
@@ -33,6 +35,8 @@ export default function RiskDetail() {
   const [editingActionItem, setEditingActionItem] = useState<ActionItem | null>(
     null
   );
+  const [showProbabilityBasis, setShowProbabilityBasis] = useState(false);
+  const [showImpactBasis, setShowImpactBasis] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -159,7 +163,6 @@ export default function RiskDetail() {
           </div>
         </div>
 
-
         {/* Risk Details Form-like Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
@@ -249,39 +252,6 @@ export default function RiskDetail() {
               </div>
             </div>
 
-            {/* Probability Basis */}
-            <div className="card-glass">
-              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-warning-600" />
-                Probability Basis
-              </h3>
-              {risk.probability_basis ? (
-                <p className="text-secondary-700 leading-relaxed">
-                  {risk.probability_basis}
-                </p>
-              ) : (
-                <p className="text-secondary-500 italic">
-                  No probability justification provided
-                </p>
-              )}
-            </div>
-
-            {/* Impact Basis */}
-            <div className="card-glass">
-              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-danger-600" />
-                Impact Basis
-              </h3>
-              {risk.impact_basis ? (
-                <p className="text-secondary-700 leading-relaxed">
-                  {risk.impact_basis}
-                </p>
-              ) : (
-                <p className="text-secondary-500 italic">
-                  No impact justification provided
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Right Column */}
@@ -297,25 +267,79 @@ export default function RiskDetail() {
                   <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                     <AlertCircle className="w-4 h-4 text-purple-600" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Probability
                     </label>
                     <p className="text-secondary-900">{risk.probability}/5</p>
                   </div>
+                  <button
+                    onClick={() => setShowProbabilityBasis(!showProbabilityBasis)}
+                    className="p-1 hover:bg-secondary-100 rounded transition-colors"
+                    title={showProbabilityBasis ? "Hide justification" : "Show justification"}
+                  >
+                    {showProbabilityBasis ? (
+                      <ChevronDown className="w-4 h-4 text-secondary-600" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-secondary-600" />
+                    )}
+                  </button>
                 </div>
+                {showProbabilityBasis && (
+                  <div className="ml-11 p-3 bg-secondary-50 rounded-lg border border-secondary-200">
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2 block">
+                      Probability Basis
+                    </label>
+                    {risk.probability_basis ? (
+                      <p className="text-secondary-700 text-sm leading-relaxed">
+                        {risk.probability_basis}
+                      </p>
+                    ) : (
+                      <p className="text-secondary-500 italic text-sm">
+                        No probability justification provided
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-warning-100 flex items-center justify-center">
                     <AlertTriangle className="w-4 h-4 text-warning-600" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Impact
                     </label>
                     <p className="text-secondary-900">{risk.impact}/5</p>
                   </div>
+                  <button
+                    onClick={() => setShowImpactBasis(!showImpactBasis)}
+                    className="p-1 hover:bg-secondary-100 rounded transition-colors"
+                    title={showImpactBasis ? "Hide justification" : "Show justification"}
+                  >
+                    {showImpactBasis ? (
+                      <ChevronDown className="w-4 h-4 text-secondary-600" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-secondary-600" />
+                    )}
+                  </button>
                 </div>
+                {showImpactBasis && (
+                  <div className="ml-11 p-3 bg-secondary-50 rounded-lg border border-secondary-200">
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2 block">
+                      Impact Basis
+                    </label>
+                    {risk.impact_basis ? (
+                      <p className="text-secondary-700 text-sm leading-relaxed">
+                        {risk.impact_basis}
+                      </p>
+                    ) : (
+                      <p className="text-secondary-500 italic text-sm">
+                        No impact justification provided
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
