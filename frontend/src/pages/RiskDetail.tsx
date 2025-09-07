@@ -235,67 +235,100 @@ export default function RiskDetail() {
                   </div>
                 </div>
 
-                {risk.latest_reviewed_date && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-accent-600" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                        Latest Reviewed
-                      </label>
-                      <p className="text-secondary-900">
-                        {new Date(
-                          risk.latest_reviewed_date
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-accent-600" />
                   </div>
-                )}
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Latest Reviewed
+                    </label>
+                    <p className="text-secondary-900">
+                      {risk.latest_reviewed_date 
+                        ? new Date(risk.latest_reviewed_date).toLocaleDateString()
+                        : "Never reviewed"
+                      }
+                    </p>
+                  </div>
+                </div>
 
-                {risk.category && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                        Category
-                      </label>
-                      <p className="text-secondary-900 capitalize">
-                        {risk.category}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-purple-600" />
                   </div>
-                )}
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Category
+                    </label>
+                    <p className="text-secondary-900 capitalize">
+                      {risk.category || "Not specified"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Created By (Owner ID)
+                    </label>
+                    <p className="text-secondary-900">
+                      User ID: {risk.owner_id}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Assigned To
+                    </label>
+                    <p className="text-secondary-900">
+                      {risk.assigned_to ? `User ID: ${risk.assigned_to}` : "Not assigned"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Probability Basis */}
-            {risk.probability_basis && (
-              <div className="card-glass">
-                <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-warning-600" />
-                  Probability Basis
-                </h3>
+            <div className="card-glass">
+              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warning-600" />
+                Probability Basis
+              </h3>
+              {risk.probability_basis ? (
                 <p className="text-secondary-700 leading-relaxed">
                   {risk.probability_basis}
                 </p>
-              </div>
-            )}
+              ) : (
+                <p className="text-secondary-500 italic">
+                  No probability justification provided
+                </p>
+              )}
+            </div>
 
             {/* Impact Basis */}
-            {risk.impact_basis && (
-              <div className="card-glass">
-                <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-danger-600" />
-                  Impact Basis
-                </h3>
+            <div className="card-glass">
+              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-danger-600" />
+                Impact Basis
+              </h3>
+              {risk.impact_basis ? (
                 <p className="text-secondary-700 leading-relaxed">
                   {risk.impact_basis}
                 </p>
-              </div>
-            )}
+              ) : (
+                <p className="text-secondary-500 italic">
+                  No impact justification provided
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Right Column */}
@@ -355,6 +388,43 @@ export default function RiskDetail() {
                     </label>
                     <p className="text-secondary-900 font-semibold">
                       {risk.risk_level}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Audit Information */}
+            <div className="card-glass">
+              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-secondary-600" />
+                Audit Information
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-secondary-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Created At
+                    </label>
+                    <p className="text-secondary-900">
+                      {new Date(risk.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-secondary-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Last Updated
+                    </label>
+                    <p className="text-secondary-900">
+                      {new Date(risk.updated_at).toLocaleString()}
                     </p>
                   </div>
                 </div>
