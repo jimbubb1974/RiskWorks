@@ -1307,9 +1307,15 @@ export default function Settings() {
 
                       <p className="text-xs text-secondary-500">
                         Current:{" "}
-                        {import.meta.env.PROD
-                          ? "Cloud (Vercel/Netlify)"
-                          : "Local (localhost:5173)"}
+                        {!import.meta.env.PROD
+                          ? "Local (localhost:5173)"
+                          : (typeof window !== "undefined" && window.location.host.includes("vercel.app")) ||
+                            import.meta.env.VITE_FRONTEND_URL?.includes("vercel.app")
+                          ? "Cloud (Vercel)"
+                          : (typeof window !== "undefined" && window.location.host.includes("netlify.app")) ||
+                            import.meta.env.VITE_FRONTEND_URL?.includes("netlify.app")
+                          ? "Cloud (Netlify)"
+                          : "Cloud"}
                       </p>
                     </div>
 
