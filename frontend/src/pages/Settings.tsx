@@ -1261,12 +1261,10 @@ export default function Settings() {
                         {/* Frontend Platform Options - always visible */}
                         <button
                           className={`px-2 py-1 text-xs rounded border ${
-                            !import.meta.env.PROD ||
                             import.meta.env.VITE_DEPLOYMENT_PLATFORM ===
                               "local" ||
                             (typeof window !== "undefined" &&
-                              !window.location.host.includes("vercel.app") &&
-                              !window.location.host.includes("netlify.app"))
+                              window.location.host.includes("localhost"))
                               ? "bg-blue-100 border-blue-300 text-blue-700"
                               : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                           }`}
@@ -1309,11 +1307,17 @@ export default function Settings() {
                         Current:{" "}
                         {!import.meta.env.PROD
                           ? "Local (localhost:5173)"
-                          : (typeof window !== "undefined" && window.location.host.includes("vercel.app")) ||
-                            import.meta.env.VITE_FRONTEND_URL?.includes("vercel.app")
+                          : (typeof window !== "undefined" &&
+                              window.location.host.includes("vercel.app")) ||
+                            import.meta.env.VITE_FRONTEND_URL?.includes(
+                              "vercel.app"
+                            )
                           ? "Cloud (Vercel)"
-                          : (typeof window !== "undefined" && window.location.host.includes("netlify.app")) ||
-                            import.meta.env.VITE_FRONTEND_URL?.includes("netlify.app")
+                          : (typeof window !== "undefined" &&
+                              window.location.host.includes("netlify.app")) ||
+                            import.meta.env.VITE_FRONTEND_URL?.includes(
+                              "netlify.app"
+                            )
                           ? "Cloud (Netlify)"
                           : "Cloud"}
                       </p>
