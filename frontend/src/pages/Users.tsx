@@ -79,65 +79,64 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-900">
-            User Management
-          </h1>
-          <p className="text-secondary-600">
-            Manage registered users and their permissions
-          </p>
-        </div>
-        <button className="btn-primary">
-          <UserPlus className="w-5 h-5 mr-2" />
-          Add User
-        </button>
-      </div>
-
-      {/* Filters */}
+      {/* Filters and Actions */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-secondary-500" />
-          <h3 className="font-medium text-secondary-900">Filters & Search</h3>
-        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Filters Section */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-secondary-500" />
+              <h3 className="font-medium text-secondary-900">
+                Filters & Search
+              </h3>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input pl-11"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="input pl-11"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="input"
+              >
+                <option value="">All roles</option>
+                <option value="Administrator">Administrator</option>
+                <option value="Manager">Manager</option>
+                <option value="User">User</option>
+              </select>
+
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="input"
+              >
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
           </div>
 
-          {/* Role Filter */}
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="input"
-          >
-            <option value="">All roles</option>
-            <option value="Administrator">Administrator</option>
-            <option value="Manager">Manager</option>
-            <option value="User">User</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input"
-          >
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
-          </select>
+          {/* Actions Section */}
+          <div className="flex items-center gap-3 lg:ml-4">
+            <button className="btn-primary">
+              <UserPlus className="w-5 h-5 mr-2" />
+              Add User
+            </button>
+          </div>
         </div>
       </div>
 

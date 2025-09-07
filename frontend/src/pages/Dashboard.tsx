@@ -11,7 +11,6 @@ import {
   Activity,
   BarChart3,
   Plus,
-  Eye,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -43,25 +42,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="card-glass">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-secondary-900 mb-2">
-              Welcome back, {user?.email?.split("@")[0] || "User"}!
-            </h1>
-            <p className="text-secondary-600">
-              Here's your risk management overview for today.
-            </p>
-          </div>
-          <div className="hidden sm:block">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
@@ -100,108 +80,57 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-secondary-900">
-                Recent Risks
-              </h2>
-              <Link
-                to="/risks"
-                className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-              >
-                View all
-              </Link>
-            </div>
-
-            <div className="space-y-4">
-              {risks.slice(0, 5).map((risk) => (
-                <div
-                  key={risk.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-secondary-50 hover:bg-secondary-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        risk.likelihood >= 4
-                          ? "bg-danger-500"
-                          : risk.likelihood >= 3
-                          ? "bg-warning-500"
-                          : "bg-success-500"
-                      }`}
-                    />
-                    <div>
-                      <h3 className="font-medium text-secondary-900 truncate max-w-xs">
-                        {risk.title}
-                      </h3>
-                      <p className="text-sm text-secondary-600">
-                        Score: {risk.likelihood * risk.impact} • {risk.status}
-                      </p>
-                    </div>
-                  </div>
-                  <Link to={`/risks/${risk.id}`} className="btn-ghost p-2">
-                    <Eye className="w-4 h-4" />
-                  </Link>
-                </div>
-              ))}
-
-              {risks.length === 0 && (
-                <div className="text-center py-8 text-secondary-500">
-                  <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No risks found. Create your first risk assessment.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Quick Actions Panel */}
-        <div className="space-y-6">
-          {/* Create Risk */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-secondary-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <Link
-                to="/risks/new"
-                className="btn-primary w-full justify-center"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create New Risk
-              </Link>
-              <Link to="/risks" className="btn-secondary w-full justify-center">
-                <Activity className="w-5 h-5 mr-2" />
-                View All Risks
-              </Link>
+        <div className="lg:col-span-3">
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Create Risk */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                <Link
+                  to="/risks/new"
+                  className="btn-primary w-full justify-center"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create New Risk
+                </Link>
+                <Link
+                  to="/risks"
+                  className="btn-secondary w-full justify-center"
+                >
+                  <Activity className="w-5 h-5 mr-2" />
+                  View All Risks
+                </Link>
+              </div>
             </div>
-          </div>
 
-          {/* Status Overview */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-secondary-900 mb-4">
-              Status Overview
-            </h3>
-            <div className="space-y-3">
-              <StatusItem
-                label="Open"
-                count={openRisks}
-                color="warning"
-                icon={<Clock className="w-4 h-4" />}
-              />
-              <StatusItem
-                label="Mitigated"
-                count={risks.filter((r) => r.status === "mitigated").length}
-                color="primary"
-                icon={<Shield className="w-4 h-4" />}
-              />
-              <StatusItem
-                label="Closed"
-                count={risks.filter((r) => r.status === "closed").length}
-                color="success"
-                icon={<CheckCircle className="w-4 h-4" />}
-              />
+            {/* Status Overview */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+                Status Overview
+              </h3>
+              <div className="space-y-3">
+                <StatusItem
+                  label="Open"
+                  count={openRisks}
+                  color="warning"
+                  icon={<Clock className="w-4 h-4" />}
+                />
+                <StatusItem
+                  label="Mitigated"
+                  count={risks.filter((r) => r.status === "mitigated").length}
+                  color="primary"
+                  icon={<Shield className="w-4 h-4" />}
+                />
+                <StatusItem
+                  label="Closed"
+                  count={risks.filter((r) => r.status === "closed").length}
+                  color="success"
+                  icon={<CheckCircle className="w-4 h-4" />}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ export type Risk = {
   latest_reviewed_date?: string;
   probability_basis?: string;
   impact_basis?: string;
+  // notes?: string;  // Temporarily commented out
 
   // Status and ownership
   status: RiskStatus;
@@ -38,16 +39,14 @@ export type RiskCreate = {
   latest_reviewed_date?: string;
   probability_basis?: string;
   impact_basis?: string;
+  // notes?: string;  // Temporarily commented out
   status?: RiskStatus;
   assigned_to?: number;
 };
 
 export type RiskUpdate = Partial<RiskCreate>;
 
-export type RiskStatus =
-  | "open"
-  | "closed"
-  | "draft";
+export type RiskStatus = "open" | "closed" | "draft";
 export type RiskCategory =
   | "operational"
   | "financial"

@@ -12,8 +12,6 @@ import {
   Settings,
   LogOut,
   Shield,
-  Bell,
-  Search,
   Menu,
   X,
   Users,
@@ -49,7 +47,7 @@ export default function AppLayout() {
         className={`
         fixed top-0 left-0 z-50 h-full w-64 glass border-r border-white/20 p-6 flex flex-col
         transform transition-transform duration-300 ease-in-out
-        lg:relative lg:translate-x-0 lg:z-auto
+        lg:relative lg:translate-x-0 lg:z-10
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
       `}
       >
@@ -131,7 +129,7 @@ export default function AppLayout() {
       {/* Main content */}
       <div className="flex flex-col flex-1 min-h-screen">
         {/* Top bar */}
-        <header className="glass border-b border-white/20 p-4 lg:p-6">
+        <header className="glass border-b border-white/20 p-4 lg:p-6 relative z-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Mobile menu button */}
@@ -146,25 +144,7 @@ export default function AppLayout() {
                 <h1 className="text-2xl font-bold text-secondary-900">
                   {pageTitle}
                 </h1>
-                <p className="text-sm text-secondary-600">
-                  {getCurrentTimeGreeting()}
-                </p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Search button */}
-              <button className="p-2 rounded-lg hover:bg-white/20 transition-colors">
-                <Search size={20} className="text-secondary-600" />
-              </button>
-
-              {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-white/20 transition-colors">
-                <Bell size={20} className="text-secondary-600" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-danger-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </button>
             </div>
           </div>
         </header>
@@ -239,11 +219,4 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/reports")) return "Reports";
   if (pathname.startsWith("/settings")) return "Settings";
   return "RiskWorks";
-}
-
-function getCurrentTimeGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning! Ready to tackle today's challenges?";
-  if (hour < 17) return "Good afternoon! How's your risk management going?";
-  return "Good evening! Time to review today's progress.";
 }

@@ -23,6 +23,7 @@ class Risk(Base):
 	latest_reviewed_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 	probability_basis: Mapped[str | None] = mapped_column(Text, nullable=True)
 	impact_basis: Mapped[str | None] = mapped_column(Text, nullable=True)
+	notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 	
 	# Status and ownership
 	status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")

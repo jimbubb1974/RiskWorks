@@ -52,120 +52,119 @@ export default function RisksList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-900">
-            Risk Management
-          </h1>
-          <p className="text-secondary-600">
-            Monitor and assess organizational risks
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* View Toggle */}
-          <div className="flex items-center bg-secondary-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("cards")}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                viewMode === "cards"
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-secondary-600 hover:text-secondary-900"
-              }`}
-              title="Card view"
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                viewMode === "table"
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-secondary-600 hover:text-secondary-900"
-              }`}
-              title="Table view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-          <button
-            onClick={() => navigate("/risks/new")}
-            className="btn-primary group"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create Risk
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
+      {/* Filters and Actions */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-secondary-500" />
-          <h3 className="font-medium text-secondary-900">Filters & Search</h3>
-        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Filters Section */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-secondary-500" />
+              <h3 className="font-medium text-secondary-900">
+                Filters & Search
+              </h3>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-          {/* Search */}
-          <div className="lg:col-span-2 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search risks..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input pl-11"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Search */}
+              <div className="lg:col-span-2 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search risks..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="input pl-11"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="input"
+              >
+                <option value="">All statuses</option>
+                <option value="open">Open</option>
+                <option value="mitigated">Mitigated</option>
+                <option value="closed">Closed</option>
+              </select>
+
+              {/* Severity Filter */}
+              <input
+                type="number"
+                min={1}
+                max={5}
+                placeholder="Min probability"
+                value={minProbability}
+                onChange={(e) =>
+                  setMinProbability(
+                    e.target.value ? Number(e.target.value) : ""
+                  )
+                }
+                className="input"
+              />
+
+              {/* Sort By */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="input"
+              >
+                <option value="created_at">Created Date</option>
+                <option value="updated_at">Updated Date</option>
+                <option value="probability">Probability</option>
+                <option value="impact">Impact</option>
+                <option value="score">Risk Score</option>
+                <option value="risk_name">Risk Name</option>
+                <option value="status">Status</option>
+              </select>
+
+              {/* Sort Order */}
+              <button
+                onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
+                className="btn-secondary justify-center"
+              >
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                {order === "asc" ? "Ascending" : "Descending"}
+              </button>
+            </div>
           </div>
 
-          {/* Status Filter */}
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="input"
-          >
-            <option value="">All statuses</option>
-            <option value="open">Open</option>
-            <option value="mitigated">Mitigated</option>
-            <option value="closed">Closed</option>
-          </select>
-
-          {/* Severity Filter */}
-          <input
-            type="number"
-            min={1}
-            max={5}
-            placeholder="Min probability"
-            value={minProbability}
-            onChange={(e) =>
-              setMinProbability(e.target.value ? Number(e.target.value) : "")
-            }
-            className="input"
-          />
-
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input"
-          >
-            <option value="created_at">Created Date</option>
-            <option value="updated_at">Updated Date</option>
-            <option value="probability">Probability</option>
-            <option value="impact">Impact</option>
-            <option value="score">Risk Score</option>
-            <option value="risk_name">Risk Name</option>
-            <option value="status">Status</option>
-          </select>
-
-          {/* Sort Order */}
-          <button
-            onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
-            className="btn-secondary justify-center"
-          >
-            <ArrowUpDown className="w-4 h-4 mr-2" />
-            {order === "asc" ? "Ascending" : "Descending"}
-          </button>
+          {/* Actions Section */}
+          <div className="flex items-center gap-3 lg:ml-4">
+            {/* View Toggle */}
+            <div className="flex items-center bg-secondary-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("cards")}
+                className={`p-2 rounded-md transition-all duration-200 ${
+                  viewMode === "cards"
+                    ? "bg-white text-primary-600 shadow-sm"
+                    : "text-secondary-600 hover:text-secondary-900"
+                }`}
+                title="Card view"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`p-2 rounded-md transition-all duration-200 ${
+                  viewMode === "table"
+                    ? "bg-white text-primary-600 shadow-sm"
+                    : "text-secondary-600 hover:text-secondary-900"
+                }`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            <button
+              onClick={() => navigate("/risks/new")}
+              className="btn-primary group"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create Risk
+            </button>
+          </div>
         </div>
       </div>
 

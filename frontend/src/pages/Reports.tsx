@@ -50,40 +50,42 @@ export default function Reports() {
     const doc = new jsPDF();
 
     // Header
-    doc.setFontSize(20);
+    doc.setFontSize(18);
     doc.setTextColor(59, 130, 246); // Blue color
-    doc.text("RiskWorks - Risk Summary Report", 20, 20);
+    doc.text("RiskWorks - Risk Summary Report", 20, 15);
 
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 35);
-    doc.text(`Total Risks: ${filteredRisks.length}`, 20, 45);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 25);
+    doc.text(`Total Risks: ${filteredRisks.length}`, 20, 32);
 
     // Filters applied
+    let tableStartY = 40;
     if (selectedCategory !== "all" || selectedStatus !== "all") {
-      doc.text("Filters Applied:", 20, 60);
-      let yPos = 70;
+      doc.text("Filters Applied:", 20, 40);
+      let yPos = 47;
       if (selectedCategory !== "all") {
         doc.text(`Category: ${selectedCategory}`, 30, yPos);
-        yPos += 10;
+        yPos += 8;
       }
       if (selectedStatus !== "all") {
         doc.text(`Status: ${selectedStatus}`, 30, yPos);
-        yPos += 10;
+        yPos += 8;
       }
-      yPos += 10;
+      tableStartY = yPos + 5;
     }
 
     // Risk table
-    let yPos = 90;
+    let yPos = tableStartY;
     const startX = 20;
-    const colWidths = [40, 30, 25, 25, 30, 30];
+    const tableWidth = 160; // Adjusted: 30+30+20+20+30+30=160
+    const colWidths = [30, 30, 20, 20, 30, 30]; // Test: Reduced title column from 50 to 30 to force wrapping
 
     // Table headers
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.setFillColor(59, 130, 246);
-    doc.rect(startX, yPos - 5, 190, 8, "F");
+    doc.rect(startX, yPos - 5, tableWidth, 8, "F");
 
     doc.text("Title", startX + 2, yPos);
     doc.text("Category", startX + colWidths[0] + 2, yPos);
@@ -117,15 +119,15 @@ export default function Reports() {
     doc.setTextColor(0, 0, 0);
 
     filteredRisks.forEach((risk, index) => {
-      if (yPos > 270) {
+      if (yPos > 280) {
         doc.addPage();
-        yPos = 20;
+        yPos = 15; // Reduced from 20 to match new header position
       }
 
       // Alternate row colors
       if (index % 2 === 0) {
         doc.setFillColor(248, 250, 252);
-        doc.rect(startX, yPos - 3, 190, 8, "F");
+        doc.rect(startX, yPos - 3, tableWidth, 16, "F"); // Increased height from 8 to 16 for two lines
       }
 
       // Risk level color coding
@@ -141,29 +143,89 @@ export default function Reports() {
       // Reset color for other text
       doc.setTextColor(0, 0, 0);
 
-      // Truncate long text
-      const title =
-        risk.title.length > 25
-          ? risk.title.substring(0, 22) + "..."
-          : risk.title;
+      // Handle text with two-line support
+      const title = risk.risk_name;
       const category = risk.category || "N/A";
       const status = risk.status
         .replace("_", " ")
         .replace(/\b\w/g, (l) => l.toUpperCase());
       const owner = risk.risk_owner || "Unassigned";
 
-      doc.text(title, startX + 2, yPos);
+      // Function to split text into two lines using actual text width measurement
+      const splitText = (text: string, maxWidthPixels: number) => {
+        if (doc.getTextWidth(text) <= maxWidthPixels) return [text];
+
+        const words = text.split(" ");
+        const lines = [];
+        let currentLine = "";
+
+        for (const word of words) {
+          const testLine = currentLine + (currentLine ? " " : "") + word;
+          if (doc.getTextWidth(testLine) <= maxWidthPixels) {
+            currentLine = testLine;
+          } else {
+            if (currentLine) {
+              lines.push(currentLine);
+              currentLine = word;
+            } else {
+              // Single word is too long, truncate it
+              let truncated = word;
+              while (
+                doc.getTextWidth(truncated + "...") > maxWidthPixels &&
+                truncated.length > 0
+              ) {
+                truncated = truncated.substring(0, truncated.length - 1);
+              }
+              lines.push(truncated + "...");
+              currentLine = "";
+            }
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines.slice(0, 2); // Limit to 2 lines
+      };
+
+      // Title (first column) - allow two lines (30px column width minus 4px padding)
+      const titleLines = splitText(title, 26);
+      doc.text(titleLines[0], startX + 2, yPos);
+      if (titleLines[1]) {
+        doc.text(titleLines[1], startX + 2, yPos + 6);
+      }
+
+      // Category (second column)
       doc.text(category, startX + colWidths[0] + 2, yPos);
+
+      // Risk Level (third column)
+      doc.text(risk.risk_level, startX + colWidths[0] + colWidths[1] + 2, yPos);
+
+      // Status (fourth column)
       doc.text(
         status,
         startX + colWidths[0] + colWidths[1] + colWidths[2] + 2,
         yPos
       );
+
+      // Owner (fifth column) - allow two lines (30px column width minus 4px padding)
+      const ownerLines = splitText(owner, 26);
       doc.text(
-        owner,
+        ownerLines[0],
         startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 2,
         yPos
       );
+      if (ownerLines[1]) {
+        doc.text(
+          ownerLines[1],
+          startX +
+            colWidths[0] +
+            colWidths[1] +
+            colWidths[2] +
+            colWidths[3] +
+            2,
+          yPos + 6
+        );
+      }
+
+      // Score (sixth column)
       doc.text(
         risk.score.toString(),
         startX +
@@ -176,32 +238,8 @@ export default function Reports() {
         yPos
       );
 
-      yPos += 10;
+      yPos += 16; // Increased from 10 to 16 to accommodate two-line rows
     });
-
-    // Summary statistics
-    yPos += 10;
-    doc.setFontSize(12);
-    doc.setTextColor(59, 130, 246);
-    doc.text("Summary Statistics", 20, yPos);
-
-    yPos += 15;
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-
-    const highRisks = filteredRisks.filter(
-      (r) => r.risk_level === "High"
-    ).length;
-    const mediumRisks = filteredRisks.filter(
-      (r) => r.risk_level === "Medium"
-    ).length;
-    const lowRisks = filteredRisks.filter((r) => r.risk_level === "Low").length;
-
-    doc.text(`High Risk Items: ${highRisks}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Medium Risk Items: ${mediumRisks}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Low Risk Items: ${lowRisks}`, 20, yPos);
 
     // Save the PDF
     doc.save(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
@@ -249,7 +287,7 @@ export default function Reports() {
       doc.text("Risk Title", 20, yPos);
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.text(risk.title, 20, yPos + 10);
+      doc.text(risk.risk_name, 20, yPos + 10);
 
       yPos += 25;
 
@@ -284,7 +322,7 @@ export default function Reports() {
       doc.setTextColor(100, 100, 100);
       doc.text("Department:", leftCol, yPos);
       doc.setTextColor(0, 0, 0);
-      doc.text(risk.department || "Not specified", leftCol + 30, yPos);
+      doc.text(risk.category || "Not specified", leftCol + 30, yPos);
 
       // Right column
       yPos = 75;
@@ -299,7 +337,7 @@ export default function Reports() {
       doc.setTextColor(100, 100, 100);
       doc.text("Likelihood:", rightCol, yPos);
       doc.setTextColor(0, 0, 0);
-      doc.text(risk.likelihood.toString(), rightCol + 35, yPos);
+      doc.text(risk.probability.toString(), rightCol + 35, yPos);
 
       yPos += 15;
       doc.setTextColor(100, 100, 100);
@@ -311,7 +349,7 @@ export default function Reports() {
       doc.setTextColor(100, 100, 100);
       doc.text("Location:", rightCol, yPos);
       doc.setTextColor(0, 0, 0);
-      doc.text(risk.location || "Not specified", rightCol + 35, yPos);
+      doc.text(risk.risk_owner || "Not specified", rightCol + 35, yPos);
 
       // Description section
       yPos = 140;
@@ -321,7 +359,7 @@ export default function Reports() {
       doc.setTextColor(0, 0, 0);
 
       // Handle long descriptions with word wrapping
-      const description = risk.description || "No description provided";
+      const description = risk.risk_description || "No description provided";
       const maxWidth = 170;
       const words = description.split(" ");
       let line = "";
@@ -346,7 +384,7 @@ export default function Reports() {
       doc.text("Root Cause:", 20, yPos);
       doc.setTextColor(0, 0, 0);
 
-      const rootCause = risk.root_cause || "Not specified";
+      const rootCause = risk.probability_basis || "Not specified";
       const rootCauseWords = rootCause.split(" ");
       line = "";
       lineY = yPos + 10;
@@ -370,7 +408,7 @@ export default function Reports() {
       doc.text("Mitigation Strategy:", 20, yPos);
       doc.setTextColor(0, 0, 0);
 
-      const mitigation = risk.mitigation_strategy || "Not specified";
+      const mitigation = risk.impact_basis || "Not specified";
       const mitigationWords = mitigation.split(" ");
       line = "";
       lineY = yPos + 10;
@@ -394,8 +432,8 @@ export default function Reports() {
       doc.text("Target Date:", 20, yPos);
       doc.setTextColor(0, 0, 0);
       doc.text(
-        risk.target_date
-          ? new Date(risk.target_date).toLocaleDateString()
+        risk.latest_reviewed_date
+          ? new Date(risk.latest_reviewed_date).toLocaleDateString()
           : "Not specified",
         20,
         yPos + 10
@@ -405,8 +443,8 @@ export default function Reports() {
       doc.text("Review Date:", 120, yPos);
       doc.setTextColor(0, 0, 0);
       doc.text(
-        risk.review_date
-          ? new Date(risk.review_date).toLocaleDateString()
+        risk.updated_at
+          ? new Date(risk.updated_at).toLocaleDateString()
           : "Not specified",
         120,
         yPos + 10
@@ -468,107 +506,106 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary-900">Reports</h1>
-          <p className="text-secondary-600 mt-2">
-            Generate and export risk reports in various formats
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={generatePDF}
-            disabled={!filteredRisks.length}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Export {selectedReportType === "detailed"
-              ? "Detailed"
-              : "Summary"}{" "}
-            PDF
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
+      {/* Filters and Actions */}
       <div className="glass p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-secondary-900 flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          Filters
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
-              Report Type
-            </label>
-            <select
-              value={selectedReportType}
-              onChange={(e) =>
-                setSelectedReportType(e.target.value as "summary" | "detailed")
-              }
-              className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="summary">Summary Table</option>
-              <option value="detailed">Detailed Forms (1 per risk)</option>
-            </select>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Filters Section */}
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-secondary-900 flex items-center gap-2 mb-4">
+              <Filter className="h-5 w-5" />
+              Filters
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Report Type
+                </label>
+                <select
+                  value={selectedReportType}
+                  onChange={(e) =>
+                    setSelectedReportType(
+                      e.target.value as "summary" | "detailed"
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="summary">Summary Table</option>
+                  <option value="detailed">Detailed Forms (1 per risk)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="operational">Operational</option>
+                  <option value="financial">Financial</option>
+                  <option value="strategic">Strategic</option>
+                  <option value="technical">Technical</option>
+                  <option value="compliance">Compliance</option>
+                  <option value="security">Security</option>
+                  <option value="environmental">Environmental</option>
+                  <option value="reputational">Reputational</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="mitigated">Mitigated</option>
+                  <option value="closed">Closed</option>
+                  <option value="escalated">Escalated</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Export Format
+                </label>
+                <select
+                  value={selectedFormat}
+                  onChange={(e) =>
+                    setSelectedFormat(
+                      e.target.value as "pdf" | "excel" | "word"
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="pdf">PDF</option>
+                  <option value="excel" disabled>
+                    Excel (Coming Soon)
+                  </option>
+                  <option value="word" disabled>
+                    Word (Coming Soon)
+                  </option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
-              Category
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+
+          {/* Actions Section */}
+          <div className="flex items-center gap-3 lg:ml-4">
+            <button
+              onClick={generatePDF}
+              disabled={!filteredRisks.length}
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="all">All Categories</option>
-              <option value="operational">Operational</option>
-              <option value="financial">Financial</option>
-              <option value="strategic">Strategic</option>
-              <option value="technical">Technical</option>
-              <option value="compliance">Compliance</option>
-              <option value="security">Security</option>
-              <option value="environmental">Environmental</option>
-              <option value="reputational">Reputational</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
-              Status
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">All Statuses</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="mitigated">Mitigated</option>
-              <option value="closed">Closed</option>
-              <option value="escalated">Escalated</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
-              Export Format
-            </label>
-            <select
-              value={selectedFormat}
-              onChange={(e) =>
-                setSelectedFormat(e.target.value as "pdf" | "excel" | "word")
-              }
-              className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="pdf">PDF</option>
-              <option value="excel" disabled>
-                Excel (Coming Soon)
-              </option>
-              <option value="word" disabled>
-                Word (Coming Soon)
-              </option>
-            </select>
+              <Download className="h-4 w-4" />
+              Export{" "}
+              {selectedReportType === "detailed" ? "Detailed" : "Summary"} PDF
+            </button>
           </div>
         </div>
       </div>
@@ -624,11 +661,11 @@ export default function Reports() {
                   >
                     <td className="py-3 px-4">
                       <div className="font-medium text-secondary-900">
-                        {risk.title}
+                        {risk.risk_name}
                       </div>
-                      {risk.description && (
+                      {risk.risk_description && (
                         <div className="text-sm text-secondary-600 truncate max-w-xs">
-                          {risk.description}
+                          {risk.risk_description}
                         </div>
                       )}
                     </td>

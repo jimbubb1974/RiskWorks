@@ -609,16 +609,8 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-900">
-            System Settings & Status
-          </h1>
-          <p className="text-secondary-600">
-            Monitor system health, ports, and configuration
-          </p>
-        </div>
+      {/* Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
         <button
           onClick={refreshStatus}
           disabled={isLoading}

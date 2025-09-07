@@ -22,6 +22,7 @@ class RiskBase(BaseModel):
 	latest_reviewed_date: Optional[datetime] = Field(None, description="Date when risk was last reviewed")
 	probability_basis: Optional[str] = Field(None, description="Justification for the probability rating")
 	impact_basis: Optional[str] = Field(None, description="Justification for the impact rating")
+	notes: Optional[str] = Field(None, description="Additional notes and comments about the risk")
 	
 	# Status and ownership
 	status: Status = Field(default="open", description="Current status of the risk")
@@ -42,6 +43,7 @@ class RiskUpdate(BaseModel):
 	latest_reviewed_date: Optional[datetime] = None
 	probability_basis: Optional[str] = None
 	impact_basis: Optional[str] = None
+	notes: Optional[str] = None
 	status: Optional[Status] = None
 	assigned_to: Optional[int] = None
 

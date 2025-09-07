@@ -111,14 +111,6 @@ export default function UserDetail() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-secondary-900">
-              User Details
-            </h1>
-            <p className="text-secondary-600">
-              View and manage user information
-            </p>
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-secondary">

@@ -24,6 +24,7 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 
 export default function RiskDetail() {
@@ -251,7 +252,6 @@ export default function RiskDetail() {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Right Column */}
@@ -265,7 +265,7 @@ export default function RiskDetail() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <AlertCircle className="w-4 h-4 text-purple-600" />
+                    <BarChart3 className="w-4 h-4 text-purple-600" />
                   </div>
                   <div className="flex-1">
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
@@ -274,9 +274,15 @@ export default function RiskDetail() {
                     <p className="text-secondary-900">{risk.probability}/5</p>
                   </div>
                   <button
-                    onClick={() => setShowProbabilityBasis(!showProbabilityBasis)}
+                    onClick={() =>
+                      setShowProbabilityBasis(!showProbabilityBasis)
+                    }
                     className="p-1 hover:bg-secondary-100 rounded transition-colors"
-                    title={showProbabilityBasis ? "Hide justification" : "Show justification"}
+                    title={
+                      showProbabilityBasis
+                        ? "Hide justification"
+                        : "Show justification"
+                    }
                   >
                     {showProbabilityBasis ? (
                       <ChevronDown className="w-4 h-4 text-secondary-600" />
@@ -315,7 +321,11 @@ export default function RiskDetail() {
                   <button
                     onClick={() => setShowImpactBasis(!showImpactBasis)}
                     className="p-1 hover:bg-secondary-100 rounded transition-colors"
-                    title={showImpactBasis ? "Hide justification" : "Show justification"}
+                    title={
+                      showImpactBasis
+                        ? "Hide justification"
+                        : "Show justification"
+                    }
                   >
                     {showImpactBasis ? (
                       <ChevronDown className="w-4 h-4 text-secondary-600" />
@@ -370,41 +380,60 @@ export default function RiskDetail() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Audit Information */}
-            <div className="card-glass">
-              <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-secondary-600" />
-                Audit Information
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-secondary-600" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Created At
-                    </label>
-                    <p className="text-secondary-900">
-                      {new Date(risk.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+        {/* Notes - Full Width */}
+        <div className="card-glass">
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-secondary-600" />
+            Notes
+          </h3>
+          <div>
+            {risk.notes ? (
+              <p className="text-secondary-700 text-sm leading-relaxed whitespace-pre-wrap">
+                {risk.notes}
+              </p>
+            ) : (
+              <p className="text-secondary-500 italic text-sm">
+                No notes provided
+              </p>
+            )}
+          </div>
+        </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-secondary-600" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Last Updated
-                    </label>
-                    <p className="text-secondary-900">
-                      {new Date(risk.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+        {/* Audit Information */}
+        <div className="card-glass">
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-secondary-600" />
+            Audit Information
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-secondary-600" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                  Created At
+                </label>
+                <p className="text-secondary-900">
+                  {new Date(risk.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-secondary-600" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                  Last Updated
+                </label>
+                <p className="text-secondary-900">
+                  {new Date(risk.updated_at).toLocaleString()}
+                </p>
               </div>
             </div>
           </div>

@@ -26,6 +26,7 @@ def list_risks_endpoint(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     min_severity: Optional[int] = Query(default=None),
     min_likelihood: Optional[int] = Query(default=None),
+    min_probability: Optional[int] = Query(default=None),
     min_impact: Optional[int] = Query(default=None),
     search: Optional[str] = Query(default=None),
     sort_by: Optional[str] = Query(default=None),
@@ -35,12 +36,15 @@ def list_risks_endpoint(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
+    # Use min_probability if provided, otherwise fall back to min_likelihood for backward compatibility
+    probability_filter = min_probability if min_probability is not None else min_likelihood
+    
     return list_risks(
         db,
         owner_id=user_id,
         status=status_filter,
         min_severity=min_severity,
-        min_likelihood=min_likelihood,
+        min_likelihood=probability_filter,
         min_impact=min_impact,
         search=search,
         sort_by=sort_by,
