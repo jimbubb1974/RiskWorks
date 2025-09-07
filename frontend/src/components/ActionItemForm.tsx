@@ -54,7 +54,13 @@ export default function ActionItemForm({
     e.preventDefault();
     if (!formData.title.trim()) return;
 
-    createMutation.mutate(formData);
+    // Convert empty string due_date to null for backend compatibility
+    const submitData = {
+      ...formData,
+      due_date: formData.due_date === "" ? null : formData.due_date,
+    };
+
+    createMutation.mutate(submitData);
   };
 
   const handleChange = (

@@ -23,7 +23,7 @@ export interface ActionItemCreate {
   status: "pending" | "in_progress" | "completed" | "cancelled";
   assigned_to?: number;
   risk_id: number;
-  due_date?: string;
+  due_date?: string | null;
   progress_percentage: number;
 }
 

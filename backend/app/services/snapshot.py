@@ -128,9 +128,11 @@ class SnapshotService:
             self.db.query(Risk).delete()
             self.db.commit()
 
-            # Restore risks
+            # Restore risks and create ID mapping
             risks_data = snapshot.risk_data.get("risks", [])
             restored_risks = 0
+            risk_id_mapping = {}  # Maps old risk ID to new risk ID
+            
             for risk_data in risks_data:
                 # Convert ISO strings back to datetime objects
                 risk_data_copy = risk_data.copy()
@@ -141,8 +143,8 @@ class SnapshotService:
                 if risk_data_copy.get("updated_at"):
                     risk_data_copy["updated_at"] = datetime.fromisoformat(risk_data_copy["updated_at"])
 
-                # Remove the id to let the database assign a new one
-                risk_data_copy.pop("id", None)
+                # Store the old ID before removing it
+                old_risk_id = risk_data_copy.pop("id", None)
                 
                 # Remove legacy fields that no longer exist in the model
                 legacy_fields = ["title", "description", "likelihood", "severity", "department", 
@@ -165,9 +167,15 @@ class SnapshotService:
                 
                 risk = Risk(**risk_data_copy)
                 self.db.add(risk)
+                self.db.flush()  # Flush to get the new ID
+                
+                # Map old ID to new ID
+                if old_risk_id is not None:
+                    risk_id_mapping[old_risk_id] = risk.id
+                
                 restored_risks += 1
 
-            # Restore action items
+            # Restore action items with updated risk IDs
             action_items_data = snapshot.action_items_data.get("action_items", []) if snapshot.action_items_data else []
             restored_action_items = 0
             for item_data in action_items_data:
@@ -182,6 +190,14 @@ class SnapshotService:
 
                 # Remove the id to let the database assign a new one
                 item_data_copy.pop("id", None)
+                
+                # Update risk_id to use the new mapped ID
+                old_risk_id = item_data_copy.get("risk_id")
+                if old_risk_id in risk_id_mapping:
+                    item_data_copy["risk_id"] = risk_id_mapping[old_risk_id]
+                else:
+                    # Skip action items that reference non-existent risks
+                    continue
                 
                 # Ensure required fields have defaults
                 if "created_by" not in item_data_copy or item_data_copy["created_by"] is None:
