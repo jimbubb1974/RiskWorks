@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { deleteRisk, getRisk } from "../services/risks";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Risk } from "../types/risk";
+import { listRBSTree, type RBSNode } from "../services/rbs";
 
 import type { ActionItem } from "../types/actionItem";
 import ActionItemsList from "../components/ActionItemsList";
@@ -13,16 +15,10 @@ import {
   Edit,
   Trash2,
   AlertTriangle,
-  Shield,
-  Clock,
-  CheckCircle,
   Calendar,
   User,
-  MapPin,
-  Target,
   FileText,
   TrendingUp,
-  AlertCircle,
   ChevronDown,
   ChevronRight,
   BarChart3,
@@ -40,6 +36,40 @@ export default function RiskDetail() {
   );
   const [showProbabilityBasis, setShowProbabilityBasis] = useState(false);
   const [showImpactBasis, setShowImpactBasis] = useState(false);
+  const { data: rbsTree = [] } = useQuery({
+    queryKey: ["rbs-tree"],
+    queryFn: listRBSTree,
+  });
+
+  function findNodeById(
+    nodes: (RBSNode & { children?: RBSNode[] })[],
+    id?: number | null
+  ): RBSNode | undefined {
+    if (!id) return undefined;
+    for (const n of nodes) {
+      if (n.id === id) return n;
+      const found = n.children ? findNodeById(n.children, id) : undefined;
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  function findNodePath(
+    nodes: (RBSNode & { children?: RBSNode[] })[],
+    id?: number | null,
+    path: RBSNode[] = []
+  ): RBSNode[] | null {
+    if (!id) return null;
+    for (const n of nodes) {
+      const nextPath = [...path, n];
+      if (n.id === id) return nextPath;
+      if (n.children && n.children.length) {
+        const found = findNodePath(n.children, id, nextPath);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
 
   useEffect(() => {
     async function load() {
@@ -226,6 +256,28 @@ export default function RiskDetail() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      RBS Category
+                    </label>
+                    <p className="text-secondary-900">
+                      {(() => {
+                        const path = findNodePath(
+                          rbsTree as any,
+                          risk.rbs_node_id as any
+                        );
+                        return path && path.length
+                          ? path.map((n) => n.name).join(" / ")
+                          : "Not linked";
+                      })()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                     <User className="w-4 h-4 text-blue-600" />
                   </div>
@@ -355,7 +407,7 @@ export default function RiskDetail() {
 
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-info-100 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-info-600" />
+                    <TrendingUp className="w-4 h-4 text-info-600" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
@@ -378,9 +430,9 @@ export default function RiskDetail() {
             Notes
           </h3>
           <div>
-            {risk.notes ? (
+            {(risk as any).notes ? (
               <p className="text-secondary-700 text-sm leading-relaxed whitespace-pre-wrap">
-                {risk.notes}
+                {(risk as any).notes}
               </p>
             ) : (
               <p className="text-secondary-500 italic text-sm">
@@ -393,7 +445,7 @@ export default function RiskDetail() {
         {/* Audit Information */}
         <div className="card-glass">
           <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-secondary-600" />
+            <Calendar className="w-5 h-5 text-secondary-600" />
             Audit Information
           </h3>
           <div className="space-y-4">
@@ -413,7 +465,7 @@ export default function RiskDetail() {
 
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-secondary-600" />
+                <Calendar className="w-4 h-4 text-secondary-600" />
               </div>
               <div>
                 <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
@@ -460,11 +512,11 @@ function StatusBadge({ status }: { status: string }) {
   const getIcon = () => {
     switch (status) {
       case "open":
-        return <Clock className="w-3 h-3" />;
+        return <TrendingUp className="w-3 h-3" />;
       case "draft":
         return <FileText className="w-3 h-3" />;
       case "closed":
-        return <CheckCircle className="w-3 h-3" />;
+        return <TrendingUp className="w-3 h-3" />;
       default:
         return null;
     }

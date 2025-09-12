@@ -80,8 +80,8 @@ def update_risk(db: Session, owner_id: int, risk_id: int, **updates) -> Optional
 	if not risk or risk.owner_id != owner_id:
 		return None
 	for key, value in updates.items():
-		if value is not None:
-			setattr(risk, key, value)
+		# Apply all provided fields, including explicit nulls, so rbs_node_id can be cleared
+		setattr(risk, key, value)
 	
 	# updated_at will be automatically updated by SQLAlchemy due to onupdate=datetime.utcnow
 	db.commit()

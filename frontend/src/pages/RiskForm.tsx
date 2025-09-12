@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createRisk, getRisk, updateRisk } from "../services/risks";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { listRBSTree, type RBSNode } from "../services/rbs";
 import {
   Save,
   Plus,
@@ -33,6 +34,7 @@ const schema = z.object({
     .max(5, "Impact must be between 1-5"),
   category: z.string().optional(),
   risk_owner: z.string().optional(),
+  rbs_node_id: z.number().int().nullable().optional(),
   latest_reviewed_date: z.string().optional(),
   probability_basis: z.string().optional(),
   impact_basis: z.string().optional(),
@@ -55,6 +57,7 @@ export default function RiskForm() {
     formState: { errors, isSubmitting },
     reset,
     watch,
+    setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -64,6 +67,7 @@ export default function RiskForm() {
       impact: 3,
       category: "operational",
       risk_owner: "Unassigned",
+      rbs_node_id: null,
       latest_reviewed_date: "",
       probability_basis: "",
       impact_basis: "",
@@ -75,6 +79,32 @@ export default function RiskForm() {
   const probability = watch("probability");
   const impact = watch("impact");
   const riskScore = probability * impact;
+
+  // Ensure RHF knows about rbs_node_id when using setValue on a controlled select
+  useEffect(() => {
+    register("rbs_node_id" as any);
+  }, [register]);
+
+  // RBS tree helpers
+  const { data: rbsTree = [] } = useQuery({
+    queryKey: ["rbs-tree"],
+    queryFn: listRBSTree,
+  });
+
+  function flattenRBSTree(
+    nodes: (RBSNode & { children?: RBSNode[] })[],
+    depth = 0
+  ): { id: number; label: string }[] {
+    const rows: { id: number; label: string }[] = [];
+    for (const n of nodes) {
+      const indent = "\u00A0\u00A0".repeat(depth); // non-breaking spaces so indentation renders in <option>
+      const marker = depth > 0 ? "↳ " : "";
+      rows.push({ id: n.id, label: `${indent}${marker}${n.name}` });
+      if (n.children && n.children.length)
+        rows.push(...flattenRBSTree(n.children, depth + 1));
+    }
+    return rows;
+  }
 
   useEffect(() => {
     async function load() {
@@ -89,6 +119,7 @@ export default function RiskForm() {
             impact: r.impact,
             category: r.category ?? "operational",
             risk_owner: r.risk_owner ?? "Unassigned",
+            rbs_node_id: (r as any).rbs_node_id ?? null,
             latest_reviewed_date: r.latest_reviewed_date ?? "",
             probability_basis: r.probability_basis ?? "",
             impact_basis: r.impact_basis ?? "",
@@ -108,6 +139,11 @@ export default function RiskForm() {
   async function onSubmit(values: FormData) {
     try {
       // Convert empty strings to null for optional fields
+      const normalizedRbsId =
+        values.rbs_node_id === undefined ||
+        Number.isNaN(values.rbs_node_id as any)
+          ? null
+          : values.rbs_node_id;
       const cleanedValues = {
         ...values,
         risk_description: values.risk_description || null,
@@ -115,6 +151,7 @@ export default function RiskForm() {
         probability_basis: values.probability_basis || null,
         impact_basis: values.impact_basis || null,
         notes: values.notes || null,
+        rbs_node_id: normalizedRbsId,
       };
 
       if (isEdit && params.id) {
@@ -206,7 +243,7 @@ export default function RiskForm() {
                     />
                   </div>
 
-                  {/* Category and Risk Owner */}
+                  {/* Category, RBS link, and Risk Owner */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-secondary-700 mb-2">
@@ -221,6 +258,31 @@ export default function RiskForm() {
                         <option value="security">Security</option>
                         <option value="environmental">Environmental</option>
                         <option value="reputational">Reputational</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-2">
+                        RBS Category (any level)
+                      </label>
+                      <select
+                        className="input"
+                        value={(watch("rbs_node_id") as any) ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const parsed = raw === "" ? undefined : Number(raw);
+
+                          setValue("rbs_node_id" as any, parsed as any, {
+                            shouldDirty: true,
+                          });
+                        }}
+                      >
+                        <option value="">No RBS link</option>
+                        {flattenRBSTree(rbsTree as any, 0).map((o) => (
+                          <option key={o.id} value={o.id}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
