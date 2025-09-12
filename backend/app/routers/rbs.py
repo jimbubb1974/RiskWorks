@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..core.security import verify_token
 from ..database import get_db
-from ..schemas.rbs import RBSNodeCreate, RBSNodeRead, RBSNodeUpdate
+from ..schemas.rbs import RBSNodeCreate, RBSNodeRead, RBSNodeUpdate, RBSNodeTree
 from ..services import rbs as rbs_service
 
 
@@ -26,9 +26,21 @@ def list_nodes(db: Session = Depends(get_db), user_id: int = Depends(get_current
     return rbs_service.list_nodes(db, owner_id=user_id)
 
 
-@router.get("/tree", response_model=List[RBSNodeRead])
+@router.get("/tree", response_model=List[RBSNodeTree])
 def list_tree(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    return rbs_service.list_tree(db, owner_id=user_id)
+    roots = rbs_service.list_tree(db, owner_id=user_id)
+    # Convert ORM to nested dicts suitable for Pydantic
+    def to_tree(node):
+        return {
+            "id": node.id,
+            "name": node.name,
+            "description": node.description,
+            "order_index": node.order_index,
+            "parent_id": node.parent_id,
+            "children": [to_tree(c) for c in getattr(node, "children", [])],
+        }
+
+    return [to_tree(n) for n in roots]
 
 
 @router.post("", response_model=RBSNodeRead, status_code=status.HTTP_201_CREATED)
@@ -50,5 +62,13 @@ def delete_node(node_id: int, db: Session = Depends(get_db), user_id: int = Depe
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RBS node not found")
     return None
+
+
+@router.post("/{node_id}/move", response_model=RBSNodeRead)
+def move_node(node_id: int, direction: str = Query(pattern="^(up|down)$"), db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
+    node = rbs_service.move_node(db, owner_id=user_id, node_id=node_id, direction=direction)
+    if not node:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RBS node not found")
+    return node
 
 

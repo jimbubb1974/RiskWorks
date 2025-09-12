@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from ..models.rbs import RBSNode
@@ -28,6 +28,19 @@ def list_tree(db: Session, owner_id: int):
 
 
 def create_node(db: Session, owner_id: int, **data) -> RBSNode:
+    # If order_index not provided or is 0/invalid, append to end among siblings
+    parent_id = data.get("parent_id")
+    if (
+        "order_index" not in data
+        or data["order_index"] is None
+        or (isinstance(data["order_index"], int) and data["order_index"] < 1)
+    ):
+        max_order = db.scalar(
+            select(func.max(RBSNode.order_index)).where(
+                RBSNode.owner_id == owner_id, RBSNode.parent_id == parent_id
+            )
+        )
+        data["order_index"] = (max_order or 0) + 1
     node = RBSNode(owner_id=owner_id, **data)
     db.add(node)
     db.commit()
@@ -54,5 +67,47 @@ def delete_node(db: Session, owner_id: int, node_id: int) -> bool:
     db.delete(node)
     db.commit()
     return True
+
+
+def move_node(db: Session, owner_id: int, node_id: int, direction: str) -> Optional[RBSNode]:
+    node = db.get(RBSNode, node_id)
+    if not node or node.owner_id != owner_id:
+        return None
+    # Get siblings ordered by order_index
+    siblings = list(
+        db.scalars(
+            select(RBSNode)
+            .where(RBSNode.owner_id == owner_id, RBSNode.parent_id == node.parent_id)
+            .order_by(RBSNode.order_index, RBSNode.id)
+        )
+    )
+    # Normalize order_index to unique sequential values if duplicates exist
+    seen = set()
+    duplicates = False
+    for s in siblings:
+        key = s.order_index
+        if key in seen:
+            duplicates = True
+            break
+        seen.add(key)
+    if duplicates or any((s.order_index or 0) < 1 for s in siblings):
+        for idx, s in enumerate(siblings, start=1):
+            s.order_index = idx
+        db.flush()
+    try:
+        idx = next(i for i, s in enumerate(siblings) if s.id == node.id)
+    except StopIteration:
+        return node
+    if direction == "up" and idx > 0:
+        prev = siblings[idx - 1]
+        node.order_index, prev.order_index = prev.order_index, node.order_index
+    elif direction == "down" and idx < len(siblings) - 1:
+        nxt = siblings[idx + 1]
+        node.order_index, nxt.order_index = nxt.order_index, node.order_index
+    else:
+        return node
+    db.commit()
+    db.refresh(node)
+    return node
 
 

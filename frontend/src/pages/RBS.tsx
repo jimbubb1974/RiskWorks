@@ -15,7 +15,9 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import { moveRBSNode } from "../services/rbs";
 
 export default function RBSPage() {
   const queryClient = useQueryClient();
@@ -29,7 +31,17 @@ export default function RBSPage() {
 
   const createMut = useMutation({
     mutationFn: createRBSNode,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rbs-tree"] }),
+    onSuccess: (_data, variables) => {
+      if (
+        variables &&
+        typeof variables === "object" &&
+        "parent_id" in variables &&
+        variables.parent_id
+      ) {
+        setExpanded((s) => ({ ...s, [variables.parent_id as number]: true }));
+      }
+      queryClient.invalidateQueries({ queryKey: ["rbs-tree"] });
+    },
   });
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<RBSNode> }) =>
@@ -41,10 +53,15 @@ export default function RBSPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rbs-tree"] }),
   });
 
+  const moveMut = useMutation({
+    mutationFn: ({ id, direction }: { id: number; direction: "up" | "down" }) =>
+      moveRBSNode(id, direction),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rbs-tree"] }),
+  });
+
   const addRoot = () =>
     createMut.mutate({
       name: "New Category",
-      order_index: 0,
       description: "",
       parent_id: null,
     });
@@ -81,11 +98,11 @@ export default function RBSPage() {
                 onCreateChild={(parentId) =>
                   createMut.mutate({
                     name: "New Category",
-                    order_index: 0,
                     description: "",
                     parent_id: parentId,
                   })
                 }
+                onMove={(id, direction) => moveMut.mutate({ id, direction })}
               />
             ))}
           </div>
@@ -103,6 +120,7 @@ function RBSNodeItem({
   onUpdate,
   onDelete,
   onCreateChild,
+  onMove,
 }: {
   node: RBSNode & { children?: RBSNode[] };
   level: number;
@@ -111,6 +129,7 @@ function RBSNodeItem({
   onUpdate: (args: { id: number; payload: Partial<RBSNode> }) => void;
   onDelete: (id: number) => void;
   onCreateChild: (parentId: number) => void;
+  onMove: (id: number, direction: "up" | "down") => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(node.name);
@@ -172,6 +191,22 @@ function RBSNodeItem({
             </>
           ) : (
             <>
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-ghost p-1"
+                  title="Move up"
+                  onClick={() => onMove(node.id, "up")}
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  className="btn-ghost p-1"
+                  title="Move down"
+                  onClick={() => onMove(node.id, "down")}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
               <button
                 className="btn-secondary"
                 onClick={() => setEditing(true)}
@@ -213,6 +248,7 @@ function RBSNodeItem({
               onUpdate={onUpdate}
               onDelete={onDelete}
               onCreateChild={onCreateChild}
+              onMove={onMove}
             />
           ))}
         </div>

@@ -35,6 +35,7 @@ class RBSNodeTree(BaseModel):
     name: str
     description: Optional[str] = None
     order_index: int
-    children: List["RBSNodeTree"] = []
+    parent_id: Optional[int] = None
+    children: List["RBSNodeTree"] = Field(default_factory=list)
 
 

@@ -6,9 +6,12 @@ export type RBSNode = {
   description?: string | null;
   order_index: number;
   parent_id?: number | null;
+  children?: RBSNode[];
 };
 
-export type RBSNodeCreate = Omit<RBSNode, "id">;
+export type RBSNodeCreate = Omit<RBSNode, "id" | "children" | "order_index"> & {
+  order_index?: number | null;
+};
 export type RBSNodeUpdate = Partial<Omit<RBSNode, "id">>;
 
 export async function listRBS(): Promise<RBSNode[]> {
@@ -36,4 +39,14 @@ export async function updateRBSNode(
 
 export async function deleteRBSNode(id: number): Promise<void> {
   await apiClient.delete(`/rbs/${id}`);
+}
+
+export async function moveRBSNode(
+  id: number,
+  direction: "up" | "down"
+): Promise<RBSNode> {
+  const { data } = await apiClient.post<RBSNode>(`/rbs/${id}/move`, null, {
+    params: { direction },
+  });
+  return data;
 }
