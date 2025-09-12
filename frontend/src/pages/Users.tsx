@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { usersService } from "../services/users";
+import AddUserModal from "../components/AddUserModal";
 
 // Define User interface locally to avoid import issues
 // interface User {
@@ -26,12 +27,11 @@ import { usersService } from "../services/users";
 export default function Users() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ["users", search, roleFilter, statusFilter],
-    queryFn: () =>
-      usersService.getUsers({ search, role: roleFilter, status: statusFilter }),
+    queryKey: ["users", search, roleFilter],
+    queryFn: () => usersService.getUsers({ search, role: roleFilter }),
   });
 
   const filteredUsers = users.filter((user) => {
@@ -39,8 +39,7 @@ export default function Users() {
       .toLowerCase()
       .includes(search.toLowerCase());
     const matchesRole = !roleFilter || user.role === roleFilter;
-    const matchesStatus = !statusFilter || user.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   const formatDate = (dateString: string) => {
@@ -53,27 +52,14 @@ export default function Users() {
 
   const getRoleColor = (role: string) => {
     switch (role.toLowerCase()) {
-      case "administrator":
-        return "bg-danger-100 text-danger-800";
       case "manager":
+        return "bg-danger-100 text-danger-800";
+      case "editor":
         return "bg-warning-100 text-warning-800";
-      case "user":
+      case "viewer":
         return "bg-primary-100 text-primary-800";
       default:
         return "bg-secondary-100 text-secondary-800";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-success-100 text-success-800";
-      case "inactive":
-        return "bg-secondary-100 text-secondary-600";
-      case "suspended":
-        return "bg-danger-100 text-danger-800";
-      default:
-        return "bg-secondary-100 text-secondary-600";
     }
   };
 
@@ -111,28 +97,19 @@ export default function Users() {
                 className="input"
               >
                 <option value="">All roles</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Manager">Manager</option>
-                <option value="User">User</option>
-              </select>
-
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="input"
-              >
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+                <option value="manager">Manager</option>
               </select>
             </div>
           </div>
 
           {/* Actions Section */}
           <div className="flex items-center gap-3 lg:ml-4">
-            <button className="btn-primary">
+            <button
+              className="btn-primary"
+              onClick={() => setIsAddUserModalOpen(true)}
+            >
               <UserPlus className="w-5 h-5 mr-2" />
               Add User
             </button>
@@ -161,11 +138,14 @@ export default function Users() {
               No users found
             </h3>
             <p className="text-secondary-600 mb-6">
-              {search || roleFilter || statusFilter
+              {search || roleFilter
                 ? "Try adjusting your filters to see more results."
                 : "No users have been registered yet."}
             </p>
-            <button className="btn-primary">
+            <button
+              className="btn-primary"
+              onClick={() => setIsAddUserModalOpen(true)}
+            >
               <UserPlus className="w-5 h-5 mr-2" />
               Add First User
             </button>
@@ -183,9 +163,6 @@ export default function Users() {
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
                     Role
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
-                    Status
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
                     Joined
@@ -234,15 +211,6 @@ export default function Users() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          user.status || "active"
-                        )}`}
-                      >
-                        {user.status || "active"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-secondary-600">
                         <Calendar className="w-4 h-4" />
                         {formatDate(user.created_at)}
@@ -266,6 +234,12 @@ export default function Users() {
           </div>
         )}
       </div>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+      />
     </div>
   );
 }

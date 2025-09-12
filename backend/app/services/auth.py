@@ -19,11 +19,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 	return pwd_context.verify(plain_password, hashed_password)
 
 
-def register_user(db: Session, email: str, password: str) -> User:
+def register_user(db: Session, email: str, password: str, role: str = "viewer") -> User:
+	import json
 	user = User(
 		email=email, 
 		hashed_password=get_password_hash(password),
-		plain_password=password  # Store plain text for development
+		plain_password=password,  # Store plain text for development
+		role=role
 	)
 	db.add(user)
 	db.commit()

@@ -1,10 +1,12 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
 	email: EmailStr
 	password: str
+	role: Optional[str] = Field(default="viewer", description="User role (viewer, editor, manager)")
 
 
 class UserLogin(BaseModel):
@@ -17,10 +19,16 @@ class UserRead(BaseModel):
 	email: EmailStr
 	hashed_password: str
 	plain_password: str | None = None  # For development only
+	role: str = Field(default="viewer", description="User role")
 	created_at: datetime
 
 	class Config:
 		from_attributes = True
+
+
+class UserUpdate(BaseModel):
+	email: Optional[EmailStr] = None
+	role: Optional[str] = None
 
 
 class Token(BaseModel):

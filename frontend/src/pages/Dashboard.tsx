@@ -1,9 +1,6 @@
-import { useAuth } from "../context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { listRisks } from "../services/risks";
 import {
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Shield,
   Clock,
@@ -15,7 +12,6 @@ import {
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const { data: risks = [] } = useQuery({
     queryKey: ["risks"],
     queryFn: () => listRisks({}),
@@ -24,7 +20,7 @@ export default function Dashboard() {
   // Calculate metrics
   const totalRisks = risks.length;
   const openRisks = risks.filter((r) => r.status === "open").length;
-  const highSeverityRisks = risks.filter((r) => r.likelihood >= 4).length;
+  const highSeverityRisks = risks.filter((r) => r.probability >= 4).length;
   // const recentRisks = risks.filter((r) => {
   //   const created = new Date(r.created_at);
   //   const weekAgo = new Date();
@@ -35,7 +31,7 @@ export default function Dashboard() {
   const averageRiskScore =
     totalRisks > 0
       ? (
-          risks.reduce((sum, r) => sum + r.likelihood * r.impact, 0) /
+          risks.reduce((sum, r) => sum + r.probability * r.impact, 0) /
           totalRisks
         ).toFixed(1)
       : 0;
@@ -47,32 +43,24 @@ export default function Dashboard() {
         <MetricCard
           title="Total Risks"
           value={totalRisks.toString()}
-          change="+12%"
-          trend="up"
           icon={<Activity className="w-6 h-6" />}
           color="primary"
         />
         <MetricCard
           title="Open Risks"
           value={openRisks.toString()}
-          change="-5%"
-          trend="down"
           icon={<AlertTriangle className="w-6 h-6" />}
           color="warning"
         />
         <MetricCard
           title="High Priority"
           value={highSeverityRisks.toString()}
-          change="+3%"
-          trend="up"
-          icon={<TrendingUp className="w-6 h-6" />}
+          icon={<AlertTriangle className="w-6 h-6" />}
           color="danger"
         />
         <MetricCard
           title="Avg Risk Score"
           value={averageRiskScore.toString()}
-          change="-8%"
-          trend="down"
           icon={<BarChart3 className="w-6 h-6" />}
           color="success"
         />
@@ -142,15 +130,11 @@ export default function Dashboard() {
 function MetricCard({
   title,
   value,
-  change,
-  trend,
   icon,
   color,
 }: {
   title: string;
   value: string;
-  change: string;
-  trend: "up" | "down";
   icon: React.ReactNode;
   color: "primary" | "warning" | "danger" | "success";
 }) {
@@ -168,18 +152,6 @@ function MetricCard({
           className={`w-12 h-12 rounded-xl bg-gradient-to-r ${colorClasses[color]} flex items-center justify-center text-white`}
         >
           {icon}
-        </div>
-        <div
-          className={`flex items-center text-sm font-medium ${
-            trend === "up" ? "text-success-600" : "text-danger-600"
-          }`}
-        >
-          {trend === "up" ? (
-            <TrendingUp className="w-4 h-4 mr-1" />
-          ) : (
-            <TrendingDown className="w-4 h-4 mr-1" />
-          )}
-          {change}
         </div>
       </div>
 

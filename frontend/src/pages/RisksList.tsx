@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { listRisks } from "../services/risks";
+import { listRisks, getRiskOwners } from "../services/risks";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -20,23 +20,25 @@ import {
 export default function RisksList() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<string>("");
-  const [minProbability, setMinProbability] = useState<number | "">("");
   const [search, setSearch] = useState<string>("");
+  const [riskOwner, setRiskOwner] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [sortBy, setSortBy] = useState<string>("score");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const { data: risks = [], isLoading } = useQuery({
-    queryKey: ["risks", status, minProbability, search, sortBy, order],
+    queryKey: ["risks", status, search, riskOwner],
     queryFn: () =>
       listRisks({
         status: status || undefined,
-        min_probability:
-          typeof minProbability === "number" ? minProbability : undefined,
         search: search || undefined,
-        sort_by: sortBy || undefined,
-        order,
+        risk_owner: riskOwner || undefined,
       }),
+  });
+
+  const { data: riskOwners = [] } = useQuery({
+    queryKey: ["risk-owners"],
+    queryFn: getRiskOwners,
   });
 
   const handleSort = (field: string) => {
@@ -49,6 +51,48 @@ export default function RisksList() {
       setOrder("desc");
     }
   };
+
+  // Sort risks for table view
+  const sortedRisks = [...risks].sort((a, b) => {
+    let aValue, bValue;
+
+    switch (sortBy) {
+      case "risk_name":
+        aValue = a.risk_name?.toLowerCase() || "";
+        bValue = b.risk_name?.toLowerCase() || "";
+        break;
+      case "probability":
+        aValue = a.probability || 0;
+        bValue = b.probability || 0;
+        break;
+      case "impact":
+        aValue = a.impact || 0;
+        bValue = b.impact || 0;
+        break;
+      case "score":
+        aValue = a.score || 0;
+        bValue = b.score || 0;
+        break;
+      case "status":
+        aValue = a.status?.toLowerCase() || "";
+        bValue = b.status?.toLowerCase() || "";
+        break;
+      case "created_at":
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+        break;
+      case "updated_at":
+        aValue = new Date(a.updated_at).getTime();
+        bValue = new Date(b.updated_at).getTime();
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return order === "asc" ? -1 : 1;
+    if (aValue > bValue) return order === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -64,7 +108,7 @@ export default function RisksList() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
               <div className="lg:col-span-2 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
@@ -89,44 +133,19 @@ export default function RisksList() {
                 <option value="closed">Closed</option>
               </select>
 
-              {/* Severity Filter */}
-              <input
-                type="number"
-                min={1}
-                max={5}
-                placeholder="Min probability"
-                value={minProbability}
-                onChange={(e) =>
-                  setMinProbability(
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-                className="input"
-              />
-
-              {/* Sort By */}
+              {/* Risk Owner Filter */}
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                value={riskOwner}
+                onChange={(e) => setRiskOwner(e.target.value)}
                 className="input"
               >
-                <option value="created_at">Created Date</option>
-                <option value="updated_at">Updated Date</option>
-                <option value="probability">Probability</option>
-                <option value="impact">Impact</option>
-                <option value="score">Risk Score</option>
-                <option value="risk_name">Risk Name</option>
-                <option value="status">Status</option>
+                <option value="">All risk owners</option>
+                {riskOwners.map((owner) => (
+                  <option key={owner} value={owner}>
+                    {owner}
+                  </option>
+                ))}
               </select>
-
-              {/* Sort Order */}
-              <button
-                onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
-                className="btn-secondary justify-center"
-              >
-                <ArrowUpDown className="w-4 h-4 mr-2" />
-                {order === "asc" ? "Ascending" : "Descending"}
-              </button>
             </div>
           </div>
 
@@ -188,7 +207,7 @@ export default function RisksList() {
               No risks found
             </h3>
             <p className="text-secondary-600 mb-6">
-              {search || status || minProbability
+              {search || status || riskOwner
                 ? "Try adjusting your filters to see more results."
                 : "Get started by creating your first risk assessment."}
             </p>
@@ -299,7 +318,7 @@ export default function RisksList() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary-100">
-                {risks.map((risk) => (
+                {sortedRisks.map((risk) => (
                   <tr
                     key={risk.id}
                     className="hover:bg-secondary-50 transition-colors"

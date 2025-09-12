@@ -28,15 +28,13 @@ class Risk(Base):
 	# Status and ownership
 	status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")
 	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
-	assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
 	
 	# Timestamps
 	created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-	updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+	updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 	
 
 	owner = relationship("User", back_populates="risks", foreign_keys=[owner_id])
-	assigned_user = relationship("User", foreign_keys=[assigned_to], back_populates=None)
 
 	@property
 	def score(self) -> int:

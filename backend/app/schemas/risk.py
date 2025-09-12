@@ -4,7 +4,7 @@ from typing import Literal, Optional, List, Union
 from pydantic import BaseModel, Field, field_validator
 
 
-Status = Literal["open", "closed", "draft"]
+Status = Literal["open", "closed", "draft", "in_progress", "mitigated", "escalated"]
 Category = Literal["operational", "financial", "strategic", "technical", "compliance", "security", "environmental", "reputational"]
 
 
@@ -39,7 +39,6 @@ class RiskBase(BaseModel):
 	
 	# Status and ownership
 	status: Status = Field(default="open", description="Current status of the risk")
-	assigned_to: Optional[int] = Field(None, description="User ID of person assigned to manage this risk")
 
 
 class RiskCreate(RiskBase):
@@ -58,7 +57,6 @@ class RiskUpdate(BaseModel):
 	impact_basis: Optional[str] = None
 	notes: Optional[str] = None
 	status: Optional[Status] = None
-	assigned_to: Optional[int] = None
 
 
 class RiskRead(RiskBase):

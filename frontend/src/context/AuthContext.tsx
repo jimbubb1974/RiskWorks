@@ -1,13 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-  loginRequest,
-  meRequest,
-  registerRequest,
-  type UserResponse,
-} from "../services/api";
+import { loginRequest, meRequest, registerRequest } from "../services/api";
+import type { User } from "../types/user";
 
 type AuthContextValue = {
-  user: UserResponse | null;
+  user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -20,7 +16,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem("token")
   );
-  const [user, setUser] = useState<UserResponse | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -28,7 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     meRequest()
-      .then((u) => setUser(u))
+      .then((u) => {
+        // Map the simple user response to full User type
+        const fullUser: User = {
+          id: u.id,
+          email: u.email,
+          hashed_password: "", // Not provided by API
+          role: "viewer", // Default role, should be fetched from backend
+          created_at: new Date().toISOString(), // Default, should be fetched from backend
+        };
+        setUser(fullUser);
+      })
       .catch(() => {
         localStorage.removeItem("token");
         setToken(null);
@@ -45,7 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("token", res.access_token);
         setToken(res.access_token);
         const u = await meRequest();
-        setUser(u);
+        // Map the simple user response to full User type
+        const fullUser: User = {
+          id: u.id,
+          email: u.email,
+          hashed_password: "", // Not provided by API
+          role: "viewer", // Default role, should be fetched from backend
+          created_at: new Date().toISOString(), // Default, should be fetched from backend
+        };
+        setUser(fullUser);
       },
       async register(email, password) {
         await registerRequest(email, password);

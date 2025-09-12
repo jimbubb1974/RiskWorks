@@ -5,6 +5,7 @@ export async function listRisks(params?: {
   status?: string;
   min_probability?: number;
   search?: string;
+  risk_owner?: string;
   sort_by?: string;
   order?: "asc" | "desc";
   limit?: number;
@@ -34,4 +35,9 @@ export async function updateRisk(
 
 export async function deleteRisk(id: number): Promise<void> {
   await apiClient.delete(`/risks/${id}`);
+}
+
+export async function getRiskOwners(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>("/risks/owners");
+  return data;
 }

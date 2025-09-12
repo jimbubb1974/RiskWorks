@@ -101,33 +101,41 @@ const ExistingDataText = ({
   newText: string;
   label: string;
 }) => {
-  const diff = createDiffHighlight(existingText || "", newText || "");
-
-  if (!diff) return null;
-
-  if (typeof diff === "object" && "text" in diff && !diff.changed) {
-    // No changes
+  // If texts are the same, show normal text
+  if (existingText === newText) {
     return (
       <p>
-        <strong>{label}:</strong> {diff.text}
+        <strong>{label}:</strong> {existingText}
       </p>
     );
   }
 
-  if (typeof diff === "object" && "existing" in diff) {
-    // Only existing text (will be deleted)
+  // If existing text is empty, show nothing (it's being added)
+  if (!existingText) {
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        <span className="text-gray-400 italic">(empty)</span>
+      </p>
+    );
+  }
+
+  // If new text is empty, existing text is being removed
+  if (!newText) {
     return (
       <p>
         <strong>{label}:</strong>{" "}
         <span className="text-red-600 line-through bg-red-50 px-1 rounded">
-          {diff.existing}
+          {existingText}
         </span>
       </p>
     );
   }
 
+  // Show existing text with parts that will be removed/changed highlighted
+  const diff = createDiffHighlight(existingText, newText);
+
   if (Array.isArray(diff)) {
-    // Word-by-word changes - show existing text with removed parts highlighted
     return (
       <p>
         <strong>{label}:</strong>{" "}
@@ -147,7 +155,11 @@ const ExistingDataText = ({
     );
   }
 
-  return null;
+  return (
+    <p>
+      <strong>{label}:</strong> {existingText}
+    </p>
+  );
 };
 
 // Component to render new data with highlighting for added/changed parts
@@ -160,33 +172,41 @@ const NewDataText = ({
   newText: string;
   label: string;
 }) => {
-  const diff = createDiffHighlight(existingText || "", newText || "");
-
-  if (!diff) return null;
-
-  if (typeof diff === "object" && "text" in diff && !diff.changed) {
-    // No changes
+  // If texts are the same, show normal text
+  if (existingText === newText) {
     return (
       <p>
-        <strong>{label}:</strong> {diff.text}
+        <strong>{label}:</strong> {newText}
       </p>
     );
   }
 
-  if (typeof diff === "object" && "new" in diff) {
-    // Only new text
+  // If new text is empty, show nothing (it's being removed)
+  if (!newText) {
+    return (
+      <p>
+        <strong>{label}:</strong>{" "}
+        <span className="text-gray-400 italic">(empty)</span>
+      </p>
+    );
+  }
+
+  // If existing text is empty, new text is being added
+  if (!existingText) {
     return (
       <p>
         <strong>{label}:</strong>{" "}
         <span className="text-red-600 font-medium bg-red-50 px-1 rounded">
-          {diff.new}
+          {newText}
         </span>
       </p>
     );
   }
 
+  // Show new text with parts that are being added/changed highlighted
+  const diff = createDiffHighlight(existingText, newText);
+
   if (Array.isArray(diff)) {
-    // Word-by-word changes - show new text with added parts highlighted
     return (
       <p>
         <strong>{label}:</strong>{" "}
@@ -206,7 +226,50 @@ const NewDataText = ({
     );
   }
 
-  return null;
+  return (
+    <p>
+      <strong>{label}:</strong> {newText}
+    </p>
+  );
+};
+
+// Helper function to get fields that have differences
+const getFieldsWithDifferences = (existingRisk: any, excelRisk: any) => {
+  const fieldsToCheck = [
+    { key: "risk_name", label: "Name" },
+    { key: "risk_description", label: "Description" },
+    { key: "category", label: "Category" },
+    { key: "status", label: "Status" },
+    { key: "probability", label: "Probability" },
+    { key: "impact", label: "Impact" },
+    { key: "risk_owner", label: "Risk Owner" },
+    { key: "probability_basis", label: "Probability Basis" },
+    { key: "impact_basis", label: "Impact Basis" },
+    { key: "notes", label: "Notes" },
+  ];
+
+  return fieldsToCheck.filter((field) => {
+    const existingValue = existingRisk[field.key];
+    const excelValue = excelRisk[field.key];
+
+    // Normalize values for comparison
+    const normalizeValue = (val: any) => {
+      if (val === null || val === undefined) return "";
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        if (trimmed === "" || isNaN(Number(trimmed))) {
+          return trimmed;
+        }
+        return Number(trimmed);
+      }
+      return val;
+    };
+
+    const normalizedExisting = normalizeValue(existingValue);
+    const normalizedExcel = normalizeValue(excelValue);
+
+    return normalizedExisting !== normalizedExcel;
+  });
 };
 
 export default function Reports() {
@@ -466,9 +529,6 @@ export default function Reports() {
                 case "risk owner":
                   risk.risk_owner = String(value);
                   break;
-                case "assigned to":
-                  risk.assigned_to = String(value);
-                  break;
                 case "probability basis":
                   risk.probability_basis = String(value);
                   break;
@@ -542,10 +602,6 @@ export default function Reports() {
                   case "status":
                     actionItem.status = String(value);
                     break;
-                  case "assigned to":
-                    actionItem.assigned_to =
-                      typeof value === "number" ? value : parseInt(value);
-                    break;
                   case "risk id":
                     actionItem.risk_id =
                       typeof value === "number" ? value : parseInt(value);
@@ -591,7 +647,6 @@ export default function Reports() {
           "probability",
           "impact",
           "risk_owner",
-          "assigned_to",
           "probability_basis",
           "impact_basis",
           "notes",
@@ -1274,7 +1329,6 @@ export default function Reports() {
       Status: risk.status,
       "Risk Owner": risk.risk_owner || "",
       "Owner ID": risk.owner_id,
-      "Assigned To": risk.assigned_to || "",
 
       // Risk Assessment
       Probability: risk.probability,
@@ -1353,7 +1407,6 @@ export default function Reports() {
         Status: actionItem.status,
 
         // Assignment
-        "Assigned To": actionItem.assigned_to || "",
         "Created By": actionItem.created_by,
         "Risk ID": actionItem.risk_id,
 
@@ -1884,25 +1937,6 @@ export default function Reports() {
                       ],
                       spacing: { after: 100 },
                     }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Assigned To:",
-                          bold: true,
-                          color: "64748B",
-                          size: 18,
-                        }),
-                        new TextRun({
-                          text: ` ${
-                            risk.assigned_to
-                              ? `User ID: ${risk.assigned_to}`
-                              : "Not assigned"
-                          }`,
-                          size: 18,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
                   ],
                   width: { size: 48, type: WidthType.PERCENTAGE },
                 }),
@@ -2253,14 +2287,6 @@ export default function Reports() {
 
                   { text: "Created By (Owner ID):", style: "fieldLabel" },
                   { text: `User ID: ${risk.owner_id}`, style: "fieldValue" },
-
-                  { text: "Assigned To:", style: "fieldLabel" },
-                  {
-                    text: risk.assigned_to
-                      ? `User ID: ${risk.assigned_to}`
-                      : "Not assigned",
-                    style: "fieldValue",
-                  },
                 ],
                 width: "*",
               },
@@ -2567,15 +2593,7 @@ export default function Reports() {
                         ],
                         [
                           {
-                            stack: [
-                              { text: "Assigned To:", style: "fieldLabel" },
-                              {
-                                text: risk.assigned_to
-                                  ? `User ID: ${risk.assigned_to}`
-                                  : "Not assigned",
-                                style: "fieldValue",
-                              },
-                            ],
+                            stack: [],
                           },
                         ],
                       ],
@@ -3272,28 +3290,22 @@ export default function Reports() {
                         <p>
                           <strong>ID:</strong> {conflict.existingRisk.id}
                         </p>
-                        <ExistingDataText
-                          existingText={conflict.existingRisk.risk_name}
-                          newText={conflict.excelRisk.risk_name}
-                          label="Name"
-                        />
-                        <ExistingDataText
-                          existingText={
-                            conflict.existingRisk.risk_description || "N/A"
-                          }
-                          newText={conflict.excelRisk.risk_description || "N/A"}
-                          label="Description"
-                        />
-                        <ExistingDataText
-                          existingText={conflict.existingRisk.category}
-                          newText={conflict.excelRisk.category}
-                          label="Category"
-                        />
-                        <ExistingDataText
-                          existingText={conflict.existingRisk.status}
-                          newText={conflict.excelRisk.status}
-                          label="Status"
-                        />
+                        {getFieldsWithDifferences(
+                          conflict.existingRisk,
+                          conflict.excelRisk
+                        ).map((field) => (
+                          <ExistingDataText
+                            key={field.key}
+                            existingText={
+                              conflict.existingRisk[field.key]?.toString() ||
+                              "N/A"
+                            }
+                            newText={
+                              conflict.excelRisk[field.key]?.toString() || "N/A"
+                            }
+                            label={field.label}
+                          />
+                        ))}
                       </div>
                     </div>
 
@@ -3306,28 +3318,22 @@ export default function Reports() {
                         <p>
                           <strong>ID:</strong> {conflict.excelRisk.id || "N/A"}
                         </p>
-                        <NewDataText
-                          existingText={conflict.existingRisk.risk_name}
-                          newText={conflict.excelRisk.risk_name}
-                          label="Name"
-                        />
-                        <NewDataText
-                          existingText={
-                            conflict.existingRisk.risk_description || "N/A"
-                          }
-                          newText={conflict.excelRisk.risk_description || "N/A"}
-                          label="Description"
-                        />
-                        <NewDataText
-                          existingText={conflict.existingRisk.category}
-                          newText={conflict.excelRisk.category}
-                          label="Category"
-                        />
-                        <NewDataText
-                          existingText={conflict.existingRisk.status}
-                          newText={conflict.excelRisk.status}
-                          label="Status"
-                        />
+                        {getFieldsWithDifferences(
+                          conflict.existingRisk,
+                          conflict.excelRisk
+                        ).map((field) => (
+                          <NewDataText
+                            key={field.key}
+                            existingText={
+                              conflict.existingRisk[field.key]?.toString() ||
+                              "N/A"
+                            }
+                            newText={
+                              conflict.excelRisk[field.key]?.toString() || "N/A"
+                            }
+                            label={field.label}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>

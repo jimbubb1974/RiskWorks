@@ -238,22 +238,6 @@ export default function RiskDetail() {
                     </p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                    <User className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Assigned To
-                    </label>
-                    <p className="text-secondary-900">
-                      {risk.assigned_to
-                        ? `User ID: ${risk.assigned_to}`
-                        : "Not assigned"}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

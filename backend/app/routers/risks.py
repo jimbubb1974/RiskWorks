@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..core.security import verify_token
 from ..database import get_db
 from ..schemas.risk import RiskCreate, RiskRead, RiskUpdate
-from ..services.risk import create_risk, delete_risk, get_risk, list_risks, update_risk
+from ..services.risk import create_risk, delete_risk, get_risk, list_risks, update_risk, get_risk_owners
 
 
 router = APIRouter(prefix="/risks", tags=["risks"])
@@ -29,6 +29,7 @@ def list_risks_endpoint(
     min_probability: Optional[int] = Query(default=None),
     min_impact: Optional[int] = Query(default=None),
     search: Optional[str] = Query(default=None),
+    risk_owner: Optional[str] = Query(default=None),
     sort_by: Optional[str] = Query(default=None),
     order: str = Query(default="desc"),
     limit: int = Query(default=50, ge=1, le=200),
@@ -47,11 +48,20 @@ def list_risks_endpoint(
         min_likelihood=probability_filter,
         min_impact=min_impact,
         search=search,
+        risk_owner=risk_owner,
         sort_by=sort_by,
         order=order,
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/owners", response_model=list[str])
+def get_risk_owners_endpoint(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    return get_risk_owners(db, user_id)
 
 
 @router.post("", response_model=RiskRead, status_code=status.HTTP_201_CREATED)

@@ -1,26 +1,11 @@
 import { apiClient } from "./api";
-
-export interface User {
-  id: number;
-  email: string;
-  hashed_password: string;
-  plain_password?: string; // For development - shows actual password
-  created_at: string;
-  role?: string;
-  status?: string;
-}
-
-export interface UsersResponse {
-  users: User[];
-  total: number;
-}
+import type { User, UserUpdate, Role } from "../types/user";
 
 export const usersService = {
   // Get all users with optional filtering
   async getUsers(params?: {
     search?: string;
     role?: string;
-    status?: string;
     limit?: number;
     offset?: number;
   }): Promise<User[]> {
@@ -28,7 +13,6 @@ export const usersService = {
 
     if (params?.search) searchParams.append("search", params.search);
     if (params?.role) searchParams.append("role", params.role);
-    if (params?.status) searchParams.append("status", params.status);
     if (params?.limit) searchParams.append("limit", params.limit.toString());
     if (params?.offset) searchParams.append("offset", params.offset.toString());
 
@@ -42,12 +26,31 @@ export const usersService = {
     return response.data;
   },
 
-  // Create a new user (for future use)
+  // Create a new user (admin endpoint)
   async createUser(userData: {
     email: string;
     password: string;
+    role?: string;
   }): Promise<User> {
-    const response = await apiClient.post("/auth/register", userData);
+    const response = await apiClient.post("/users", userData);
+    return response.data;
+  },
+
+  // Update a user (admin endpoint)
+  async updateUser(id: number, userData: UserUpdate): Promise<User> {
+    const response = await apiClient.put(`/users/${id}`, userData);
+    return response.data;
+  },
+
+  // Get available roles
+  async getRoles(): Promise<Role[]> {
+    const response = await apiClient.get("/users/roles");
+    return response.data;
+  },
+
+  // Get user permissions based on role
+  async getUserPermissions(userId: number): Promise<string[]> {
+    const response = await apiClient.get(`/users/${userId}/permissions`);
     return response.data;
   },
 };

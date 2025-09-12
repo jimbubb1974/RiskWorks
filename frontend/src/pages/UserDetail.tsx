@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
 import {
   ArrowLeft,
   Mail,
@@ -10,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { usersService } from "../services/users";
+import EditUserModal from "../components/EditUserModal";
 
 // Define User interface locally
 // interface User {
@@ -25,6 +27,7 @@ import { usersService } from "../services/users";
 export default function UserDetail() {
   const { id } = useParams<{ id: string }>();
   const userId = parseInt(id || "0");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const {
     data: user,
@@ -48,27 +51,14 @@ export default function UserDetail() {
 
   const getRoleColor = (role: string) => {
     switch (role?.toLowerCase()) {
-      case "administrator":
-        return "bg-danger-100 text-danger-800";
       case "manager":
+        return "bg-danger-100 text-danger-800";
+      case "editor":
         return "bg-warning-100 text-warning-800";
-      case "user":
+      case "viewer":
         return "bg-primary-100 text-primary-800";
       default:
         return "bg-secondary-100 text-secondary-800";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-success-100 text-success-800";
-      case "inactive":
-        return "bg-secondary-100 text-secondary-600";
-      case "suspended":
-        return "bg-danger-100 text-danger-800";
-      default:
-        return "bg-success-100 text-success-800";
     }
   };
 
@@ -113,7 +103,10 @@ export default function UserDetail() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-secondary">
+          <button
+            className="btn-secondary"
+            onClick={() => setIsEditModalOpen(true)}
+          >
             <Edit className="w-5 h-5 mr-2" />
             Edit User
           </button>
@@ -146,13 +139,6 @@ export default function UserDetail() {
                 >
                   <Shield className="w-3 h-3 mr-1" />
                   {user.role || "User"}
-                </span>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                    user.status || "active"
-                  )}`}
-                >
-                  {user.status || "active"}
                 </span>
               </div>
             </div>
@@ -193,14 +179,6 @@ export default function UserDetail() {
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary-50">
                 <UserIcon className="w-5 h-5 text-secondary-500" />
-                <div>
-                  <p className="text-sm font-medium text-secondary-900">
-                    Status
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    {user.status || "Active"}
-                  </p>
-                </div>
               </div>
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary-50">
@@ -243,28 +221,16 @@ export default function UserDetail() {
             </div>
           </div>
         </div>
-
-        {/* Permissions */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-secondary-900 mb-4">
-            Permissions
-          </h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-secondary-50">
-              <span className="text-sm text-secondary-900">View Risks</span>
-              <span className="text-xs text-success-600">✓ Allowed</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-secondary-50">
-              <span className="text-sm text-secondary-900">Create Risks</span>
-              <span className="text-xs text-success-600">✓ Allowed</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-secondary-50">
-              <span className="text-sm text-secondary-900">Manage Users</span>
-              <span className="text-xs text-warning-600">✗ Restricted</span>
-            </div>
-          </div>
-        </div>
       </div>
+
+      {/* Edit User Modal */}
+      {user && (
+        <EditUserModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          user={user}
+        />
+      )}
     </div>
   );
 }

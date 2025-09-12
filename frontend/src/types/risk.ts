@@ -18,7 +18,6 @@ export type Risk = {
   // Status and ownership
   status: RiskStatus;
   owner_id: number;
-  assigned_to?: number;
 
   // Timestamps
   created_at: string;
@@ -41,12 +40,17 @@ export type RiskCreate = {
   impact_basis?: string;
   notes?: string;
   status?: RiskStatus;
-  assigned_to?: number;
 };
 
 export type RiskUpdate = Partial<RiskCreate>;
 
-export type RiskStatus = "open" | "closed" | "draft";
+export type RiskStatus =
+  | "open"
+  | "closed"
+  | "draft"
+  | "in_progress"
+  | "mitigated"
+  | "escalated";
 export type RiskCategory =
   | "operational"
   | "financial"

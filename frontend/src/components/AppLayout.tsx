@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard,
   ListChecks,
+  TreeDeciduous,
   Settings,
   LogOut,
   Shield,
@@ -107,6 +108,12 @@ export default function AppLayout() {
             label="Reports"
             icon={<FileText size={20} />}
             description="Generate & Export"
+          />
+          <NavItem
+            to="/rbs"
+            label="RBS"
+            icon={<TreeDeciduous size={20} />}
+            description="Risk Breakdown Structure"
           />
           <NavItem
             to="/settings"

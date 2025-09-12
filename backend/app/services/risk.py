@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from sqlalchemy import select, desc, asc
+from sqlalchemy import select, desc, asc, distinct
 from sqlalchemy.orm import Session
 
 from ..models.risk import Risk
@@ -14,6 +14,7 @@ def list_risks(
 	min_likelihood: Optional[int] = None,
 	min_impact: Optional[int] = None,
 	search: Optional[str] = None,
+	risk_owner: Optional[str] = None,
 	sort_by: Optional[str] = None,
 	order: str = "desc",
 	limit: int = 50,
@@ -31,6 +32,8 @@ def list_risks(
 	if search:
 		like = f"%{search}%"
 		stmt = stmt.where(Risk.risk_name.ilike(like))
+	if risk_owner:
+		stmt = stmt.where(Risk.risk_owner.ilike(f"%{risk_owner}%"))
 	if sort_by == "score":
 		# Sort by computed score (probability * impact)
 		score_expr = Risk.probability * Risk.impact
@@ -79,6 +82,8 @@ def update_risk(db: Session, owner_id: int, risk_id: int, **updates) -> Optional
 	for key, value in updates.items():
 		if value is not None:
 			setattr(risk, key, value)
+	
+	# updated_at will be automatically updated by SQLAlchemy due to onupdate=datetime.utcnow
 	db.commit()
 	db.refresh(risk)
 	return risk
@@ -91,5 +96,17 @@ def delete_risk(db: Session, owner_id: int, risk_id: int) -> bool:
 	db.delete(risk)
 	db.commit()
 	return True
+
+
+def get_risk_owners(db: Session, owner_id: int) -> list[str]:
+	"""Get unique risk owner names for the given user's risks."""
+	stmt = select(distinct(Risk.risk_owner)).where(
+		Risk.owner_id == owner_id,
+		Risk.risk_owner.isnot(None),
+		Risk.risk_owner != ""
+	).order_by(Risk.risk_owner)
+	
+	owners = db.scalars(stmt).all()
+	return [owner for owner in owners if owner]  # Filter out None/empty values
 
 

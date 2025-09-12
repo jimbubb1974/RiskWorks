@@ -31,7 +31,6 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export type LoginResponse = { access_token: string; token_type: string };
-export type UserResponse = { id: number; email: string };
 
 export async function loginRequest(
   email: string,
@@ -49,16 +48,21 @@ export async function loginRequest(
 export async function registerRequest(
   email: string,
   password: string
-): Promise<UserResponse> {
-  const { data } = await apiClient.post<UserResponse>("/auth/register", {
-    email,
-    password,
-  });
+): Promise<{ id: number; email: string }> {
+  const { data } = await apiClient.post<{ id: number; email: string }>(
+    "/auth/register",
+    {
+      email,
+      password,
+    }
+  );
   return data;
 }
 
-export async function meRequest(): Promise<UserResponse> {
-  const { data } = await apiClient.get<UserResponse>("/auth/me");
+export async function meRequest(): Promise<{ id: number; email: string }> {
+  const { data } = await apiClient.get<{ id: number; email: string }>(
+    "/auth/me"
+  );
   return data;
 }
 
