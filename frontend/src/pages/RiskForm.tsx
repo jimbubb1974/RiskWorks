@@ -32,7 +32,6 @@ const schema = z.object({
     .number()
     .min(1, "Impact must be between 1-5")
     .max(5, "Impact must be between 1-5"),
-  category: z.string().optional(),
   scope: z.enum(["project", "site", "enterprise"]).default("project"),
   risk_owner: z.string().optional(),
   rbs_node_id: z.number().int().nullable().optional(),
@@ -66,7 +65,6 @@ export default function RiskForm() {
       risk_description: "",
       probability: 3,
       impact: 3,
-      category: "operational",
       scope: "project",
       risk_owner: "Unassigned",
       rbs_node_id: null,
@@ -119,7 +117,6 @@ export default function RiskForm() {
             risk_description: r.risk_description ?? "",
             probability: r.probability,
             impact: r.impact,
-            category: r.category ?? "operational",
             scope: (r as any).scope ?? "project",
             risk_owner: r.risk_owner ?? "Unassigned",
             rbs_node_id: (r as any).rbs_node_id ?? null,
@@ -246,24 +243,8 @@ export default function RiskForm() {
                     />
                   </div>
 
-                  {/* Category, Scope, RBS link, and Risk Owner */}
+                  {/* Scope, RBS link, and Risk Owner */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-700 mb-2">
-                        Risk Category
-                      </label>
-                      <select {...register("category")} className="input">
-                        <option value="operational">Operational</option>
-                        <option value="financial">Financial</option>
-                        <option value="strategic">Strategic</option>
-                        <option value="technical">Technical</option>
-                        <option value="compliance">Compliance</option>
-                        <option value="security">Security</option>
-                        <option value="environmental">Environmental</option>
-                        <option value="reputational">Reputational</option>
-                      </select>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-medium text-secondary-700 mb-2">
                         Scope

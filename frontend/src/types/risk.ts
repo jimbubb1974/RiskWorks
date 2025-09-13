@@ -8,7 +8,6 @@ export type Risk = {
   impact: number;
 
   // Risk details
-  category?: string;
   scope: RiskScope;
   risk_owner?: string;
   rbs_node_id?: number | null;
@@ -36,7 +35,6 @@ export type RiskCreate = {
   risk_description?: string | null;
   probability: number;
   impact: number;
-  category?: RiskCategory;
   scope?: RiskScope;
   risk_owner?: string;
   rbs_node_id?: number | null;
@@ -56,14 +54,4 @@ export type RiskStatus =
   | "in_progress"
   | "mitigated"
   | "escalated";
-export type RiskCategory =
-  | "operational"
-  | "financial"
-  | "strategic"
-  | "technical"
-  | "compliance"
-  | "security"
-  | "environmental"
-  | "reputational";
-
 export type RiskScope = "project" | "site" | "enterprise";

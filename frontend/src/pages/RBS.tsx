@@ -68,10 +68,7 @@ export default function RBSPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card flex items-center justify-between py-3">
-        <h3 className="font-semibold text-secondary-900">
-          Risk Breakdown Structure
-        </h3>
+      <div className="card py-3 flex items-center justify-end">
         <button className="btn-primary" onClick={addRoot}>
           <Plus className="w-4 h-4 mr-2" /> Add Root Category
         </button>

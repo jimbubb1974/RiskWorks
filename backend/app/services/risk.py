@@ -41,7 +41,7 @@ def list_risks(
 		# Sort by computed score (probability * impact)
 		score_expr = Risk.probability * Risk.impact
 		stmt = stmt.order_by(desc(score_expr) if order == "desc" else asc(score_expr))
-	elif sort_by in {"created_at", "updated_at", "probability", "impact", "risk_name", "status", "category"}:
+	elif sort_by in {"created_at", "updated_at", "probability", "impact", "risk_name", "status"}:
 		col = getattr(Risk, sort_by)
 		stmt = stmt.order_by(desc(col) if order == "desc" else asc(col))
 	else:
@@ -55,7 +55,6 @@ def create_risk(db: Session, owner_id: int, **risk_data) -> Risk:
 	defaults = {
 		"probability": 3,
 		"impact": 3,
-		"category": "operational",
 		"scope": "project",
 		"risk_owner": "Unassigned",
 		"status": "open"

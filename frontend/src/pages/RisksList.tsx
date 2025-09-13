@@ -295,7 +295,7 @@ export default function RisksList() {
                     onClick={() => handleSort("probability")}
                   >
                     <div className="flex items-center gap-2">
-                      Probability
+                      Prob
                       <SortIndicator
                         field="probability"
                         currentSort={sortBy}
@@ -324,7 +324,7 @@ export default function RisksList() {
                     onClick={() => handleSort("score")}
                   >
                     <div className="flex items-center gap-2">
-                      Risk Score
+                      Score
                       <SortIndicator
                         field="score"
                         currentSort={sortBy}
@@ -575,11 +575,6 @@ function RiskCard({ risk }: { risk: any }) {
       <div className="px-6 py-4 bg-secondary-50 border-t border-secondary-100 group-hover:bg-secondary-100 transition-colors">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-2">
-            {risk.category && (
-              <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm w-fit">
-                {risk.category}
-              </span>
-            )}
             {(risk as any).scope && (
               <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm w-fit">
                 {(risk as any).scope}

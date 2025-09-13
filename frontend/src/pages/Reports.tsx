@@ -238,7 +238,6 @@ const getFieldsWithDifferences = (existingRisk: any, excelRisk: any) => {
   const fieldsToCheck = [
     { key: "risk_name", label: "Name" },
     { key: "risk_description", label: "Description" },
-    { key: "category", label: "Category" },
     { key: "status", label: "Status" },
     { key: "probability", label: "Probability" },
     { key: "impact", label: "Impact" },
@@ -279,7 +278,6 @@ export default function Reports() {
   const [selectedReportType, setSelectedReportType] = useState<
     "summary" | "risk-detail"
   >("summary");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importStatus, setImportStatus] = useState<{
@@ -387,8 +385,6 @@ export default function Reports() {
 
   const filteredRisks =
     risks?.filter((risk) => {
-      if (selectedCategory !== "all" && risk.category !== selectedCategory)
-        return false;
       if (selectedStatus !== "all" && risk.status !== selectedStatus)
         return false;
       return true;
@@ -506,9 +502,6 @@ export default function Reports() {
                 case "description":
                   risk.risk_description = String(value);
                   break;
-                case "category":
-                  risk.category = String(value);
-                  break;
                 case "status":
                   risk.status = String(value).toLowerCase().replace(" ", "_");
                   break;
@@ -555,7 +548,6 @@ export default function Reports() {
           risk.impact = risk.impact || 1;
           risk.status = risk.status || "open";
           risk.risk_level = risk.risk_level || "Low";
-          risk.category = risk.category || "operational";
 
           return risk;
         })
@@ -642,7 +634,6 @@ export default function Reports() {
         const fieldsToCompare = [
           "risk_name",
           "risk_description",
-          "category",
           "status",
           "probability",
           "impact",
@@ -1190,7 +1181,6 @@ export default function Reports() {
       // Data rows
       ...filteredRisks.map((risk) => [
         { text: risk.risk_name, style: "tableCell" },
-        { text: risk.category || "N/A", style: "tableCell" },
         {
           text: risk.risk_level,
           style: "tableCell",
@@ -1214,9 +1204,6 @@ export default function Reports() {
 
     // Build filters text
     const filtersText = [];
-    if (selectedCategory !== "all") {
-      filtersText.push(`Category: ${selectedCategory}`);
-    }
     if (selectedStatus !== "all") {
       filtersText.push(`Status: ${selectedStatus}`);
     }
@@ -1325,7 +1312,6 @@ export default function Reports() {
       "Risk ID": risk.id,
       "Risk Name": risk.risk_name,
       Description: risk.risk_description || "",
-      Category: risk.category || "",
       Status: risk.status,
       "Risk Owner": risk.risk_owner || "",
       "Owner ID": risk.owner_id,
@@ -1475,10 +1461,8 @@ export default function Reports() {
       { Field: "Total Action Items", Value: actionItems?.length || 0 },
       {
         Field: "Filters Applied",
-        Value:
-          selectedCategory !== "all" || selectedStatus !== "all" ? "Yes" : "No",
+        Value: selectedStatus !== "all" ? "Yes" : "No",
       },
-      { Field: "Category Filter", Value: selectedCategory },
       { Field: "Status Filter", Value: selectedStatus },
       { Field: "Export Format", Value: "Excel" },
       { Field: "Version", Value: "1.0" },
@@ -1504,9 +1488,6 @@ export default function Reports() {
   const generateWordSummary = async () => {
     // Build filters text
     const filtersText = [];
-    if (selectedCategory !== "all") {
-      filtersText.push(`Category: ${selectedCategory}`);
-    }
     if (selectedStatus !== "all") {
       filtersText.push(`Status: ${selectedStatus}`);
     }
@@ -1579,11 +1560,7 @@ export default function Reports() {
                 ],
               }),
               new TableCell({
-                children: [
-                  new Paragraph({
-                    children: [new TextRun({ text: risk.category || "N/A" })],
-                  }),
-                ],
+                children: [new Paragraph({})],
               }),
               new TableCell({
                 children: [
@@ -1916,7 +1893,6 @@ export default function Reports() {
                           size: 18,
                         }),
                         new TextRun({
-                          text: ` ${risk.category || "Not specified"}`,
                           size: 18,
                         }),
                       ],
@@ -2279,12 +2255,6 @@ export default function Reports() {
                     style: "fieldValue",
                   },
 
-                  { text: "Category:", style: "fieldLabel" },
-                  {
-                    text: risk.category || "Not specified",
-                    style: "fieldValue",
-                  },
-
                   { text: "Created By (Owner ID):", style: "fieldLabel" },
                   { text: `User ID: ${risk.owner_id}`, style: "fieldValue" },
                 ],
@@ -2568,13 +2538,7 @@ export default function Reports() {
                         ],
                         [
                           {
-                            stack: [
-                              { text: "Category:", style: "fieldLabel" },
-                              {
-                                text: risk.category || "Not specified",
-                                style: "fieldValue",
-                              },
-                            ],
+                            stack: [],
                           },
                         ],
                         [
@@ -2890,26 +2854,6 @@ export default function Reports() {
                   <option value="risk-detail">
                     Risk Detail Report (All Fields)
                   </option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="operational">Operational</option>
-                  <option value="financial">Financial</option>
-                  <option value="strategic">Strategic</option>
-                  <option value="technical">Technical</option>
-                  <option value="compliance">Compliance</option>
-                  <option value="security">Security</option>
-                  <option value="environmental">Environmental</option>
-                  <option value="reputational">Reputational</option>
                 </select>
               </div>
               <div>
@@ -3505,11 +3449,6 @@ export default function Reports() {
                           {risk.risk_description}
                         </div>
                       )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
-                        {risk.category || "Uncategorized"}
-                      </span>
                     </td>
                     <td className="py-3 px-4">
                       <span

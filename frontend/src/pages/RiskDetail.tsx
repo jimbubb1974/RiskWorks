@@ -242,20 +242,6 @@ export default function RiskDetail() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
-                      Category
-                    </label>
-                    <p className="text-secondary-900 capitalize">
-                      {risk.category || "Not specified"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
                     <FileText className="w-4 h-4 text-secondary-600" />
                   </div>

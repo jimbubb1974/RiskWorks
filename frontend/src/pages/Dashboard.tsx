@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listRisks, getRiskOwners } from "../services/risks";
+import { listRBSTree, type RBSNode } from "../services/rbs";
 import {
   AlertTriangle,
   Shield,
@@ -9,6 +10,7 @@ import {
   Activity,
   BarChart3,
   Plus,
+  Network,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -20,6 +22,11 @@ export default function Dashboard() {
   const { data: riskOwners = [] } = useQuery({
     queryKey: ["risk-owners"],
     queryFn: getRiskOwners,
+  });
+
+  const { data: rbsTree = [] } = useQuery({
+    queryKey: ["rbs-tree"],
+    queryFn: listRBSTree,
   });
 
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -65,6 +72,20 @@ export default function Dashboard() {
     }
     return counts;
   }, [filteredForMatrix]);
+
+  // Calculate risk counts for RBS nodes
+  const rbsRiskCounts = useMemo(() => {
+    const counts: { [key: number]: number } = {};
+
+    // Count risks for each RBS node
+    risks.forEach((risk) => {
+      if (risk.rbs_node_id) {
+        counts[risk.rbs_node_id] = (counts[risk.rbs_node_id] || 0) + 1;
+      }
+    });
+
+    return counts;
+  }, [risks]);
 
   return (
     <div className="space-y-6">
@@ -237,6 +258,21 @@ export default function Dashboard() {
           P = Probability, I = Impact
         </div>
       </div>
+
+      {/* RBS Overview */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-secondary-900">
+            Risk Distribution
+          </h3>
+          <Link to="/rbs" className="btn-secondary text-sm">
+            <Network className="w-4 h-4 mr-2" />
+            Manage RBS
+          </Link>
+        </div>
+
+        <RBSVisualization rbsTree={rbsTree} riskCounts={rbsRiskCounts} />
+      </div>
     </div>
   );
 }
@@ -305,6 +341,167 @@ function StatusItem({
         <span className="text-secondary-700 font-medium">{label}</span>
       </div>
       <span className="text-secondary-900 font-semibold">{count}</span>
+    </div>
+  );
+}
+
+function RBSVisualization({
+  rbsTree,
+  riskCounts,
+}: {
+  rbsTree: (RBSNode & { children?: RBSNode[] })[];
+  riskCounts: { [key: number]: number };
+}) {
+  if (rbsTree.length === 0) {
+    return (
+      <div className="text-center py-8 text-secondary-500">
+        <Network className="w-12 h-12 mx-auto mb-3 text-secondary-300" />
+        <p>No RBS categories defined yet.</p>
+        <p className="text-sm">
+          Create your first RBS category to get started.
+        </p>
+      </div>
+    );
+  }
+
+  // Calculate maximum risk count for bar scaling
+  const maxRiskCount = Math.max(...Object.values(riskCounts), 1);
+
+  // Calculate maximum title width by flattening the tree and finding the longest title
+  const flattenTree = (
+    nodes: (RBSNode & { children?: RBSNode[] })[],
+    level = 0
+  ): { name: string; level: number }[] => {
+    const result: { name: string; level: number }[] = [];
+    for (const node of nodes) {
+      result.push({ name: node.name, level });
+      if (node.children && node.children.length) {
+        result.push(...flattenTree(node.children, level + 1));
+      }
+    }
+    return result;
+  };
+
+  const allNodes = flattenTree(rbsTree);
+  const maxTitleLength = Math.max(
+    ...allNodes.map((node) => node.name.length),
+    10
+  );
+  const maxLevel = Math.max(...allNodes.map((n) => n.level), 0);
+  const maxIndentPx = maxLevel * 20;
+  // Approximate label column width including max indentation and some padding
+  const labelColumnWidth = Math.min(maxIndentPx + maxTitleLength * 7 + 48, 260);
+
+  return (
+    <div className="space-y-0.5">
+      {rbsTree.map((node) => (
+        <RBSNodeItem
+          key={node.id}
+          node={node}
+          riskCount={riskCounts[node.id] || 0}
+          riskCounts={riskCounts}
+          level={0}
+          maxRiskCount={maxRiskCount}
+          labelColumnWidth={labelColumnWidth}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RBSNodeItem({
+  node,
+  riskCount,
+  riskCounts,
+  level,
+  maxRiskCount,
+  labelColumnWidth,
+}: {
+  node: RBSNode & { children?: RBSNode[] };
+  riskCount: number;
+  riskCounts: { [key: number]: number };
+  level: number;
+  maxRiskCount: number;
+  labelColumnWidth: number;
+}) {
+  const indent = level * 20;
+  const hasChildren = node.children && node.children.length > 0;
+
+  // Calculate bar width as percentage of max risk count
+  const barWidth = maxRiskCount > 0 ? (riskCount / maxRiskCount) * 100 : 0;
+
+  // Use a single color for all bars
+  const getBarColor = (count: number) => {
+    return count === 0 ? "bg-secondary-100" : "bg-primary-200";
+  };
+
+  return (
+    <div>
+      <div className="py-2 px-3 rounded-lg hover:bg-secondary-50 transition-colors">
+        <div
+          className="items-center"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `${labelColumnWidth}px 120px 1fr`,
+            columnGap: "12px",
+            alignItems: "center",
+          }}
+        >
+          {/* Label column: indentation + title */}
+          <div className="flex items-center min-w-0">
+            {/* Indentation for hierarchy */}
+            <div style={{ width: `${indent}px` }} className="flex-shrink-0" />
+            {level > 0 && (
+              <div className="w-4 h-4 flex items-center justify-center">
+                <div className="w-2 h-2 bg-secondary-300 rounded-full"></div>
+              </div>
+            )}
+            <span className="font-medium text-secondary-900 truncate ml-1">
+              {node.name}
+            </span>
+          </div>
+
+          {/* Bar column: fixed start, left-aligned */}
+          <div className="flex items-center gap-2 justify-self-start">
+            <div className="w-20 h-2 bg-secondary-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${getBarColor(
+                  riskCount
+                )}`}
+                style={{ width: `${barWidth}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-secondary-600">
+              {riskCount}
+            </span>
+          </div>
+
+          {/* Description (subcategory label removed) */}
+          <div className="flex items-center gap-3 min-w-0">
+            {node.description && (
+              <span className="text-sm text-secondary-600 truncate max-w-xs hidden sm:block">
+                {node.description}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {hasChildren && (
+        <div>
+          {node.children!.map((child) => (
+            <RBSNodeItem
+              key={child.id}
+              node={child}
+              riskCount={riskCounts[child.id] || 0}
+              riskCounts={riskCounts}
+              level={level + 1}
+              maxRiskCount={maxRiskCount}
+              labelColumnWidth={labelColumnWidth}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

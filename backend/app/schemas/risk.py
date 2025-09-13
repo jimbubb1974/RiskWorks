@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, field_validator
 
 
 Status = Literal["open", "closed", "draft", "in_progress", "mitigated", "escalated"]
-Category = Literal["operational", "financial", "strategic", "technical", "compliance", "security", "environmental", "reputational"]
 Scope = Literal["project", "site", "enterprise"]
 
 
@@ -18,7 +17,6 @@ class RiskBase(BaseModel):
 	impact: int = Field(ge=1, le=5, description="Impact if risk occurs (1-5 scale)", default=3)
 	
 	# Risk details
-	category: Optional[Category] = Field(default="operational", description="Risk category")
 	scope: Scope = Field(default="project", description="Scope of the risk: project, site, or enterprise")
 	risk_owner: Optional[str] = Field(default="Unassigned", max_length=100, description="Person responsible for the risk")
 	rbs_node_id: Optional[int] = Field(default=None, description="Linked RBS node id; can be any level")
@@ -53,7 +51,6 @@ class RiskUpdate(BaseModel):
 	risk_description: Optional[str] = None
 	probability: Optional[int] = Field(default=None, ge=1, le=5)
 	impact: Optional[int] = Field(default=None, ge=1, le=5)
-	category: Optional[Category] = None
 	scope: Optional[Scope] = None
 	risk_owner: Optional[str] = Field(default=None, max_length=100)
 	latest_reviewed_date: Optional[datetime] = None
