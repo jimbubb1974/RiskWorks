@@ -67,8 +67,8 @@ export default function RBSPage() {
     });
 
   return (
-    <div className="space-y-6">
-      <div className="card flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="card flex items-center justify-between py-3">
         <h3 className="font-semibold text-secondary-900">
           Risk Breakdown Structure
         </h3>
@@ -77,15 +77,15 @@ export default function RBSPage() {
         </button>
       </div>
 
-      <div className="card">
+      <div className="card py-3">
         {isLoading ? (
-          <div className="text-secondary-600">Loading RBS...</div>
+          <div className="text-secondary-600 py-2">Loading RBS...</div>
         ) : nodes.length === 0 ? (
-          <div className="text-secondary-600">
+          <div className="text-secondary-600 py-2">
             No categories yet. Create your first root category.
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {nodes.map((n) => (
               <RBSNodeItem
                 key={n.id}
@@ -145,7 +145,7 @@ function RBSNodeItem({
 
   return (
     <div className="rounded-lg border border-secondary-200">
-      <div className="flex items-center justify-between p-3">
+      <div className="flex items-center justify-between p-2">
         <div className="flex items-center gap-2">
           <button
             className="btn-ghost p-1"
@@ -166,27 +166,30 @@ function RBSNodeItem({
           </button>
           {editing ? (
             <input
-              className="input"
+              className="input text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           ) : (
-            <div className="font-medium" style={{ marginLeft: level * 8 }}>
+            <div
+              className="font-medium text-sm"
+              style={{ marginLeft: level * 8 }}
+            >
               {node.name}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {editing ? (
             <>
-              <button className="btn-primary" onClick={save}>
-                <Save className="w-4 h-4 mr-1" /> Save
+              <button className="btn-primary text-sm px-2 py-1" onClick={save}>
+                <Save className="w-3 h-3 mr-1" /> Save
               </button>
               <button
-                className="btn-secondary"
+                className="btn-secondary text-sm px-2 py-1"
                 onClick={() => setEditing(false)}
               >
-                <X className="w-4 h-4 mr-1" /> Cancel
+                <X className="w-3 h-3 mr-1" /> Cancel
               </button>
             </>
           ) : (
@@ -197,47 +200,51 @@ function RBSNodeItem({
                   title="Move up"
                   onClick={() => onMove(node.id, "up")}
                 >
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-3 h-3" />
                 </button>
                 <button
                   className="btn-ghost p-1"
                   title="Move down"
                   onClick={() => onMove(node.id, "down")}
                 >
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-3 h-3" />
                 </button>
               </div>
               <button
-                className="btn-secondary"
+                className="btn-secondary text-sm px-2 py-1"
                 onClick={() => setEditing(true)}
               >
-                <Edit3 className="w-4 h-4 mr-1" /> Edit
-              </button>
-              <button className="btn-danger" onClick={() => onDelete(node.id)}>
-                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                <Edit3 className="w-3 h-3 mr-1" /> Edit
               </button>
               <button
-                className="btn-secondary"
+                className="btn-danger text-sm px-2 py-1"
+                onClick={() => onDelete(node.id)}
+              >
+                <Trash2 className="w-3 h-3 mr-1" /> Delete
+              </button>
+              <button
+                className="btn-secondary text-sm px-2 py-1"
                 onClick={() => onCreateChild(node.id)}
               >
-                <Plus className="w-4 h-4 mr-1" /> Add Child
+                <Plus className="w-3 h-3 mr-1" /> Add Child
               </button>
             </>
           )}
         </div>
       </div>
       {editing && (
-        <div className="p-3">
+        <div className="p-2">
           <textarea
-            className="input"
+            className="input text-sm"
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            rows={2}
           />
         </div>
       )}
       {hasChildren && isOpen && (
-        <div className="pl-6 pb-3 space-y-2">
+        <div className="pl-4 pb-2 space-y-1">
           {node.children!.map((child) => (
             <RBSNodeItem
               key={child.id}

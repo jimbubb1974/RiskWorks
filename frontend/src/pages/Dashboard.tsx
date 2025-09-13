@@ -211,12 +211,14 @@ export default function Dashboard() {
                 {matrixCounts[rowIdx].map((count, colIdx) => {
                   const probabilityVal = colIdx + 1;
                   const score = probabilityVal * impactVal;
-                  const color =
-                    score >= 16
-                      ? "bg-danger-100 border-danger-200 text-danger-800"
-                      : score >= 9
-                      ? "bg-warning-100 border-warning-200 text-warning-800"
-                      : "bg-success-100 border-success-200 text-success-800";
+                  const isEmpty = count === 0;
+                  const color = isEmpty
+                    ? "bg-transparent border-secondary-200 text-secondary-400"
+                    : score >= 16
+                    ? "bg-danger-100 border-danger-200 text-danger-800"
+                    : score >= 9
+                    ? "bg-warning-100 border-warning-200 text-warning-800"
+                    : "bg-success-100 border-success-200 text-success-800";
                   return (
                     <div
                       key={`cell-${rowIdx}-${colIdx}`}
