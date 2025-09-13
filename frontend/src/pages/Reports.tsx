@@ -14,7 +14,9 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  TrendingUp,
 } from "lucide-react";
+import RiskTrends from "../components/RiskTrends";
 import type { Risk } from "../types/risk";
 import type { ActionItem } from "../types/actionItem";
 import type { Snapshot } from "../types/snapshot";
@@ -279,6 +281,7 @@ export default function Reports() {
     "summary" | "risk-detail"
   >("summary");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [showRiskTrends, setShowRiskTrends] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importStatus, setImportStatus] = useState<{
     type: "success" | "error" | "info" | null;
@@ -2945,6 +2948,13 @@ export default function Reports() {
           {/* Actions Section */}
           <div className="flex items-center gap-3 lg:ml-4">
             <button
+              onClick={() => setShowRiskTrends(true)}
+              className="btn-secondary"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Risk Trends
+            </button>
+            <button
               onClick={generateExport}
               disabled={!filteredRisks.length}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
@@ -3532,6 +3542,15 @@ export default function Reports() {
           </div>
         )}
       </div>
+
+      {/* Risk Trends Modal/Overlay */}
+      {showRiskTrends && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <RiskTrends onClose={() => setShowRiskTrends(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
