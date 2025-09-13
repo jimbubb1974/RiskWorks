@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listRisks, getRiskOwners } from "../services/risks";
 import { listRBSTree, type RBSNode } from "../services/rbs";
+import { usePermissions } from "../hooks/usePermissions";
 import {
   AlertTriangle,
   Shield,
@@ -15,13 +16,17 @@ import {
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
+  const permissions = usePermissions();
+
   const { data: risks = [] } = useQuery({
     queryKey: ["risks"],
     queryFn: () => listRisks({}),
+    enabled: permissions.canViewRisks(),
   });
   const { data: riskOwners = [] } = useQuery({
     queryKey: ["risk-owners"],
     queryFn: getRiskOwners,
+    enabled: permissions.canViewRisks(),
   });
 
   const { data: rbsTree = [] } = useQuery({
@@ -128,20 +133,24 @@ export default function Dashboard() {
                 Quick Actions
               </h3>
               <div className="space-y-3">
-                <Link
-                  to="/risks/new"
-                  className="btn-primary w-full justify-center"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create New Risk
-                </Link>
-                <Link
-                  to="/risks"
-                  className="btn-secondary w-full justify-center"
-                >
-                  <Activity className="w-5 h-5 mr-2" />
-                  View All Risks
-                </Link>
+                {permissions.canCreateRisks() && (
+                  <Link
+                    to="/risks/new"
+                    className="btn-primary w-full justify-center"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Create New Risk
+                  </Link>
+                )}
+                {permissions.canViewRisks() && (
+                  <Link
+                    to="/risks"
+                    className="btn-secondary w-full justify-center"
+                  >
+                    <Activity className="w-5 h-5 mr-2" />
+                    View All Risks
+                  </Link>
+                )}
               </div>
             </div>
 

@@ -20,8 +20,13 @@ def list_risks(
 	order: str = "desc",
 	limit: int = 50,
 	offset: int = 0,
+	user_role: Optional[str] = None,
 ):
-	stmt = select(Risk).where(Risk.owner_id == owner_id)
+	# Managers and viewers can see all risks, others only see their own
+	if user_role in ["manager", "viewer"]:
+		stmt = select(Risk)
+	else:
+		stmt = select(Risk).where(Risk.owner_id == owner_id)
 	if status:
 		stmt = stmt.where(Risk.status == status)
 	if min_severity is not None:
@@ -74,13 +79,22 @@ def create_risk(db: Session, owner_id: int, **risk_data) -> Risk:
 	return risk
 
 
-def get_risk(db: Session, owner_id: int, risk_id: int) -> Optional[Risk]:
-	return db.get(Risk, risk_id) if (r := db.get(Risk, risk_id)) and r.owner_id == owner_id else None
-
-
-def update_risk(db: Session, owner_id: int, risk_id: int, **updates) -> Optional[Risk]:
+def get_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[str] = None) -> Optional[Risk]:
 	risk = db.get(Risk, risk_id)
-	if not risk or risk.owner_id != owner_id:
+	if not risk:
+		return None
+	# Managers and viewers can access any risk, others only their own
+	if user_role in ["manager", "viewer"] or risk.owner_id == owner_id:
+		return risk
+	return None
+
+
+def update_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[str] = None, **updates) -> Optional[Risk]:
+	risk = db.get(Risk, risk_id)
+	if not risk:
+		return None
+	# Managers can update any risk, others only their own
+	if user_role != "manager" and risk.owner_id != owner_id:
 		return None
 	for key, value in updates.items():
 		# Apply all provided fields, including explicit nulls, so rbs_node_id can be cleared
@@ -92,9 +106,12 @@ def update_risk(db: Session, owner_id: int, risk_id: int, **updates) -> Optional
 	return risk
 
 
-def delete_risk(db: Session, owner_id: int, risk_id: int) -> bool:
+def delete_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[str] = None) -> bool:
 	risk = db.get(Risk, risk_id)
-	if not risk or risk.owner_id != owner_id:
+	if not risk:
+		return False
+	# Managers can delete any risk, others only their own
+	if user_role != "manager" and risk.owner_id != owner_id:
 		return False
 	db.delete(risk)
 	db.commit()

@@ -18,9 +18,11 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { moveRBSNode } from "../services/rbs";
+import { usePermissions } from "../hooks/usePermissions";
 
 export default function RBSPage() {
   const queryClient = useQueryClient();
+  const permissions = usePermissions();
   const { data: nodes = [], isLoading } = useQuery({
     queryKey: ["rbs-tree"],
     queryFn: listRBSTree,
@@ -68,11 +70,13 @@ export default function RBSPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card py-3 flex items-center justify-end">
-        <button className="btn-primary" onClick={addRoot}>
-          <Plus className="w-4 h-4 mr-2" /> Add Root Category
-        </button>
-      </div>
+      {permissions.canEditRisks() && (
+        <div className="card py-3 flex items-center justify-end">
+          <button className="btn-primary" onClick={addRoot}>
+            <Plus className="w-4 h-4 mr-2" /> Add Root Category
+          </button>
+        </div>
+      )}
 
       <div className="card py-3">
         {isLoading ? (
@@ -100,6 +104,7 @@ export default function RBSPage() {
                   })
                 }
                 onMove={(id, direction) => moveMut.mutate({ id, direction })}
+                canEdit={permissions.canEditRisks()}
               />
             ))}
           </div>
@@ -118,6 +123,7 @@ function RBSNodeItem({
   onDelete,
   onCreateChild,
   onMove,
+  canEdit,
 }: {
   node: RBSNode & { children?: RBSNode[] };
   level: number;
@@ -127,6 +133,7 @@ function RBSNodeItem({
   onDelete: (id: number) => void;
   onCreateChild: (parentId: number) => void;
   onMove: (id: number, direction: "up" | "down") => void;
+  canEdit: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(node.name);
@@ -147,9 +154,22 @@ function RBSNodeItem({
           <button
             className="btn-ghost p-1"
             onClick={() =>
-              hasChildren ? onToggle(node.id) : onCreateChild(node.id)
+              hasChildren
+                ? onToggle(node.id)
+                : canEdit
+                ? onCreateChild(node.id)
+                : null
             }
-            title={hasChildren ? (isOpen ? "Collapse" : "Expand") : "Add child"}
+            title={
+              hasChildren
+                ? isOpen
+                  ? "Collapse"
+                  : "Expand"
+                : canEdit
+                ? "Add child"
+                : "No children"
+            }
+            disabled={!hasChildren && !canEdit}
           >
             {hasChildren ? (
               isOpen ? (
@@ -157,8 +177,10 @@ function RBSNodeItem({
               ) : (
                 <ChevronRight className="w-4 h-4" />
               )
-            ) : (
+            ) : canEdit ? (
               <Plus className="w-4 h-4" />
+            ) : (
+              <div className="w-4 h-4" />
             )}
           </button>
           {editing ? (
@@ -178,18 +200,23 @@ function RBSNodeItem({
         </div>
         <div className="flex items-center gap-1">
           {editing ? (
-            <>
-              <button className="btn-primary text-sm px-2 py-1" onClick={save}>
-                <Save className="w-3 h-3 mr-1" /> Save
-              </button>
-              <button
-                className="btn-secondary text-sm px-2 py-1"
-                onClick={() => setEditing(false)}
-              >
-                <X className="w-3 h-3 mr-1" /> Cancel
-              </button>
-            </>
-          ) : (
+            canEdit ? (
+              <>
+                <button
+                  className="btn-primary text-sm px-2 py-1"
+                  onClick={save}
+                >
+                  <Save className="w-3 h-3 mr-1" /> Save
+                </button>
+                <button
+                  className="btn-secondary text-sm px-2 py-1"
+                  onClick={() => setEditing(false)}
+                >
+                  <X className="w-3 h-3 mr-1" /> Cancel
+                </button>
+              </>
+            ) : null
+          ) : canEdit ? (
             <>
               <div className="flex items-center gap-1">
                 <button
@@ -226,10 +253,10 @@ function RBSNodeItem({
                 <Plus className="w-3 h-3 mr-1" /> Add Child
               </button>
             </>
-          )}
+          ) : null}
         </div>
       </div>
-      {editing && (
+      {editing && canEdit && (
         <div className="p-2">
           <textarea
             className="input text-sm"
@@ -253,6 +280,7 @@ function RBSNodeItem({
               onDelete={onDelete}
               onCreateChild={onCreateChild}
               onMove={onMove}
+              canEdit={canEdit}
             />
           ))}
         </div>

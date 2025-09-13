@@ -8,6 +8,7 @@ from ..core.security import verify_token
 from ..database import get_db
 from ..schemas.rbs import RBSNodeCreate, RBSNodeRead, RBSNodeUpdate, RBSNodeTree
 from ..services import rbs as rbs_service
+from ..models.user import User
 
 
 router = APIRouter(prefix="/rbs", tags=["rbs"])
@@ -21,14 +22,30 @@ def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]) -> int:
     return int(user_id)
 
 
+def get_current_user(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)) -> User:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
+
 @router.get("", response_model=List[RBSNodeRead])
-def list_nodes(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    return rbs_service.list_nodes(db, owner_id=user_id)
+def list_nodes(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Managers and admins can see all RBS nodes, others only see their own
+    if current_user.role in ["manager", "admin"]:
+        return rbs_service.list_all_nodes(db)
+    else:
+        return rbs_service.list_nodes(db, owner_id=current_user.id)
 
 
 @router.get("/tree", response_model=List[RBSNodeTree])
-def list_tree(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    roots = rbs_service.list_tree(db, owner_id=user_id)
+def list_tree(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Managers and admins can see all RBS nodes, others only see their own
+    if current_user.role in ["manager", "admin"]:
+        roots = rbs_service.list_all_tree(db)
+    else:
+        roots = rbs_service.list_tree(db, owner_id=current_user.id)
+    
     # Convert ORM to nested dicts suitable for Pydantic
     def to_tree(node):
         return {
@@ -44,29 +61,44 @@ def list_tree(db: Session = Depends(get_db), user_id: int = Depends(get_current_
 
 
 @router.post("", response_model=RBSNodeRead, status_code=status.HTTP_201_CREATED)
-def create_node(payload: RBSNodeCreate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    return rbs_service.create_node(db, owner_id=user_id, **payload.model_dump())
+def create_node(payload: RBSNodeCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return rbs_service.create_node(db, owner_id=current_user.id, **payload.model_dump())
 
 
 @router.put("/{node_id}", response_model=RBSNodeRead)
-def update_node(node_id: int, payload: RBSNodeUpdate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    node = rbs_service.update_node(db, owner_id=user_id, node_id=node_id, **payload.model_dump())
+def update_node(node_id: int, payload: RBSNodeUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Check if user can edit this node (owner or manager/admin)
+    if current_user.role in ["manager", "admin"]:
+        node = rbs_service.update_node_any(db, node_id=node_id, **payload.model_dump())
+    else:
+        node = rbs_service.update_node(db, owner_id=current_user.id, node_id=node_id, **payload.model_dump())
+    
     if not node:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RBS node not found")
     return node
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_node(node_id: int, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    ok = rbs_service.delete_node(db, owner_id=user_id, node_id=node_id)
+def delete_node(node_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Check if user can delete this node (owner or manager/admin)
+    if current_user.role in ["manager", "admin"]:
+        ok = rbs_service.delete_node_any(db, node_id=node_id)
+    else:
+        ok = rbs_service.delete_node(db, owner_id=current_user.id, node_id=node_id)
+    
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RBS node not found")
     return None
 
 
 @router.post("/{node_id}/move", response_model=RBSNodeRead)
-def move_node(node_id: int, direction: str = Query(pattern="^(up|down)$"), db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
-    node = rbs_service.move_node(db, owner_id=user_id, node_id=node_id, direction=direction)
+def move_node(node_id: int, direction: str = Query(pattern="^(up|down)$"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Check if user can move this node (owner or manager/admin)
+    if current_user.role in ["manager", "admin"]:
+        node = rbs_service.move_node_any(db, node_id=node_id, direction=direction)
+    else:
+        node = rbs_service.move_node(db, owner_id=current_user.id, node_id=node_id, direction=direction)
+    
     if not node:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RBS node not found")
     return node

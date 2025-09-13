@@ -363,7 +363,11 @@ export default function Reports() {
     setConflictResolutions({});
   };
 
-  const { data: risks, isLoading } = useQuery({
+  const {
+    data: risks,
+    isLoading,
+    error: risksError,
+  } = useQuery({
     queryKey: ["risks"],
     queryFn: () => api.get<Risk[]>("/risks").then((res) => res.data),
   });
@@ -1167,6 +1171,12 @@ export default function Reports() {
   };
 
   const generateSummaryPDF = () => {
+    // Safety check
+    if (!filteredRisks || filteredRisks.length === 0) {
+      console.error("No risks available for PDF generation");
+      return;
+    }
+
     // Prepare table data
     const tableBody = [
       // Header row
@@ -1179,27 +1189,34 @@ export default function Reports() {
         { text: "Score", style: "tableHeader" },
       ],
       // Data rows
-      ...filteredRisks.map((risk) => [
-        { text: risk.risk_name, style: "tableCell" },
-        {
-          text: risk.risk_level,
-          style: "tableCell",
-          color:
-            risk.risk_level === "High"
-              ? "#dc2626"
-              : risk.risk_level === "Medium"
-              ? "#f59e0b"
-              : "#22c55e",
-        },
-        {
-          text: risk.status
-            .replace("_", " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase()),
-          style: "tableCell",
-        },
-        { text: risk.risk_owner || "Unassigned", style: "tableCell" },
-        { text: risk.score.toString(), style: "tableCell" },
-      ]),
+      ...filteredRisks.map((risk, index) => {
+        const row = [
+          { text: risk.risk_name || "N/A", style: "tableCell" },
+          { text: "N/A", style: "tableCell" }, // Category column - placeholder for now
+          {
+            text: risk.risk_level || "N/A",
+            style: "tableCell",
+            color:
+              risk.risk_level === "Critical"
+                ? "#7f1d1d" // Dark red/maroon - most alarming
+                : risk.risk_level === "High"
+                ? "#dc2626" // Bright red - very alarming
+                : risk.risk_level === "Medium"
+                ? "#f59e0b" // Orange - moderate concern
+                : "#22c55e", // Green - minimal concern
+          },
+          {
+            text: (risk.status || "unknown")
+              .replace("_", " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase()),
+            style: "tableCell",
+          },
+          { text: risk.risk_owner || "Unassigned", style: "tableCell" },
+          { text: (risk.score || 0).toString(), style: "tableCell" },
+        ];
+
+        return row;
+      }),
     ];
 
     // Build filters text
@@ -1298,9 +1315,14 @@ export default function Reports() {
     };
 
     // Generate and download PDF
-    pdfMake
-      .createPdf(docDefinition)
-      .download(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
+    try {
+      pdfMake
+        .createPdf(docDefinition)
+        .download(`risk-summary-${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please check the console for details.");
+    }
   };
 
   const generateExcel = () => {
@@ -1555,7 +1577,7 @@ export default function Reports() {
               new TableCell({
                 children: [
                   new Paragraph({
-                    children: [new TextRun({ text: risk.risk_name })],
+                    children: [new TextRun({ text: risk.risk_name || "N/A" })],
                   }),
                 ],
               }),
@@ -1567,13 +1589,15 @@ export default function Reports() {
                   new Paragraph({
                     children: [
                       new TextRun({
-                        text: risk.risk_level,
+                        text: risk.risk_level || "N/A",
                         color:
-                          risk.risk_level === "High"
-                            ? "DC2626"
+                          risk.risk_level === "Critical"
+                            ? "7F1D1D" // Dark red/maroon - most alarming
+                            : risk.risk_level === "High"
+                            ? "DC2626" // Bright red - very alarming
                             : risk.risk_level === "Medium"
-                            ? "F59E0B"
-                            : "22C55E",
+                            ? "F59E0B" // Orange - moderate concern
+                            : "22C55E", // Green - minimal concern
                       }),
                     ],
                   }),
@@ -1584,7 +1608,7 @@ export default function Reports() {
                   new Paragraph({
                     children: [
                       new TextRun({
-                        text: risk.status
+                        text: (risk.status || "unknown")
                           .replace("_", " ")
                           .replace(/\b\w/g, (l) => l.toUpperCase()),
                       }),
@@ -1604,7 +1628,9 @@ export default function Reports() {
               new TableCell({
                 children: [
                   new Paragraph({
-                    children: [new TextRun({ text: risk.score.toString() })],
+                    children: [
+                      new TextRun({ text: (risk.score || 0).toString() }),
+                    ],
                   }),
                 ],
               }),
@@ -1761,7 +1787,7 @@ export default function Reports() {
                     new Paragraph({
                       children: [
                         new TextRun({
-                          text: risk.risk_name,
+                          text: risk.risk_name || "N/A",
                           bold: true,
                           size: 24,
                         }),
@@ -2169,11 +2195,13 @@ export default function Reports() {
     // Create content for each risk with comprehensive field layout
     const riskPages = filteredRisks.flatMap((risk, index) => {
       const riskLevelColor =
-        risk.risk_level === "High"
-          ? "#dc2626"
+        risk.risk_level === "Critical"
+          ? "#7f1d1d" // Dark red/maroon - most alarming
+          : risk.risk_level === "High"
+          ? "#dc2626" // Bright red - very alarming
           : risk.risk_level === "Medium"
-          ? "#f59e0b"
-          : "#22c55e";
+          ? "#f59e0b" // Orange - moderate concern
+          : "#22c55e"; // Green - minimal concern
       const riskScore = risk.probability * risk.impact;
 
       return {
@@ -2193,7 +2221,7 @@ export default function Reports() {
               {
                 stack: [
                   { text: "Title", style: "sectionHeader" },
-                  { text: risk.risk_name, style: "riskTitle" },
+                  { text: risk.risk_name || "N/A", style: "riskTitle" },
                 ],
                 width: "90%",
               },
@@ -2201,7 +2229,7 @@ export default function Reports() {
                 stack: [
                   { text: `ID: ${risk.id}`, style: "riskId" },
                   {
-                    text: risk.status
+                    text: (risk.status || "unknown")
                       .replace("_", " ")
                       .replace(/\b\w/g, (l) => l.toUpperCase()),
                     style: "statusBadge",
@@ -2225,7 +2253,7 @@ export default function Reports() {
 
           // Risk Level Badge
           {
-            text: risk.risk_level,
+            text: risk.risk_level || "N/A",
             style: "riskLevelBadge",
             color: "white",
             fillColor: riskLevelColor,
@@ -2449,11 +2477,13 @@ export default function Reports() {
     const riskPages = filteredRisks.map((risk, index) => {
       const riskScore = risk.probability * risk.impact;
       const riskLevelColor =
-        risk.risk_level === "High"
-          ? "#dc2626"
+        risk.risk_level === "Critical"
+          ? "#7f1d1d" // Dark red/maroon - most alarming
+          : risk.risk_level === "High"
+          ? "#dc2626" // Bright red - very alarming
           : risk.risk_level === "Medium"
-          ? "#f59e0b"
-          : "#22c55e";
+          ? "#f59e0b" // Orange - moderate concern
+          : "#22c55e"; // Green - minimal concern
 
       return {
         // Force page break for each risk except the first
@@ -2474,7 +2504,7 @@ export default function Reports() {
                 stack: [
                   { text: `ID: ${risk.id}`, style: "infoText" },
                   {
-                    text: risk.status
+                    text: (risk.status || "unknown")
                       .replace("_", " ")
                       .replace(/\b\w/g, (l) => l.toUpperCase()),
                     style: "statusText",
@@ -2613,7 +2643,7 @@ export default function Reports() {
                             stack: [
                               { text: "Risk Level:", style: "fieldLabel" },
                               {
-                                text: risk.risk_level,
+                                text: risk.risk_level || "N/A",
                                 style: "fieldValue",
                               },
                             ],
@@ -2806,12 +2836,14 @@ export default function Reports() {
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
+      case "Critical":
+        return "bg-red-900 text-red-100 border-red-800"; // Dark red - most alarming
       case "High":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-red-100 text-red-800 border-red-200"; // Bright red - very alarming
       case "Medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"; // Orange - moderate concern
       case "Low":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-green-100 text-green-800 border-green-200"; // Green - minimal concern
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }

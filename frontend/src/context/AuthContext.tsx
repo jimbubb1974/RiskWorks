@@ -25,13 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     meRequest()
       .then((u) => {
-        // Map the simple user response to full User type
+        // Map the user response to full User type
         const fullUser: User = {
           id: u.id,
           email: u.email,
-          hashed_password: "", // Not provided by API
-          role: "viewer", // Default role, should be fetched from backend
-          created_at: new Date().toISOString(), // Default, should be fetched from backend
+          hashed_password: u.hashed_password || "",
+          role: u.role || "viewer",
+          created_at: u.created_at || new Date().toISOString(),
         };
         setUser(fullUser);
       })
@@ -51,13 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("token", res.access_token);
         setToken(res.access_token);
         const u = await meRequest();
-        // Map the simple user response to full User type
+        // Map the user response to full User type
         const fullUser: User = {
           id: u.id,
           email: u.email,
-          hashed_password: "", // Not provided by API
-          role: "viewer", // Default role, should be fetched from backend
-          created_at: new Date().toISOString(), // Default, should be fetched from backend
+          hashed_password: u.hashed_password || "",
+          role: u.role || "viewer",
+          created_at: u.created_at || new Date().toISOString(),
         };
         setUser(fullUser);
       },

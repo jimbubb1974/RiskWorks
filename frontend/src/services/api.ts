@@ -59,10 +59,20 @@ export async function registerRequest(
   return data;
 }
 
-export async function meRequest(): Promise<{ id: number; email: string }> {
-  const { data } = await apiClient.get<{ id: number; email: string }>(
-    "/auth/me"
-  );
+export async function meRequest(): Promise<{
+  id: number;
+  email: string;
+  role: string;
+  hashed_password: string;
+  created_at: string;
+}> {
+  const { data } = await apiClient.get<{
+    id: number;
+    email: string;
+    role: string;
+    hashed_password: string;
+    created_at: string;
+  }>("/auth/me");
   return data;
 }
 

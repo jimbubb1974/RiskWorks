@@ -3,6 +3,7 @@ import { listRisks, getRiskOwners } from "../services/risks";
 import { listRBSTree, type RBSNode } from "../services/rbs";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
+import { usePermissions } from "../hooks/usePermissions";
 import {
   Plus,
   Search,
@@ -21,6 +22,7 @@ import {
 
 export default function RisksList() {
   const navigate = useNavigate();
+  const permissions = usePermissions();
   const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [riskOwner, setRiskOwner] = useState<string>("");
@@ -219,13 +221,15 @@ export default function RisksList() {
                 <List className="w-4 h-4" />
               </button>
             </div>
-            <button
-              onClick={() => navigate("/risks/new")}
-              className="btn-primary group"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Risk
-            </button>
+            {permissions.canCreateRisks() && (
+              <button
+                onClick={() => navigate("/risks/new")}
+                className="btn-primary group"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Risk
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -413,13 +417,15 @@ export default function RisksList() {
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <Link
-                          to={`/risks/${risk.id}/edit`}
-                          className="btn-ghost p-2 tooltip"
-                          title="Edit risk"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
+                        {permissions.canEditRisks() && (
+                          <Link
+                            to={`/risks/${risk.id}/edit`}
+                            className="btn-ghost p-2 tooltip"
+                            title="Edit risk"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -494,6 +500,7 @@ function RiskScoreBadge({ score }: { score: number }) {
 }
 
 function RiskCard({ risk }: { risk: any }) {
+  const permissions = usePermissions();
   const riskScore = risk.probability * risk.impact;
 
   return (
@@ -525,13 +532,15 @@ function RiskCard({ risk }: { risk: any }) {
               >
                 <Eye className="w-4 h-4 text-secondary-600" />
               </Link>
-              <Link
-                to={`/risks/${risk.id}/edit`}
-                className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
-                title="Edit risk"
-              >
-                <Edit className="w-4 h-4 text-secondary-600" />
-              </Link>
+              {permissions.canEditRisks() && (
+                <Link
+                  to={`/risks/${risk.id}/edit`}
+                  className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                  title="Edit risk"
+                >
+                  <Edit className="w-4 h-4 text-secondary-600" />
+                </Link>
+              )}
             </div>
           </div>
 

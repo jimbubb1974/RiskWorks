@@ -18,6 +18,7 @@ import {
   deleteActionItem,
   updateActionItemStatus,
 } from "../services/api";
+import { usePermissions } from "../hooks/usePermissions";
 
 interface ActionItemsListProps {
   riskId: number;
@@ -32,6 +33,7 @@ export default function ActionItemsList({
 }: ActionItemsListProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
+  const permissions = usePermissions();
 
   const {
     data: actionItems = [],
@@ -149,13 +151,15 @@ export default function ActionItemsList({
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-        <button
-          onClick={onCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Action Item
-        </button>
+        {permissions.canEditRisks() && (
+          <button
+            onClick={onCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Action Item
+          </button>
+        )}
       </div>
 
       {/* Action Items List */}
@@ -224,36 +228,48 @@ export default function ActionItemsList({
 
                 <div className="flex items-center gap-2 ml-4">
                   {/* Status dropdown */}
-                  <select
-                    value={actionItem.status}
-                    onChange={(e) =>
-                      handleStatusChange(actionItem.id, e.target.value)
-                    }
-                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    disabled={statusUpdateMutation.isPending}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
+                  {permissions.canEditRisks() ? (
+                    <select
+                      value={actionItem.status}
+                      onChange={(e) =>
+                        handleStatusChange(actionItem.id, e.target.value)
+                      }
+                      className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      disabled={statusUpdateMutation.isPending}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  ) : (
+                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                      {actionItem.status
+                        .replace("_", " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </span>
+                  )}
 
                   {/* Action buttons */}
-                  <button
-                    onClick={() => onEdit?.(actionItem)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(actionItem.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Delete"
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {permissions.canEditRisks() && (
+                    <>
+                      <button
+                        onClick={() => onEdit?.(actionItem)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(actionItem.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 

@@ -5,11 +5,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from ..core.security import verify_token
-from ..core.roles import Role, get_available_roles, get_role_permissions_list
+from ..core.roles import Role, get_available_roles, get_role_permissions_list, has_permission, Permission
 from ..database import get_db
 from ..models.user import User
 from ..schemas.user import UserRead, UserCreate, UserUpdate
-from ..services.auth import register_user
+from ..services.auth import register_user, get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -20,6 +20,16 @@ def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]) -> int:
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return int(user_id)
+
+
+def check_permission(permission: Permission, user_id: int, db: Session):
+    """Check if user has permission, raise 403 if not"""
+    user = get_current_user(db, user_id)
+    if not has_permission(user.role, permission):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions. Required: {permission.value}"
+        )
 
 
 @router.get("", response_model=list[UserRead])
@@ -33,8 +43,9 @@ def list_users_endpoint(
 ):
     """
     List all users with optional filtering.
-    Note: In a real application, you'd want role-based access control here.
     """
+    # Check permission to view users
+    check_permission(Permission.VIEW_USERS, user_id, db)
     query = db.query(User)
     
     # Apply filters
@@ -76,8 +87,9 @@ def create_user_endpoint(
 ):
     """
     Create a new user (admin endpoint).
-    Note: In a real application, you'd want role-based access control here.
     """
+    # Check permission to create users
+    check_permission(Permission.CREATE_USERS, current_user_id, db)
     # Check if user already exists
     existing = db.query(User).filter(User.email == user_data.email).first()
     if existing:
@@ -112,8 +124,9 @@ def update_user_endpoint(
 ):
     """
     Update a user (admin endpoint).
-    Note: In a real application, you'd want role-based access control here.
     """
+    # Check permission to edit users
+    check_permission(Permission.EDIT_USERS, current_user_id, db)
     import json
     
     # Get the user to update

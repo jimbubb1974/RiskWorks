@@ -6,6 +6,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import {
   LayoutDashboard,
   ListChecks,
@@ -22,6 +23,7 @@ import { useState } from "react";
 
 export default function AppLayout() {
   const { logout, user } = useAuth();
+  const permissions = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -91,36 +93,44 @@ export default function AppLayout() {
             icon={<LayoutDashboard size={20} />}
             description="Overview & Analytics"
           />
-          <NavItem
-            to="/risks"
-            label="Risks"
-            icon={<ListChecks size={20} />}
-            description="Manage & Assess"
-          />
-          <NavItem
-            to="/users"
-            label="Users"
-            icon={<Users size={20} />}
-            description="Manage Users"
-          />
-          <NavItem
-            to="/reports"
-            label="Reports"
-            icon={<FileText size={20} />}
-            description="Generate & Export"
-          />
+          {permissions.canViewRisks() && (
+            <NavItem
+              to="/risks"
+              label="Risks"
+              icon={<ListChecks size={20} />}
+              description="Manage & Assess"
+            />
+          )}
+          {permissions.canViewUsers() && (
+            <NavItem
+              to="/users"
+              label="Users"
+              icon={<Users size={20} />}
+              description="Manage Users"
+            />
+          )}
+          {permissions.canViewReports() && (
+            <NavItem
+              to="/reports"
+              label="Reports"
+              icon={<FileText size={20} />}
+              description="Generate & Export"
+            />
+          )}
           <NavItem
             to="/rbs"
             label="RBS"
             icon={<Network size={20} />}
             description="Risk Breakdown Structure"
           />
-          <NavItem
-            to="/settings"
-            label="Settings"
-            icon={<Settings size={20} />}
-            description="Preferences"
-          />
+          {permissions.canViewSettings() && (
+            <NavItem
+              to="/settings"
+              label="Settings"
+              icon={<Settings size={20} />}
+              description="Preferences"
+            />
+          )}
         </nav>
 
         {/* Logout button */}

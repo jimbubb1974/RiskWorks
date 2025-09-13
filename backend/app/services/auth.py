@@ -46,3 +46,11 @@ def create_user_access_token(user: User) -> str:
 	return create_access_token(subject=str(user.id))
 
 
+def get_current_user(db: Session, user_id: int) -> User:
+	"""Get current user by ID."""
+	user = db.scalar(select(User).where(User.id == user_id))
+	if not user:
+		raise ValueError(f"User with ID {user_id} not found")
+	return user
+
+

@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Risk } from "../types/risk";
 import { listRBSTree, type RBSNode } from "../services/rbs";
+import { usePermissions } from "../hooks/usePermissions";
 
 import type { ActionItem } from "../types/actionItem";
 import ActionItemsList from "../components/ActionItemsList";
@@ -18,6 +19,7 @@ import {
   Calendar,
   User,
   FileText,
+  Clock,
   TrendingUp,
   ChevronDown,
   ChevronRight,
@@ -28,6 +30,7 @@ export default function RiskDetail() {
   const params = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const permissions = usePermissions();
   const [risk, setRisk] = useState<Risk | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -153,17 +156,21 @@ export default function RiskDetail() {
             Back to Risks
           </button>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(`/risks/${risk.id}/edit`)}
-              className="btn-primary"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Risk
-            </button>
-            <button onClick={onDelete} className="btn-danger">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </button>
+            {permissions.canEditRisks() && (
+              <button
+                onClick={() => navigate(`/risks/${risk.id}/edit`)}
+                className="btn-primary"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Risk
+              </button>
+            )}
+            {permissions.canDeleteRisks() && (
+              <button onClick={onDelete} className="btn-danger">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </button>
+            )}
           </div>
         </div>
 
@@ -512,7 +519,7 @@ function StatusBadge({ status }: { status: string }) {
   const getIcon = () => {
     switch (status) {
       case "open":
-        return <TrendingUp className="w-3 h-3" />;
+        return <Clock className="w-3 h-3" />;
       case "draft":
         return <FileText className="w-3 h-3" />;
       case "closed":
