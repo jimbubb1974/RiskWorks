@@ -56,14 +56,18 @@ def list_risks(
 
 
 def create_risk(db: Session, owner_id: int, **risk_data) -> Risk:
-	# Set defaults for new fields
+	# Set defaults for new fields only if not provided
 	defaults = {
-		"probability": 3,
-		"impact": 3,
 		"scope": "project",
 		"risk_owner": "Unassigned",
 		"status": "open"
 	}
+	
+	# Only set probability and impact defaults if they're not provided
+	if "probability" not in risk_data:
+		defaults["probability"] = 3
+	if "impact" not in risk_data:
+		defaults["impact"] = 3
 	
 	# Update defaults with provided data
 	risk_data = {**defaults, **risk_data}
@@ -76,6 +80,18 @@ def create_risk(db: Session, owner_id: int, **risk_data) -> Risk:
 	db.add(risk)
 	db.commit()
 	db.refresh(risk)
+	
+	# Log the creation
+	from .audit import log_audit_event
+	log_audit_event(
+		db=db,
+		entity_type="risk",
+		entity_id=risk.id,
+		user_id=owner_id,
+		action="create",
+		description=f"Risk '{risk.risk_name}' created"
+	)
+	
 	return risk
 
 
@@ -96,6 +112,23 @@ def update_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[st
 	# Managers can update any risk, others only their own
 	if user_role != "manager" and risk.owner_id != owner_id:
 		return None
+	
+	# Store the old state for audit logging
+	old_risk = Risk(
+		risk_name=risk.risk_name,
+		risk_description=risk.risk_description,
+		probability=risk.probability,
+		impact=risk.impact,
+		scope=risk.scope,
+		risk_owner=risk.risk_owner,
+		rbs_node_id=risk.rbs_node_id,
+		latest_reviewed_date=risk.latest_reviewed_date,
+		probability_basis=risk.probability_basis,
+		impact_basis=risk.impact_basis,
+		notes=risk.notes,
+		status=risk.status
+	)
+	
 	for key, value in updates.items():
 		# Apply all provided fields, including explicit nulls, so rbs_node_id can be cleared
 		setattr(risk, key, value)
@@ -103,6 +136,21 @@ def update_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[st
 	# updated_at will be automatically updated by SQLAlchemy due to onupdate=datetime.utcnow
 	db.commit()
 	db.refresh(risk)
+	
+	# Log the changes
+	from .audit import log_audit_event, get_risk_changes
+	changes = get_risk_changes(old_risk, risk)
+	if changes:
+		log_audit_event(
+			db=db,
+			entity_type="risk",
+			entity_id=risk.id,
+			user_id=owner_id,
+			action="update",
+			changes=changes,
+			description=f"Risk '{risk.risk_name}' updated"
+		)
+	
 	return risk
 
 
@@ -113,6 +161,18 @@ def delete_risk(db: Session, owner_id: int, risk_id: int, user_role: Optional[st
 	# Managers can delete any risk, others only their own
 	if user_role != "manager" and risk.owner_id != owner_id:
 		return False
+	
+	# Log the deletion before deleting
+	from .audit import log_audit_event
+	log_audit_event(
+		db=db,
+		entity_type="risk",
+		entity_id=risk.id,
+		user_id=owner_id,
+		action="delete",
+		description=f"Risk '{risk.risk_name}' deleted"
+	)
+	
 	db.delete(risk)
 	db.commit()
 	return True

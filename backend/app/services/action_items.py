@@ -51,13 +51,38 @@ class ActionItemService:
         self.db.add(db_action_item)
         self.db.commit()
         self.db.refresh(db_action_item)
+        
+        # Log the creation
+        from .audit import log_audit_event
+        log_audit_event(
+            db=self.db,
+            entity_type="action_item",
+            entity_id=db_action_item.id,
+            user_id=created_by,
+            action="create",
+            description=f"Action item '{db_action_item.title}' created"
+        )
+        
         return db_action_item
 
-    def update_action_item(self, action_item_id: int, action_item_update: ActionItemUpdate) -> Optional[ActionItem]:
+    def update_action_item(self, action_item_id: int, action_item_update: ActionItemUpdate, updated_by: int) -> Optional[ActionItem]:
         """Update an existing action item"""
         db_action_item = self.get_action_item(action_item_id)
         if not db_action_item:
             return None
+        
+        # Store the old state for audit logging
+        old_item = ActionItem(
+            title=db_action_item.title,
+            description=db_action_item.description,
+            action_type=db_action_item.action_type,
+            priority=db_action_item.priority,
+            status=db_action_item.status,
+            assigned_to=db_action_item.assigned_to,
+            due_date=db_action_item.due_date,
+            completed_date=db_action_item.completed_date,
+            progress_percentage=db_action_item.progress_percentage
+        )
             
         update_data = action_item_update.dict(exclude_unset=True)
         update_data["updated_at"] = datetime.utcnow()
@@ -80,13 +105,39 @@ class ActionItemService:
             
         self.db.commit()
         self.db.refresh(db_action_item)
+        
+        # Log the changes
+        from .audit import log_audit_event, get_action_item_changes
+        changes = get_action_item_changes(old_item, db_action_item)
+        if changes:
+            log_audit_event(
+                db=self.db,
+                entity_type="action_item",
+                entity_id=db_action_item.id,
+                user_id=updated_by,
+                action="update",
+                changes=changes,
+                description=f"Action item '{db_action_item.title}' updated"
+            )
+        
         return db_action_item
 
-    def delete_action_item(self, action_item_id: int) -> bool:
+    def delete_action_item(self, action_item_id: int, deleted_by: int) -> bool:
         """Delete an action item"""
         db_action_item = self.get_action_item(action_item_id)
         if not db_action_item:
             return False
+        
+        # Log the deletion before deleting
+        from .audit import log_audit_event
+        log_audit_event(
+            db=self.db,
+            entity_type="action_item",
+            entity_id=db_action_item.id,
+            user_id=deleted_by,
+            action="delete",
+            description=f"Action item '{db_action_item.title}' deleted"
+        )
             
         self.db.delete(db_action_item)
         self.db.commit()

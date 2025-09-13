@@ -18,6 +18,7 @@ import {
   X,
   Users,
   FileText,
+  History,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -68,7 +69,7 @@ export default function AppLayout() {
             <Shield className="h-6 w-6 text-white" />
           </div>
           <Link
-            to="/dashboard"
+            to="/app/dashboard"
             className="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent"
           >
             RiskWorks
@@ -88,14 +89,14 @@ export default function AppLayout() {
         {/* Navigation */}
         <nav className="flex-1 space-y-2">
           <NavItem
-            to="/dashboard"
+            to="/app/dashboard"
             label="Dashboard"
             icon={<LayoutDashboard size={20} />}
             description="Overview & Analytics"
           />
           {permissions.canViewRisks() && (
             <NavItem
-              to="/risks"
+              to="/app/risks"
               label="Risks"
               icon={<ListChecks size={20} />}
               description="Manage & Assess"
@@ -103,7 +104,7 @@ export default function AppLayout() {
           )}
           {permissions.canViewUsers() && (
             <NavItem
-              to="/users"
+              to="/app/users"
               label="Users"
               icon={<Users size={20} />}
               description="Manage Users"
@@ -111,21 +112,29 @@ export default function AppLayout() {
           )}
           {permissions.canViewReports() && (
             <NavItem
-              to="/reports"
+              to="/app/reports"
               label="Reports"
               icon={<FileText size={20} />}
               description="Generate & Export"
             />
           )}
           <NavItem
-            to="/rbs"
+            to="/app/rbs"
             label="RBS"
             icon={<Network size={20} />}
             description="Risk Breakdown Structure"
           />
+          {permissions.canViewAuditLogs() && (
+            <NavItem
+              to="/app/audit"
+              label="Audit Logs"
+              icon={<History size={20} />}
+              description="Track Changes"
+            />
+          )}
           {permissions.canViewSettings() && (
             <NavItem
-              to="/settings"
+              to="/app/settings"
               label="Settings"
               icon={<Settings size={20} />}
               description="Preferences"
@@ -223,18 +232,19 @@ function NavItem({
 }
 
 function getPageTitle(pathname: string): string {
-  if (pathname.startsWith("/dashboard")) return "Dashboard";
-  if (pathname.startsWith("/risks/new")) return "Create Risk";
-  if (pathname.startsWith("/risks") && pathname.includes("/edit"))
+  if (pathname.startsWith("/app/dashboard")) return "Dashboard";
+  if (pathname.startsWith("/app/risks/new")) return "Create Risk";
+  if (pathname.startsWith("/app/risks") && pathname.includes("/edit"))
     return "Edit Risk";
-  if (pathname.startsWith("/risks") && pathname !== "/risks")
+  if (pathname.startsWith("/app/risks") && pathname !== "/app/risks")
     return "Risk Details";
-  if (pathname.startsWith("/risks")) return "Risk Management";
-  if (pathname.startsWith("/users") && pathname !== "/users")
+  if (pathname.startsWith("/app/risks")) return "Risk Management";
+  if (pathname.startsWith("/app/users") && pathname !== "/app/users")
     return "User Details";
-  if (pathname.startsWith("/users")) return "User Management";
-  if (pathname.startsWith("/reports")) return "Reports";
-  if (pathname.startsWith("/settings")) return "Settings";
-  if (pathname.startsWith("/rbs")) return "Risk Breakdown Structure";
+  if (pathname.startsWith("/app/users")) return "User Management";
+  if (pathname.startsWith("/app/reports")) return "Reports";
+  if (pathname.startsWith("/app/audit")) return "Audit Logs";
+  if (pathname.startsWith("/app/settings")) return "Settings";
+  if (pathname.startsWith("/app/rbs")) return "Risk Breakdown Structure";
   return "RiskWorks";
 }

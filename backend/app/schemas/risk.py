@@ -13,8 +13,8 @@ class RiskBase(BaseModel):
 	risk_description: Optional[str] = Field(None, description="Detailed description of the risk")
 	
 	# Risk Assessment (1-5 scale)
-	probability: int = Field(ge=1, le=5, description="Probability of risk occurring (1-5 scale)", default=3)
-	impact: int = Field(ge=1, le=5, description="Impact if risk occurs (1-5 scale)", default=3)
+	probability: Optional[int] = Field(None, ge=1, le=5, description="Probability of risk occurring (1-5 scale)")
+	impact: Optional[int] = Field(None, ge=1, le=5, description="Impact if risk occurs (1-5 scale)")
 	
 	# Risk details
 	scope: Scope = Field(default="project", description="Scope of the risk: project, site, or enterprise")
@@ -66,7 +66,7 @@ class RiskRead(RiskBase):
 	owner_id: int
 	created_at: datetime
 	updated_at: datetime
-	score: int
+	score: Optional[int]
 	risk_level: str
 	action_items_count: int
 

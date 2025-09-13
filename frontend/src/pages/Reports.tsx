@@ -1203,7 +1203,9 @@ export default function Reports() {
                 ? "#dc2626" // Bright red - very alarming
                 : risk.risk_level === "Medium"
                 ? "#f59e0b" // Orange - moderate concern
-                : "#22c55e", // Green - minimal concern
+                : risk.risk_level === "Low"
+                ? "#22c55e" // Green - minimal concern
+                : "#6b7280", // Gray - not assessed
           },
           {
             text: (risk.status || "unknown")
@@ -1212,7 +1214,7 @@ export default function Reports() {
             style: "tableCell",
           },
           { text: risk.risk_owner || "Unassigned", style: "tableCell" },
-          { text: (risk.score || 0).toString(), style: "tableCell" },
+          { text: (risk.score || "N/A").toString(), style: "tableCell" },
         ];
 
         return row;
@@ -1341,7 +1343,7 @@ export default function Reports() {
       // Risk Assessment
       Probability: risk.probability,
       Impact: risk.impact,
-      "Risk Score": risk.score,
+      "Risk Score": risk.score || "N/A",
       "Risk Level": risk.risk_level,
 
       // Risk Analysis
@@ -1597,7 +1599,9 @@ export default function Reports() {
                             ? "DC2626" // Bright red - very alarming
                             : risk.risk_level === "Medium"
                             ? "F59E0B" // Orange - moderate concern
-                            : "22C55E", // Green - minimal concern
+                            : risk.risk_level === "Low"
+                            ? "22C55E" // Green - minimal concern
+                            : "6B7280", // Gray - not assessed
                       }),
                     ],
                   }),
@@ -1757,7 +1761,8 @@ export default function Reports() {
   const generateWordDetail = async () => {
     // Create sections for each risk
     const riskSections = filteredRisks.map((risk, index) => {
-      const riskScore = risk.probability * risk.impact;
+      const riskScore =
+        risk.probability && risk.impact ? risk.probability * risk.impact : null;
 
       return [
         // Page break for each risk
@@ -2201,8 +2206,11 @@ export default function Reports() {
           ? "#dc2626" // Bright red - very alarming
           : risk.risk_level === "Medium"
           ? "#f59e0b" // Orange - moderate concern
-          : "#22c55e"; // Green - minimal concern
-      const riskScore = risk.probability * risk.impact;
+          : risk.risk_level === "Low"
+          ? "#22c55e" // Green - minimal concern
+          : "#6b7280"; // Gray - not assessed
+      const riskScore =
+        risk.probability && risk.impact ? risk.probability * risk.impact : null;
 
       return {
         stack: [
@@ -2301,7 +2309,10 @@ export default function Reports() {
                   { text: `${risk.impact}/5`, style: "fieldValue" },
 
                   { text: "Risk Score:", style: "fieldLabel" },
-                  { text: riskScore.toString(), style: "riskScore" },
+                  {
+                    text: riskScore ? riskScore.toString() : "N/A",
+                    style: "riskScore",
+                  },
 
                   { text: "Risk Level:", style: "fieldLabel" },
                   { text: risk.risk_level, style: "fieldValue" },
@@ -2475,7 +2486,8 @@ export default function Reports() {
   const generateRiskDetailPDFKit = () => {
     // Create individual pages for each risk with consistent margins
     const riskPages = filteredRisks.map((risk, index) => {
-      const riskScore = risk.probability * risk.impact;
+      const riskScore =
+        risk.probability && risk.impact ? risk.probability * risk.impact : null;
       const riskLevelColor =
         risk.risk_level === "Critical"
           ? "#7f1d1d" // Dark red/maroon - most alarming
@@ -2483,7 +2495,9 @@ export default function Reports() {
           ? "#dc2626" // Bright red - very alarming
           : risk.risk_level === "Medium"
           ? "#f59e0b" // Orange - moderate concern
-          : "#22c55e"; // Green - minimal concern
+          : risk.risk_level === "Low"
+          ? "#22c55e" // Green - minimal concern
+          : "#6b7280"; // Gray - not assessed
 
       return {
         // Force page break for each risk except the first
@@ -2632,7 +2646,7 @@ export default function Reports() {
                             stack: [
                               { text: "Risk Score:", style: "fieldLabel" },
                               {
-                                text: riskScore.toString(),
+                                text: riskScore ? riskScore.toString() : "N/A",
                                 style: "riskScoreText",
                               },
                             ],
@@ -2844,6 +2858,8 @@ export default function Reports() {
         return "bg-yellow-100 text-yellow-800 border-yellow-200"; // Orange - moderate concern
       case "Low":
         return "bg-green-100 text-green-800 border-green-200"; // Green - minimal concern
+      case "Not Assessed":
+        return "bg-gray-100 text-gray-600 border-gray-300"; // Gray - not assessed
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }

@@ -73,7 +73,7 @@ async def update_action_item(
 ):
     """Update an existing action item"""
     service = ActionItemService(db)
-    updated_item = service.update_action_item(action_item_id, action_item_update)
+    updated_item = service.update_action_item(action_item_id, action_item_update, user_id)
     if not updated_item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -90,7 +90,7 @@ async def delete_action_item(
 ):
     """Delete an action item"""
     service = ActionItemService(db)
-    success = service.delete_action_item(action_item_id)
+    success = service.delete_action_item(action_item_id, user_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

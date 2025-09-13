@@ -223,7 +223,7 @@ export default function RisksList() {
             </div>
             {permissions.canCreateRisks() && (
               <button
-                onClick={() => navigate("/risks/new")}
+                onClick={() => navigate("/app/risks/new")}
                 className="btn-primary group"
               >
                 <Plus className="w-5 h-5 mr-2" />
@@ -259,7 +259,7 @@ export default function RisksList() {
                 : "Get started by creating your first risk assessment."}
             </p>
             <button
-              onClick={() => navigate("/risks/new")}
+              onClick={() => navigate("/app/risks/new")}
               className="btn-primary"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -411,7 +411,7 @@ export default function RisksList() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Link
-                          to={`/risks/${risk.id}`}
+                          to={`/app/risks/${risk.id}`}
                           className="btn-ghost p-2 tooltip"
                           title="View details"
                         >
@@ -419,7 +419,7 @@ export default function RisksList() {
                         </Link>
                         {permissions.canEditRisks() && (
                           <Link
-                            to={`/risks/${risk.id}/edit`}
+                            to={`/app/risks/${risk.id}/edit`}
                             className="btn-ghost p-2 tooltip"
                             title="Edit risk"
                           >
@@ -501,7 +501,8 @@ function RiskScoreBadge({ score }: { score: number }) {
 
 function RiskCard({ risk }: { risk: any }) {
   const permissions = usePermissions();
-  const riskScore = risk.probability * risk.impact;
+  const riskScore =
+    risk.probability && risk.impact ? risk.probability * risk.impact : null;
 
   return (
     <div className="group bg-white rounded-xl border border-secondary-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
@@ -526,7 +527,7 @@ function RiskCard({ risk }: { risk: any }) {
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <Link
-                to={`/risks/${risk.id}`}
+                to={`/app/risks/${risk.id}`}
                 className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
                 title="View details"
               >
@@ -534,7 +535,7 @@ function RiskCard({ risk }: { risk: any }) {
               </Link>
               {permissions.canEditRisks() && (
                 <Link
-                  to={`/risks/${risk.id}/edit`}
+                  to={`/app/risks/${risk.id}/edit`}
                   className="btn-ghost p-2 hover:bg-secondary-100 rounded-lg transition-colors"
                   title="Edit risk"
                 >

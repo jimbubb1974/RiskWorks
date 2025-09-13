@@ -93,7 +93,7 @@ def create_risk_endpoint(payload: RiskCreate, db: Session = Depends(get_db), use
     # Convert payload to dict and handle new fields
     risk_data = payload.model_dump()
     
-    # Ensure probability and impact are set
+    # Only set defaults if probability and impact are not provided at all
     if "probability" not in risk_data:
         risk_data["probability"] = 3
     if "impact" not in risk_data:

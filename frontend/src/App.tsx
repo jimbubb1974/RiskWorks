@@ -15,6 +15,7 @@ import UserDetail from "./pages/UserDetail";
 import Reports from "./pages/Reports";
 import LandingPage from "./components/LandingPage";
 import RBSPage from "./pages/RBS";
+import AuditLogs from "./pages/AuditLogs";
 
 const router = createBrowserRouter([
   {
@@ -24,23 +25,24 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   {
-    path: "/",
+    path: "/app",
     element: <ProtectedRoute />,
     children: [
       {
-        path: "/",
+        path: "",
         element: <AppLayout />,
         children: [
-          { path: "/dashboard", element: <Dashboard /> },
-          { path: "/risks", element: <RisksList /> },
-          { path: "/risks/new", element: <RiskForm /> },
-          { path: "/risks/:id", element: <RiskDetail /> },
-          { path: "/risks/:id/edit", element: <RiskForm /> },
-          { path: "/users", element: <Users /> },
-          { path: "/users/:id", element: <UserDetail /> },
-          { path: "/reports", element: <Reports /> },
-          { path: "/rbs", element: <RBSPage /> },
-          { path: "/settings", element: <Settings /> },
+          { path: "dashboard", element: <Dashboard /> },
+          { path: "risks", element: <RisksList /> },
+          { path: "risks/new", element: <RiskForm /> },
+          { path: "risks/:id", element: <RiskDetail /> },
+          { path: "risks/:id/edit", element: <RiskForm /> },
+          { path: "users", element: <Users /> },
+          { path: "users/:id", element: <UserDetail /> },
+          { path: "reports", element: <Reports /> },
+          { path: "rbs", element: <RBSPage /> },
+          { path: "audit", element: <AuditLogs /> },
+          { path: "settings", element: <Settings /> },
         ],
       },
     ],

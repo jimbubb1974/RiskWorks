@@ -51,9 +51,6 @@ def get_system_status(
             # Only log database failures, not successes
         except Exception as e:
             db_status = "disconnected"
-            print(f"❌ Database connection test failed: {e}")
-            print(f"   Database engine URL: {get_engine().url}")
-            print(f"   Database file exists: {Path('risk_platform.db').exists()}")
         
         # Process information
         current_process = psutil.Process()
@@ -146,7 +143,7 @@ def get_port_status(
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         return {"pid": conn.pid, "name": "Unknown", "cmdline": "", "cpu_percent": 0, "memory_mb": 0}
         except Exception as e:
-            print(f"Error getting process info for port {port}: {e}")
+            pass
         
         return None
     
@@ -181,7 +178,7 @@ def get_port_status(
         except Exception as e:
             # Only log errors for important ports
             if port in [8000, 5173]:
-                print(f"IPv4 check failed for port {port}: {e}")
+                pass
         
         # If IPv4 failed, try IPv6 (::1)
         if not is_active:
@@ -197,7 +194,7 @@ def get_port_status(
             except Exception as e:
                 # Only log errors for important ports
                 if port in [8000, 5173]:
-                    print(f"⚠️ Port {port} ({port_info['service']}) ERROR: {e}")
+                    pass
         
         port_info["status"] = "active" if is_active else "inactive"
         
@@ -398,7 +395,6 @@ def switch_environment(
     from ..core.config import settings
     
     try:
-        print(f"🔄 Environment switch requested: {request.action}")
         
         # Get backend directory path
         backend_dir = Path(__file__).parent.parent.parent
@@ -410,14 +406,12 @@ def switch_environment(
         
         # Check if environment files exist
         if not local_env.exists():
-            print(f"❌ Local environment file not found: {local_env}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Local environment file (.env.local) not found. Run 'python simple_env_switch.py create' first."
             )
         
         if not cloud_env.exists():
-            print(f"❌ Cloud environment file not found: {cloud_env}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Cloud environment file (.env.cloud) not found. Run 'python simple_env_switch.py create' first."
@@ -428,13 +422,11 @@ def switch_environment(
             # Copy local env to active env
             import shutil
             shutil.copy2(local_env, active_env)
-            print(f"✅ Switched to LOCAL environment")
             current_env = "local"
         elif request.action == "cloud":
             # Copy cloud env to active env
             import shutil
             shutil.copy2(cloud_env, active_env)
-            print(f"✅ Switched to CLOUD environment")
             current_env = "cloud"
         else:
             raise HTTPException(
@@ -443,14 +435,11 @@ def switch_environment(
             )
         
         # Verify the switch worked
-        if active_env.exists():
-            print(f"✅ Active environment file updated: {active_env}")
-        else:
-            print(f"❌ Failed to update active environment file")
-        
-        # Environment switch completed - manual restart required
-        print(f"✅ Environment switch completed successfully")
-        print(f"🔄 Manual backend restart required to apply new configuration")
+        if not active_env.exists():
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update active environment file"
+            )
         
         return {
             "success": True,
@@ -473,7 +462,6 @@ def switch_environment(
         }
         
     except Exception as e:
-        print(f"❌ Environment switch error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to switch environment: {str(e)}"

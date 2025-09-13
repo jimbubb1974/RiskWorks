@@ -54,6 +54,7 @@ export function usePermissions() {
         Permission.CREATE_SNAPSHOTS,
         Permission.RESTORE_SNAPSHOTS,
         Permission.DELETE_SNAPSHOTS,
+        Permission.VIEW_AUDIT_LOGS,
       ],
     };
 
@@ -76,6 +77,7 @@ export function usePermissions() {
 
   const canViewReports = () => hasPermission(Permission.VIEW_REPORTS);
   const canExportData = () => hasPermission(Permission.EXPORT_DATA);
+  const canViewAuditLogs = () => hasPermission(Permission.VIEW_AUDIT_LOGS);
 
   return {
     hasPermission,
@@ -91,5 +93,6 @@ export function usePermissions() {
     canEditSettings,
     canViewReports,
     canExportData,
+    canViewAuditLogs,
   };
 }

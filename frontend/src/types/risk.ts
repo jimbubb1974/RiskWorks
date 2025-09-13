@@ -4,8 +4,8 @@ export type Risk = {
   risk_description?: string | null;
 
   // Risk Assessment (1-5 scale)
-  probability: number;
-  impact: number;
+  probability?: number | null;
+  impact?: number | null;
 
   // Risk details
   scope: RiskScope;
@@ -33,8 +33,8 @@ export type Risk = {
 export type RiskCreate = {
   risk_name: string;
   risk_description?: string | null;
-  probability: number;
-  impact: number;
+  probability?: number | null;
+  impact?: number | null;
   scope?: RiskScope;
   risk_owner?: string;
   rbs_node_id?: number | null;

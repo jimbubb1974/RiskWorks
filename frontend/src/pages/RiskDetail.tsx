@@ -6,6 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Risk } from "../types/risk";
 import { listRBSTree, type RBSNode } from "../services/rbs";
 import { usePermissions } from "../hooks/usePermissions";
+import { auditService } from "../services/audit";
+import RiskTrendChart from "../components/RiskTrendChart";
 
 import type { ActionItem } from "../types/actionItem";
 import ActionItemsList from "../components/ActionItemsList";
@@ -39,9 +41,17 @@ export default function RiskDetail() {
   );
   const [showProbabilityBasis, setShowProbabilityBasis] = useState(false);
   const [showImpactBasis, setShowImpactBasis] = useState(false);
+  const [showTrendChart, setShowTrendChart] = useState(false);
   const { data: rbsTree = [] } = useQuery({
     queryKey: ["rbs-tree"],
     queryFn: listRBSTree,
+  });
+
+  // Query for risk trend data
+  const { data: trendData = [], isLoading: trendLoading } = useQuery({
+    queryKey: ["risk-trend", params.id],
+    queryFn: () => auditService.getRiskTrend(Number(params.id!), 30),
+    enabled: !!params.id && showTrendChart,
   });
 
   function findNodeById(
@@ -89,7 +99,7 @@ export default function RiskDetail() {
     await deleteRisk(Number(params.id));
     // Invalidate risks cache to refresh the list
     queryClient.invalidateQueries({ queryKey: ["risks"] });
-    navigate("/risks");
+    navigate("/app/risks");
   }
 
   const handleCreateActionItem = () => {
@@ -118,8 +128,17 @@ export default function RiskDetail() {
     );
   }
 
-  const riskScore = risk.probability * risk.impact;
+  const riskScore =
+    risk.probability && risk.impact ? risk.probability * risk.impact : null;
   const getRiskLevel = () => {
+    if (!riskScore) {
+      return {
+        level: "Not Assessed",
+        color: "text-gray-600",
+        bg: "bg-gray-50",
+        border: "border-gray-200",
+      };
+    }
     if (riskScore >= 16)
       return {
         level: "Critical",
@@ -149,7 +168,7 @@ export default function RiskDetail() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate("/risks")}
+            onClick={() => navigate("/app/risks")}
             className="btn-secondary group"
           >
             <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
@@ -158,7 +177,7 @@ export default function RiskDetail() {
           <div className="flex items-center gap-3">
             {permissions.canEditRisks() && (
               <button
-                onClick={() => navigate(`/risks/${risk.id}/edit`)}
+                onClick={() => navigate(`/app/risks/${risk.id}/edit`)}
                 className="btn-primary"
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -318,7 +337,9 @@ export default function RiskDetail() {
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Probability
                     </label>
-                    <p className="text-secondary-900">{risk.probability}/5</p>
+                    <p className="text-secondary-900">
+                      {risk.probability || "Not set"}/5
+                    </p>
                   </div>
                   <button
                     onClick={() =>
@@ -363,7 +384,9 @@ export default function RiskDetail() {
                     <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
                       Impact
                     </label>
-                    <p className="text-secondary-900">{risk.impact}/5</p>
+                    <p className="text-secondary-900">
+                      {risk.impact || "Not set"}/5
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowImpactBasis(!showImpactBasis)}
@@ -425,10 +448,54 @@ export default function RiskDetail() {
                     </p>
                   </div>
                 </div>
+
+                {/* View Risk Trends Button */}
+                {permissions.canViewAuditLogs() && (
+                  <div className="pt-4 border-t border-secondary-200">
+                    <button
+                      onClick={() => setShowTrendChart(!showTrendChart)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg border border-primary-200 transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      {showTrendChart ? "Hide Risk Trends" : "View Risk Trends"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Risk Trends Chart */}
+        {showTrendChart && (
+          <div className="card-glass">
+            <h3 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary-600" />
+              Risk Trends (Last 30 Days)
+            </h3>
+            {trendLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <span className="ml-3 text-secondary-600">
+                  Loading trend data...
+                </span>
+              </div>
+            ) : trendData.length > 0 ? (
+              <RiskTrendChart data={trendData} riskId={Number(params.id!)} />
+            ) : (
+              <div className="text-center py-8">
+                <TrendingUp className="w-12 h-12 text-secondary-400 mx-auto mb-4" />
+                <p className="text-secondary-500">
+                  No trend data available for this risk
+                </p>
+                <p className="text-sm text-secondary-400 mt-1">
+                  Trend data will appear as you make changes to the risk over
+                  time
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notes - Full Width */}
         <div className="card-glass">

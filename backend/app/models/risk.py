@@ -14,8 +14,8 @@ class Risk(Base):
 	risk_description: Mapped[str | None] = mapped_column(Text, nullable=True)
 	
 	# Risk Assessment (1-5 scale)
-	probability: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
-	impact: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+	probability: Mapped[int | None] = mapped_column(Integer, nullable=True)
+	impact: Mapped[int | None] = mapped_column(Integer, nullable=True)
 	
 	# Risk details
 	scope: Mapped[str] = mapped_column(String(32), nullable=False, default="project")
@@ -39,8 +39,10 @@ class Risk(Base):
 	action_items = relationship("ActionItem", back_populates="risk")
 
 	@property
-	def score(self) -> int:
+	def score(self) -> int | None:
 		# Risk Score = Probability × Impact
+		if self.probability is None or self.impact is None:
+			return None
 		return int(self.probability) * int(self.impact)
 
 	@property
@@ -51,7 +53,9 @@ class Risk(Base):
 	@property
 	def risk_level(self) -> str:
 		score = self.score
-		if score <= 4:
+		if score is None:
+			return "Not Assessed"
+		elif score <= 4:
 			return "Low"
 		elif score <= 8:
 			return "Medium"

@@ -25,13 +25,27 @@ const schema = z.object({
     .max(255, "Risk name must be less than 255 characters"),
   risk_description: z.string().optional(),
   probability: z
-    .number()
-    .min(1, "Probability must be between 1-5")
-    .max(5, "Probability must be between 1-5"),
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => {
+      if (val === "" || val === undefined || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    })
+    .refine((val) => val === undefined || (val >= 1 && val <= 5), {
+      message: "Probability must be between 1 and 5",
+    }),
   impact: z
-    .number()
-    .min(1, "Impact must be between 1-5")
-    .max(5, "Impact must be between 1-5"),
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => {
+      if (val === "" || val === undefined || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    })
+    .refine((val) => val === undefined || (val >= 1 && val <= 5), {
+      message: "Impact must be between 1 and 5",
+    }),
   scope: z.enum(["project", "site", "enterprise"]).default("project"),
   risk_owner: z.string().optional(),
   rbs_node_id: z.number().int().nullable().optional(),
@@ -63,8 +77,8 @@ export default function RiskForm() {
     defaultValues: {
       risk_name: "",
       risk_description: "",
-      probability: 3,
-      impact: 3,
+      probability: undefined,
+      impact: undefined,
       scope: "project",
       risk_owner: "Unassigned",
       rbs_node_id: null,
@@ -78,7 +92,10 @@ export default function RiskForm() {
 
   const probability = watch("probability");
   const impact = watch("impact");
-  const riskScore = probability * impact;
+  const riskScore =
+    probability && impact && probability !== "" && impact !== ""
+      ? Number(probability) * Number(impact)
+      : undefined;
 
   // Ensure RHF knows about rbs_node_id when using setValue on a controlled select
   useEffect(() => {
@@ -115,8 +132,8 @@ export default function RiskForm() {
           reset({
             risk_name: r.risk_name,
             risk_description: r.risk_description ?? "",
-            probability: r.probability,
-            impact: r.impact,
+            probability: r.probability?.toString() ?? "",
+            impact: r.impact?.toString() ?? "",
             scope: (r as any).scope ?? "project",
             risk_owner: r.risk_owner ?? "Unassigned",
             rbs_node_id: (r as any).rbs_node_id ?? null,
@@ -147,6 +164,8 @@ export default function RiskForm() {
       const cleanedValues = {
         ...values,
         risk_description: values.risk_description || null,
+        probability: values.probability === "" ? null : values.probability,
+        impact: values.impact === "" ? null : values.impact,
         latest_reviewed_date: values.latest_reviewed_date || null,
         probability_basis: values.probability_basis || null,
         impact_basis: values.impact_basis || null,
@@ -163,7 +182,7 @@ export default function RiskForm() {
         // Invalidate risks cache to refresh the list
         queryClient.invalidateQueries({ queryKey: ["risks"] });
       }
-      navigate("/risks");
+      navigate("/app/risks");
     } catch (error) {
       console.error("Failed to save risk:", error);
     }
@@ -183,7 +202,7 @@ export default function RiskForm() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link to="/risks" className="btn-secondary group">
+          <Link to="/app/risks" className="btn-secondary group">
             <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
             Back to Risks
           </Link>
@@ -336,10 +355,8 @@ export default function RiskForm() {
                       <BarChart3 className="w-4 h-4 inline mr-2" />
                       Probability (1-5)
                     </label>
-                    <select
-                      {...register("probability", { valueAsNumber: true })}
-                      className="input"
-                    >
+                    <select {...register("probability")} className="input">
+                      <option value="">Not entered</option>
                       <option value={1}>1 - Very Unlikely</option>
                       <option value={2}>2 - Unlikely</option>
                       <option value={3}>3 - Possible</option>
@@ -360,10 +377,8 @@ export default function RiskForm() {
                       <Target className="w-4 h-4 inline mr-2" />
                       Impact (1-5)
                     </label>
-                    <select
-                      {...register("impact", { valueAsNumber: true })}
-                      className="input"
-                    >
+                    <select {...register("impact")} className="input">
+                      <option value="">Not entered</option>
                       <option value={1}>1 - Minimal Impact</option>
                       <option value={2}>2 - Minor Impact</option>
                       <option value={3}>3 - Moderate Impact</option>
@@ -383,28 +398,34 @@ export default function RiskForm() {
                     <div className="text-center">
                       <div
                         className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl text-2xl font-bold text-white ${
-                          riskScore >= 16
+                          riskScore === undefined
+                            ? "bg-gray-500"
+                            : riskScore >= 16
                             ? "bg-danger-500"
                             : riskScore >= 9
                             ? "bg-warning-500"
                             : "bg-success-500"
                         }`}
                       >
-                        {riskScore}
+                        {riskScore ?? "N/A"}
                       </div>
                       <p className="text-sm text-secondary-600 mt-2">
                         Risk Score
                       </p>
                       <p
                         className={`text-sm font-medium ${
-                          riskScore >= 16
+                          riskScore === undefined
+                            ? "text-gray-600"
+                            : riskScore >= 16
                             ? "text-danger-600"
                             : riskScore >= 9
                             ? "text-warning-600"
                             : "text-success-600"
                         }`}
                       >
-                        {riskScore >= 16
+                        {riskScore === undefined
+                          ? "Not Calculated"
+                          : riskScore >= 16
                           ? "Critical Risk"
                           : riskScore >= 9
                           ? "High Risk"
@@ -478,7 +499,7 @@ export default function RiskForm() {
 
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-3 pt-6">
-            <Link to="/risks" className="btn-secondary">
+            <Link to="/app/risks" className="btn-secondary">
               Cancel
             </Link>
             <button

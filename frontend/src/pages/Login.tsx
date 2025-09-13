@@ -28,7 +28,7 @@ export default function Login() {
     try {
       setLoginError(""); // Clear any previous errors
       await login(values.email, values.password);
-      navigate("/dashboard");
+      navigate("/app/dashboard");
     } catch (error: any) {
       if (error.response?.status === 401) {
         setLoginError("Invalid email or password. Please try again.");

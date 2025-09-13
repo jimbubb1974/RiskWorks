@@ -81,7 +81,7 @@ export default function UserDetail() {
         <p className="text-secondary-600 mb-6">
           The user you're looking for doesn't exist or has been removed.
         </p>
-        <Link to="/users" className="btn-primary">
+        <Link to="/app/users" className="btn-primary">
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back to Users
         </Link>
@@ -95,7 +95,7 @@ export default function UserDetail() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            to="/users"
+            to="/app/users"
             className="btn-ghost p-2 hover:bg-secondary-100"
             title="Back to Users"
           >

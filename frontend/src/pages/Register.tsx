@@ -23,7 +23,7 @@ export default function Register() {
 
   async function onSubmit(values: FormData) {
     await registerUser(values.email, values.password);
-    navigate("/dashboard");
+    navigate("/app/dashboard");
   }
 
   return (

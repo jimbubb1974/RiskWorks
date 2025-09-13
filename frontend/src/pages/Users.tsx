@@ -219,7 +219,7 @@ export default function Users() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Link
-                          to={`/users/${user.id}`}
+                          to={`/app/users/${user.id}`}
                           className="btn-ghost p-2"
                           title="View user details"
                         >

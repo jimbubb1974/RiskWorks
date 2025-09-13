@@ -31,4 +31,7 @@ export enum Permission {
   CREATE_SNAPSHOTS = "create_snapshots",
   RESTORE_SNAPSHOTS = "restore_snapshots",
   DELETE_SNAPSHOTS = "delete_snapshots",
+
+  // Audit permissions
+  VIEW_AUDIT_LOGS = "view_audit_logs",
 }
