@@ -188,8 +188,8 @@ def get_risk_trend_data(db: Session, risk_id: int, days: int = 30) -> List[Dict[
     
     trend_data = []
     for log in logs:
-        if 'changes' in log.changes:
-            changes = log.changes['changes']
+        if log.changes:
+            changes = log.changes
             data_point = {
                 'timestamp': log.timestamp.isoformat(),
                 'user_id': log.user_id,
