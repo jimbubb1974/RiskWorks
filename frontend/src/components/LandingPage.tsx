@@ -50,53 +50,13 @@ export default function LandingPage() {
               today's fast-paced business environment.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Link
-                to="/register"
-                className="btn-primary text-lg px-8 py-4 group"
-              >
-                Start Free Trial
-                <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <button className="btn-ghost text-lg px-8 py-4 group">
-                Watch Demo
-                <Star className="ml-2 h-5 w-5" />
-              </button>
-            </div>
+            {/* Removed extra marketing CTAs; keep header Sign In / Get Started */}
+            <div className="mt-8"></div>
           </div>
 
-          {/* Feature Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mt-16 animate-slide-up">
-            <FeatureCard
-              icon={<Zap className="h-8 w-8" />}
-              title="Lightning Fast"
-              description="Streamlined workflows that get you from risk identification to mitigation in minutes, not hours."
-            />
-            <FeatureCard
-              icon={<Target className="h-8 w-8" />}
-              title="Precision Analytics"
-              description="Advanced algorithms and real-time insights help you focus on what matters most."
-            />
-            <FeatureCard
-              icon={<Users className="h-8 w-8" />}
-              title="Team Collaboration"
-              description="Built-in collaboration tools ensure everyone stays aligned on risk management strategies."
-            />
-          </div>
+          {/* Removed marketing feature cards */}
 
-          {/* Stats Section */}
-          <div className="mt-20 py-16">
-            <div className="card-glass mx-auto max-w-4xl">
-              <h3 className="text-2xl font-semibold text-secondary-900 mb-8">
-                Trusted by Organizations Worldwide
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <StatCard number="10,000+" label="Risks Assessed" />
-                <StatCard number="500+" label="Organizations" />
-                <StatCard number="99.9%" label="Uptime" />
-              </div>
-            </div>
-          </div>
+          {/* Removed stats/uptime/companies marketing section */}
         </div>
       </main>
 
@@ -122,33 +82,4 @@ export default function LandingPage() {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="card-glass group hover:scale-105 transition-all duration-300">
-      <div className="text-primary-600 mb-4 flex justify-center group-hover:text-accent-600 transition-colors">
-        {icon}
-      </div>
-      <h3 className="text-xl font-semibold text-secondary-900 mb-3">{title}</h3>
-      <p className="text-secondary-600 leading-relaxed">{description}</p>
-    </div>
-  );
-}
-
-function StatCard({ number, label }: { number: string; label: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
-        {number}
-      </div>
-      <div className="text-secondary-600">{label}</div>
-    </div>
-  );
-}
+// Marketing components removed

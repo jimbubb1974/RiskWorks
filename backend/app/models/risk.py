@@ -19,6 +19,7 @@ class Risk(Base):
 	
 	# Risk details
 	category: Mapped[str] = mapped_column(String(50), nullable=True, default="operational")
+	scope: Mapped[str] = mapped_column(String(32), nullable=False, default="project")
 	risk_owner: Mapped[str] = mapped_column(String(100), nullable=True, default="Unassigned")
 	rbs_node_id: Mapped[int | None] = mapped_column(ForeignKey("rbs_nodes.id"), nullable=True, index=True)
 	latest_reviewed_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

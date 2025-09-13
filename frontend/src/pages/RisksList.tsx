@@ -273,6 +273,9 @@ export default function RisksList() {
                       />
                     </div>
                   </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-secondary-600">
+                    Scope
+                  </th>
                   <th
                     className="px-6 py-4 text-left text-sm font-medium text-secondary-600 cursor-pointer hover:bg-secondary-50 transition-colors select-none"
                     onClick={() => handleSort("score")}
@@ -343,6 +346,9 @@ export default function RisksList() {
                     </td>
                     <td className="px-6 py-4">
                       <SeverityBadge severity={risk.impact} />
+                    </td>
+                    <td className="px-6 py-4 capitalize">
+                      {(risk as any).scope ?? "project"}
                     </td>
                     <td className="px-6 py-4">
                       <RiskScoreBadge score={risk.score} />
@@ -527,6 +533,11 @@ function RiskCard({ risk }: { risk: any }) {
           {risk.category && (
             <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm">
               {risk.category}
+            </span>
+          )}
+          {(risk as any).scope && (
+            <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm">
+              {(risk as any).scope}
             </span>
           )}
         </div>

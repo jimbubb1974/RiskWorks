@@ -33,6 +33,7 @@ const schema = z.object({
     .min(1, "Impact must be between 1-5")
     .max(5, "Impact must be between 1-5"),
   category: z.string().optional(),
+  scope: z.enum(["project", "site", "enterprise"]).default("project"),
   risk_owner: z.string().optional(),
   rbs_node_id: z.number().int().nullable().optional(),
   latest_reviewed_date: z.string().optional(),
@@ -66,6 +67,7 @@ export default function RiskForm() {
       probability: 3,
       impact: 3,
       category: "operational",
+      scope: "project",
       risk_owner: "Unassigned",
       rbs_node_id: null,
       latest_reviewed_date: "",
@@ -118,6 +120,7 @@ export default function RiskForm() {
             probability: r.probability,
             impact: r.impact,
             category: r.category ?? "operational",
+            scope: (r as any).scope ?? "project",
             risk_owner: r.risk_owner ?? "Unassigned",
             rbs_node_id: (r as any).rbs_node_id ?? null,
             latest_reviewed_date: r.latest_reviewed_date ?? "",
@@ -243,7 +246,7 @@ export default function RiskForm() {
                     />
                   </div>
 
-                  {/* Category, RBS link, and Risk Owner */}
+                  {/* Category, Scope, RBS link, and Risk Owner */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-secondary-700 mb-2">
@@ -258,6 +261,17 @@ export default function RiskForm() {
                         <option value="security">Security</option>
                         <option value="environmental">Environmental</option>
                         <option value="reputational">Reputational</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-2">
+                        Scope
+                      </label>
+                      <select {...register("scope")} className="input">
+                        <option value="project">Project</option>
+                        <option value="site">Site</option>
+                        <option value="enterprise">Enterprise</option>
                       </select>
                     </div>
 

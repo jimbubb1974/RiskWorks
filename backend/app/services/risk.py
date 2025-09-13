@@ -53,6 +53,7 @@ def create_risk(db: Session, owner_id: int, **risk_data) -> Risk:
 		"probability": 3,
 		"impact": 3,
 		"category": "operational",
+		"scope": "project",
 		"risk_owner": "Unassigned",
 		"status": "open"
 	}

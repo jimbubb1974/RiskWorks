@@ -1,5 +1,6 @@
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listRisks } from "../services/risks";
+import { listRisks, getRiskOwners } from "../services/risks";
 import {
   AlertTriangle,
   Shield,
@@ -16,6 +17,13 @@ export default function Dashboard() {
     queryKey: ["risks"],
     queryFn: () => listRisks({}),
   });
+  const { data: riskOwners = [] } = useQuery({
+    queryKey: ["risk-owners"],
+    queryFn: getRiskOwners,
+  });
+
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [ownerFilter, setOwnerFilter] = useState<string>("");
 
   // Calculate metrics
   const totalRisks = risks.length;
@@ -35,6 +43,28 @@ export default function Dashboard() {
           totalRisks
         ).toFixed(1)
       : 0;
+
+  // Filters applied to matrix only
+  const filteredForMatrix = useMemo(() => {
+    return risks.filter((r) => {
+      if (statusFilter && r.status !== statusFilter) return false;
+      if (ownerFilter && (r.risk_owner || "") !== ownerFilter) return false;
+      return true;
+    });
+  }, [risks, statusFilter, ownerFilter]);
+
+  // Build 5x5 matrix counts: rows=impact(5..1), cols=probability(1..5)
+  const matrixCounts: number[][] = useMemo(() => {
+    const counts = Array.from({ length: 5 }, () => Array(5).fill(0));
+    for (const r of filteredForMatrix) {
+      const p = Math.min(5, Math.max(1, Number(r.probability)));
+      const i = Math.min(5, Math.max(1, Number(r.impact)));
+      const row = 5 - i; // impact 5 at top (row 0)
+      const col = p - 1; // probability 1 at left (col 0)
+      counts[row][col] += 1;
+    }
+    return counts;
+  }, [filteredForMatrix]);
 
   return (
     <div className="space-y-6">
@@ -121,6 +151,88 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Risk Matrix Pane */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-secondary-900">
+            Risk Matrix
+          </h3>
+          <div className="flex gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input"
+            >
+              <option value="">All statuses</option>
+              <option value="open">Open</option>
+              <option value="mitigated">Mitigated</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select
+              value={ownerFilter}
+              onChange={(e) => setOwnerFilter(e.target.value)}
+              className="input"
+            >
+              <option value="">All owners</option>
+              {riskOwners.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-6 gap-1">
+            {/* Header row */}
+            <div></div>
+            {[1, 2, 3, 4, 5].map((p) => (
+              <div
+                key={p}
+                className="text-center text-xs text-secondary-600 py-1"
+              >
+                P{p}
+              </div>
+            ))}
+
+            {/* Rows: impact 5..1 */}
+            {[5, 4, 3, 2, 1].map((impactVal, rowIdx) => (
+              <React.Fragment key={`row-${impactVal}`}>
+                <div
+                  key={`label-${impactVal}`}
+                  className="text-right pr-2 text-xs text-secondary-600 flex items-center justify-end"
+                >
+                  I{impactVal}
+                </div>
+                {matrixCounts[rowIdx].map((count, colIdx) => {
+                  const probabilityVal = colIdx + 1;
+                  const score = probabilityVal * impactVal;
+                  const color =
+                    score >= 16
+                      ? "bg-danger-100 border-danger-200 text-danger-800"
+                      : score >= 9
+                      ? "bg-warning-100 border-warning-200 text-warning-800"
+                      : "bg-success-100 border-success-200 text-success-800";
+                  return (
+                    <div
+                      key={`cell-${rowIdx}-${colIdx}`}
+                      className={`h-12 flex items-center justify-center border rounded ${color}`}
+                      title={`P${probabilityVal} x I${impactVal} = ${score}`}
+                    >
+                      <span className="text-sm font-medium">{count}</span>
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-secondary-500">
+          P = Probability, I = Impact
         </div>
       </div>
     </div>

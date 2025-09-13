@@ -256,6 +256,20 @@ export default function RiskDetail() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-secondary-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">
+                      Scope
+                    </label>
+                    <p className="text-secondary-900 capitalize">
+                      {(risk as any).scope || "Project"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600" />
                   </div>
