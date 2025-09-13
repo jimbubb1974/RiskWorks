@@ -71,6 +71,7 @@ class RiskRead(RiskBase):
 	updated_at: datetime
 	score: int
 	risk_level: str
+	action_items_count: int
 
 	class Config:
 		from_attributes = True

@@ -28,6 +28,7 @@ export type Risk = {
   // Computed fields
   score: number;
   risk_level: string;
+  action_items_count: number;
 };
 
 export type RiskCreate = {

@@ -37,11 +37,17 @@ class Risk(Base):
 	
 
 	owner = relationship("User", back_populates="risks", foreign_keys=[owner_id])
+	action_items = relationship("ActionItem", back_populates="risk")
 
 	@property
 	def score(self) -> int:
 		# Risk Score = Probability × Impact
 		return int(self.probability) * int(self.impact)
+
+	@property
+	def action_items_count(self) -> int:
+		# Count of action items for this risk
+		return len(self.action_items) if self.action_items else 0
 
 	@property
 	def risk_level(self) -> str:

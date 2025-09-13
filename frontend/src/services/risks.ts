@@ -6,6 +6,7 @@ export async function listRisks(params?: {
   min_probability?: number;
   search?: string;
   risk_owner?: string;
+  rbs_node_id?: number;
   sort_by?: string;
   order?: "asc" | "desc";
   limit?: number;

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { listRisks, getRiskOwners } from "../services/risks";
+import { listRBSTree, type RBSNode } from "../services/rbs";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Search,
@@ -15,6 +16,7 @@ import {
   CheckCircle,
   Grid3X3,
   List,
+  ListChecks,
 } from "lucide-react";
 
 export default function RisksList() {
@@ -22,17 +24,19 @@ export default function RisksList() {
   const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [riskOwner, setRiskOwner] = useState<string>("");
+  const [rbsFilter, setRbsFilter] = useState<string>("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [sortBy, setSortBy] = useState<string>("score");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
   const { data: risks = [], isLoading } = useQuery({
-    queryKey: ["risks", status, search, riskOwner],
+    queryKey: ["risks", status, search, riskOwner, rbsFilter],
     queryFn: () =>
       listRisks({
         status: status || undefined,
         search: search || undefined,
         risk_owner: riskOwner || undefined,
+        rbs_node_id: rbsFilter ? Number(rbsFilter) : undefined,
       }),
   });
 
@@ -40,6 +44,31 @@ export default function RisksList() {
     queryKey: ["risk-owners"],
     queryFn: getRiskOwners,
   });
+
+  const { data: rbsTree = [] } = useQuery({
+    queryKey: ["rbs-tree"],
+    queryFn: listRBSTree,
+  });
+
+  // Flatten RBS tree for dropdown
+  const flattenRBSTree = useMemo(() => {
+    const flatten = (
+      nodes: (RBSNode & { children?: RBSNode[] })[],
+      depth = 0
+    ): { id: number; label: string }[] => {
+      const result: { id: number; label: string }[] = [];
+      for (const node of nodes) {
+        const indent = "\u00A0\u00A0".repeat(depth);
+        const marker = depth > 0 ? "↳ " : "";
+        result.push({ id: node.id, label: `${indent}${marker}${node.name}` });
+        if (node.children && node.children.length) {
+          result.push(...flatten(node.children, depth + 1));
+        }
+      }
+      return result;
+    };
+    return flatten(rbsTree);
+  }, [rbsTree]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -108,7 +137,7 @@ export default function RisksList() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="lg:col-span-2 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
@@ -143,6 +172,20 @@ export default function RisksList() {
                 {riskOwners.map((owner) => (
                   <option key={owner} value={owner}>
                     {owner}
+                  </option>
+                ))}
+              </select>
+
+              {/* RBS Filter */}
+              <select
+                value={rbsFilter}
+                onChange={(e) => setRbsFilter(e.target.value)}
+                className="input"
+              >
+                <option value="">All RBS categories</option>
+                {flattenRBSTree.map((node) => (
+                  <option key={node.id} value={node.id}>
+                    {node.label}
                   </option>
                 ))}
               </select>
@@ -443,7 +486,7 @@ function RiskScoreBadge({ score }: { score: number }) {
 
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold ${getColorClass()}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getColorClass()}`}
     >
       {score}
     </span>
@@ -469,7 +512,9 @@ function RiskCard({ risk }: { risk: any }) {
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <RiskSeverityIndicator severity={risk.probability} />
+              <span className="font-mono text-sm text-secondary-500 bg-secondary-100 px-2 py-1 rounded">
+                #{risk.id}
+              </span>
               <StatusBadge status={risk.status} />
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -507,7 +552,7 @@ function RiskCard({ risk }: { risk: any }) {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-secondary-50 rounded-lg">
             <div className="text-xs text-secondary-500 mb-2 font-medium">
-              Probability
+              Prob
             </div>
             <ProbabilityBadge probability={risk.probability} />
           </div>
@@ -519,7 +564,7 @@ function RiskCard({ risk }: { risk: any }) {
           </div>
           <div className="text-center p-3 bg-secondary-50 rounded-lg">
             <div className="text-xs text-secondary-500 mb-2 font-medium">
-              Risk Score
+              Score
             </div>
             <RiskScoreBadge score={riskScore} />
           </div>
@@ -528,16 +573,24 @@ function RiskCard({ risk }: { risk: any }) {
 
       {/* Footer with additional info and hover effects */}
       <div className="px-6 py-4 bg-secondary-50 border-t border-secondary-100 group-hover:bg-secondary-100 transition-colors">
-        <div className="flex items-center justify-between text-xs text-secondary-600">
-          <span className="font-mono">#{risk.id}</span>
-          {risk.category && (
-            <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm">
-              {risk.category}
-            </span>
-          )}
-          {(risk as any).scope && (
-            <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm">
-              {(risk as any).scope}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-2">
+            {risk.category && (
+              <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm w-fit">
+                {risk.category}
+              </span>
+            )}
+            {(risk as any).scope && (
+              <span className="capitalize bg-white px-3 py-1.5 rounded-full border border-secondary-200 text-xs font-medium shadow-sm w-fit">
+                {(risk as any).scope}
+              </span>
+            )}
+          </div>
+          {risk.action_items_count > 0 && (
+            <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+              <ListChecks className="w-3 h-3" />
+              {risk.action_items_count} action
+              {risk.action_items_count !== 1 ? "s" : ""}
             </span>
           )}
         </div>

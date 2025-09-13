@@ -15,6 +15,7 @@ def list_risks(
 	min_impact: Optional[int] = None,
 	search: Optional[str] = None,
 	risk_owner: Optional[str] = None,
+	rbs_node_id: Optional[int] = None,
 	sort_by: Optional[str] = None,
 	order: str = "desc",
 	limit: int = 50,
@@ -34,6 +35,8 @@ def list_risks(
 		stmt = stmt.where(Risk.risk_name.ilike(like))
 	if risk_owner:
 		stmt = stmt.where(Risk.risk_owner.ilike(f"%{risk_owner}%"))
+	if rbs_node_id is not None:
+		stmt = stmt.where(Risk.rbs_node_id == rbs_node_id)
 	if sort_by == "score":
 		# Sort by computed score (probability * impact)
 		score_expr = Risk.probability * Risk.impact
