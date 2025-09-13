@@ -8,7 +8,9 @@ A modern, full-stack risk management application built with FastAPI and React. R
 - **User Management**: Multi-user system with role-based access control
 - **Action Items**: Track mitigation actions and follow-ups
 - **Risk Snapshots**: Historical tracking of risk changes over time
-- **Reports**: Generate risk reports in multiple formats (PDF, Excel, Word)
+- **Audit Logging**: Comprehensive audit trail for all system changes
+- **Risk Trends**: Visualize risk score changes over time with interactive charts
+- **Reports**: Generate risk reports and audit history in multiple formats (PDF, Excel, Word)
 - **Real-time Updates**: Modern React frontend with real-time data synchronization
 - **Cloud Ready**: Deploy to cloud platforms with easy environment switching
 
@@ -30,6 +32,8 @@ A modern, full-stack risk management application built with FastAPI and React. R
 - **State Management**: TanStack Query for server state
 - **Forms**: React Hook Form with Zod validation
 - **Routing**: React Router for client-side navigation
+- **Charts**: Chart.js for interactive data visualization
+- **Export**: PDFMake, XLSX, and DocX for multi-format exports
 
 ## 🚀 Quick Start
 
@@ -156,6 +160,8 @@ python switch_frontend_platform.py
 - **Impact**: 1-5 scale rating
 - **Risk Score**: Automatically calculated (Probability × Impact)
 - **Risk Level**: Categorized as Low, Medium, High, or Critical
+- **Risk Trends**: Visualize how risk scores change over time
+- **Historical Tracking**: Complete audit trail of all risk modifications
 
 ### Risk Categories
 
@@ -203,6 +209,13 @@ python switch_frontend_platform.py
 - `GET /users/` - List users
 - `GET /users/{id}` - Get user details
 - `PUT /users/{id}` - Update user
+
+### Audit Logs
+
+- `GET /audit/logs` - Get audit logs with filtering
+- `GET /audit/risks/{id}/trail` - Get risk audit trail
+- `GET /audit/action-items/{id}/trail` - Get action item audit trail
+- `GET /audit/risks/{id}/trend` - Get risk trend data
 
 ### System
 
@@ -269,6 +282,7 @@ For support and questions:
 - **v0.2.0** - Added action items and user management
 - **v0.3.0** - Implemented risk snapshots and reporting
 - **v0.4.0** - Cloud deployment configuration and environment switching
+- **v0.5.0** - Added comprehensive audit logging and risk trends visualization
 
 ---
 

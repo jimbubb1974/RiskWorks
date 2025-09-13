@@ -20,6 +20,8 @@ import RiskTrends from "../components/RiskTrends";
 import type { Risk } from "../types/risk";
 import type { ActionItem } from "../types/actionItem";
 import type { Snapshot } from "../types/snapshot";
+import { auditService } from "../services/audit";
+import type { AuditLog } from "../services/audit";
 import {
   api,
   createSnapshot,
@@ -278,7 +280,7 @@ export default function Reports() {
     "pdf" | "excel" | "word"
   >("pdf");
   const [selectedReportType, setSelectedReportType] = useState<
-    "summary" | "risk-detail"
+    "summary" | "risk-detail" | "audit-history"
   >("summary");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [showRiskTrends, setShowRiskTrends] = useState(false);
@@ -379,6 +381,13 @@ export default function Reports() {
     queryKey: ["action-items"],
     queryFn: () =>
       api.get<ActionItem[]>("/action-items/").then((res) => res.data),
+  });
+
+  // Fetch audit logs for audit history report
+  const { data: auditLogs = [], isLoading: auditLogsLoading } = useQuery({
+    queryKey: ["audit-logs"],
+    queryFn: () => auditService.getAuditLogs({ limit: 1000 }),
+    enabled: selectedReportType === "audit-history",
   });
 
   const {
@@ -1156,20 +1165,30 @@ export default function Reports() {
   };
 
   const generateExport = () => {
-    if (!filteredRisks.length) return;
-
-    if (selectedFormat === "excel") {
-      generateExcel();
-    } else if (selectedFormat === "word") {
-      if (selectedReportType === "risk-detail") {
-        generateWordDetail();
+    if (selectedReportType === "audit-history") {
+      if (!auditLogs.length) return;
+      if (selectedFormat === "excel") {
+        generateAuditExcel();
+      } else if (selectedFormat === "word") {
+        generateAuditWord();
       } else {
-        generateWordSummary();
+        generateAuditPDF();
       }
-    } else if (selectedReportType === "risk-detail") {
-      generateRiskDetailPDFKit();
     } else {
-      generateSummaryPDF();
+      if (!filteredRisks.length) return;
+      if (selectedFormat === "excel") {
+        generateExcel();
+      } else if (selectedFormat === "word") {
+        if (selectedReportType === "risk-detail") {
+          generateWordDetail();
+        } else {
+          generateWordSummary();
+        }
+      } else if (selectedReportType === "risk-detail") {
+        generateRiskDetailPDFKit();
+      } else {
+        generateSummaryPDF();
+      }
     }
   };
 
@@ -2834,6 +2853,277 @@ export default function Reports() {
       );
   };
 
+  // Audit History Export Functions
+  const generateAuditExcel = () => {
+    if (!auditLogs || auditLogs.length === 0) {
+      console.error("No audit logs available for export");
+      return;
+    }
+
+    // Prepare audit data for Excel
+    const auditData = auditLogs.map((log) => ({
+      Timestamp: new Date(log.timestamp).toLocaleString(),
+      "Entity Type": log.entity_type,
+      "Entity ID": log.entity_id,
+      User: log.user_email || `User ${log.user_id}`,
+      Action: log.action,
+      Description: log.description || "",
+      Changes: log.changes ? JSON.stringify(log.changes, null, 2) : "",
+      "IP Address": log.ip_address || "",
+      "User Agent": log.user_agent || "",
+    }));
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(auditData);
+
+    // Set column widths
+    worksheet["!cols"] = [
+      { wch: 20 }, // Timestamp
+      { wch: 15 }, // Entity Type
+      { wch: 10 }, // Entity ID
+      { wch: 25 }, // User
+      { wch: 15 }, // Action
+      { wch: 40 }, // Description
+      { wch: 50 }, // Changes
+      { wch: 15 }, // IP Address
+      { wch: 30 }, // User Agent
+    ];
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Audit History");
+
+    // Add metadata sheet
+    const metadata = [
+      { Field: "Export Date", Value: new Date().toISOString() },
+      { Field: "Total Audit Logs", Value: auditLogs.length },
+      { Field: "Export Format", Value: "Excel" },
+      { Field: "Version", Value: "1.0" },
+    ];
+
+    const metadataSheet = XLSX.utils.json_to_sheet(metadata);
+    metadataSheet["!cols"] = [{ wch: 20 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(workbook, metadataSheet, "Export Info");
+
+    // Generate filename and download
+    const timestamp = new Date().toISOString().split("T")[0];
+    XLSX.writeFile(workbook, `audit-history-${timestamp}.xlsx`);
+  };
+
+  const generateAuditWord = async () => {
+    if (!auditLogs || auditLogs.length === 0) {
+      console.error("No audit logs available for export");
+      return;
+    }
+
+    // Create audit log sections
+    const auditSections = auditLogs.map((log, index) => {
+      const changesText = log.changes
+        ? Object.entries(log.changes)
+            .map(([key, value]) => {
+              if (typeof value === "object" && value !== null) {
+                const oldVal = value.old !== undefined ? value.old : "N/A";
+                const newVal = value.new !== undefined ? value.new : "N/A";
+                return `${key}: ${oldVal} → ${newVal}`;
+              }
+              return `${key}: ${value}`;
+            })
+            .join(", ")
+        : "No changes recorded";
+
+      return (
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Audit Log ${index + 1}`,
+              bold: true,
+              size: 20,
+              color: "2563EB",
+            }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Timestamp: ", bold: true }),
+            new TextRun({ text: new Date(log.timestamp).toLocaleString() }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Entity: ", bold: true }),
+            new TextRun({ text: `${log.entity_type} (ID: ${log.entity_id})` }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "User: ", bold: true }),
+            new TextRun({ text: log.user_email || `User ${log.user_id}` }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Action: ", bold: true }),
+            new TextRun({ text: log.action }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Description: ", bold: true }),
+            new TextRun({ text: log.description || "No description" }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Changes: ", bold: true }),
+            new TextRun({ text: changesText }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+    });
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Audit History Report",
+                  bold: true,
+                  size: 32,
+                  color: "2563EB",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Generated on ${new Date().toLocaleDateString()}`,
+                  size: 20,
+                  color: "64748B",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 600 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Total Audit Logs: ${auditLogs.length}`,
+                  bold: true,
+                  size: 18,
+                }),
+              ],
+              spacing: { after: 400 },
+            }),
+            ...auditSections,
+          ],
+        },
+      ],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-history-${
+      new Date().toISOString().split("T")[0]
+    }.docx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateAuditPDF = () => {
+    if (!auditLogs || auditLogs.length === 0) {
+      console.error("No audit logs available for PDF generation");
+      return;
+    }
+
+    // Create audit log data for PDF
+    const auditTableData = auditLogs.map((log) => [
+      new Date(log.timestamp).toLocaleString(),
+      log.entity_type,
+      log.entity_id.toString(),
+      log.user_email || `User ${log.user_id}`,
+      log.action,
+      log.description || "No description",
+      log.changes ? JSON.stringify(log.changes, null, 2) : "No changes",
+    ]);
+
+    const docDefinition = {
+      content: [
+        {
+          text: "Audit History Report",
+          style: "header",
+          alignment: "center",
+        },
+        {
+          text: `Generated on ${new Date().toLocaleDateString()}`,
+          style: "subheader",
+          alignment: "center",
+        },
+        {
+          text: `Total Audit Logs: ${auditLogs.length}`,
+          style: "subheader",
+          alignment: "center",
+        },
+        {
+          text: " ",
+          margin: [0, 20, 0, 0],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["15%", "10%", "8%", "15%", "10%", "20%", "22%"],
+            body: [
+              [
+                "Timestamp",
+                "Entity Type",
+                "Entity ID",
+                "User",
+                "Action",
+                "Description",
+                "Changes",
+              ],
+              ...auditTableData,
+            ],
+          },
+          layout: "lightHorizontalLines",
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          margin: [0, 0, 0, 10],
+        },
+        subheader: {
+          fontSize: 12,
+          margin: [0, 0, 0, 10],
+        },
+      },
+      defaultStyle: {
+        fontSize: 8,
+      },
+    };
+
+    pdfMake
+      .createPdf(docDefinition)
+      .download(`audit-history-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "open":
@@ -2896,7 +3186,10 @@ export default function Reports() {
                   value={selectedReportType}
                   onChange={(e) =>
                     setSelectedReportType(
-                      e.target.value as "summary" | "risk-detail"
+                      e.target.value as
+                        | "summary"
+                        | "risk-detail"
+                        | "audit-history"
                     )
                   }
                   className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -2905,6 +3198,7 @@ export default function Reports() {
                   <option value="risk-detail">
                     Risk Detail Report (All Fields)
                   </option>
+                  <option value="audit-history">Audit History Report</option>
                 </select>
               </div>
               <div>
@@ -2956,7 +3250,11 @@ export default function Reports() {
             </button>
             <button
               onClick={generateExport}
-              disabled={!filteredRisks.length}
+              disabled={
+                selectedReportType === "audit-history"
+                  ? !auditLogs.length
+                  : !filteredRisks.length
+              }
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="h-4 w-4" />
@@ -3453,14 +3751,102 @@ export default function Reports() {
       <div className="glass p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-secondary-900">
-            Preview ({filteredRisks.length} risks)
+            {selectedReportType === "audit-history"
+              ? `Preview (${auditLogs.length} audit logs)`
+              : `Preview (${filteredRisks.length} risks)`}
           </h3>
           <div className="text-sm text-secondary-600">
-            Showing filtered results
+            {selectedReportType === "audit-history"
+              ? "Showing audit history"
+              : "Showing filtered results"}
           </div>
         </div>
 
-        {filteredRisks.length === 0 ? (
+        {selectedReportType === "audit-history" ? (
+          // Audit History Display
+          auditLogs.length === 0 ? (
+            <div className="text-center py-12">
+              <History className="h-12 w-12 text-secondary-400 mx-auto mb-4" />
+              <p className="text-secondary-600">No audit logs available</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-secondary-200">
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      Timestamp
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      Entity
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      User
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      Action
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      Description
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-secondary-700">
+                      Changes
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr
+                      key={log.id}
+                      className="border-b border-secondary-100 hover:bg-secondary-50"
+                    >
+                      <td className="py-3 px-4 text-sm text-secondary-700">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-secondary-700">
+                        {log.entity_type} #{log.entity_id}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-secondary-700">
+                        {log.user_email || `User ${log.user_id}`}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-secondary-700">
+                        {log.description || "No description"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-secondary-700">
+                        {log.changes ? (
+                          <div className="max-w-xs truncate">
+                            {Object.entries(log.changes)
+                              .map(([key, value]) => {
+                                if (
+                                  typeof value === "object" &&
+                                  value !== null
+                                ) {
+                                  const oldVal =
+                                    value.old !== undefined ? value.old : "N/A";
+                                  const newVal =
+                                    value.new !== undefined ? value.new : "N/A";
+                                  return `${key}: ${oldVal} → ${newVal}`;
+                                }
+                                return `${key}: ${value}`;
+                              })
+                              .join(", ")}
+                          </div>
+                        ) : (
+                          "No changes"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : filteredRisks.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 text-secondary-400 mx-auto mb-4" />
             <p className="text-secondary-600">
