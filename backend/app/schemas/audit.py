@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class AuditLogBase(BaseModel):
@@ -23,8 +23,7 @@ class AuditLogRead(AuditLogBase):
     timestamp: datetime
     user_email: Optional[str] = None  # Will be populated by the service
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RiskTrendDataPoint(BaseModel):

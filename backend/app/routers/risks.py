@@ -124,7 +124,9 @@ def update_risk_endpoint(risk_id: int, payload: RiskUpdate, db: Session = Depend
     from ..services.auth import get_current_user
     user = get_current_user(db, user_id)
     
-    risk = update_risk(db, owner_id=user_id, risk_id=risk_id, user_role=user.role, **payload.model_dump())
+    # Only update fields that were actually sent by the client. Still allow explicit nulls.
+    update_data = payload.model_dump(exclude_unset=True)
+    risk = update_risk(db, owner_id=user_id, risk_id=risk_id, user_role=user.role, **update_data)
     if not risk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Risk not found")
     return risk

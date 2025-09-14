@@ -83,7 +83,7 @@ def get_system_status(
         from ..core.config import settings
         
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "database": {
                 "status": db_status,
                 "type": settings.database_type,
@@ -208,7 +208,7 @@ def get_port_status(
         port_status.append(port_info)
     
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "ports": port_status
     }
 
@@ -239,7 +239,7 @@ def get_configuration(
     cors_origins = settings.cors_origins
     
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "environment": environment,
         "isCloud": is_cloud,
         "cloudProvider": cloud_provider,
@@ -325,7 +325,7 @@ def get_deployment_info(
         render_deploy_id = os.getenv("RENDER_DEPLOY_ID", "unknown")
         
         # Get deployment time (when the service started)
-        deployment_time = datetime.utcnow().isoformat()
+        deployment_time = datetime.now(timezone.utc).isoformat()
         
         # Try to get actual deployment time from environment
         if "RENDER" in os.environ:
@@ -338,7 +338,7 @@ def get_deployment_info(
         )
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "backend": {
                 "version": {
                     "commit_hash": commit_hash,

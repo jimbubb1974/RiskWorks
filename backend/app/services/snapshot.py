@@ -40,7 +40,7 @@ class SnapshotService:
                 }
                 for risk in risks
             ],
-            "snapshot_created_at": datetime.utcnow().isoformat(),
+            "snapshot_created_at": datetime.now(timezone.utc).isoformat(),
             "total_risks": len(risks)
         }
 
@@ -62,7 +62,7 @@ class SnapshotService:
                 }
                 for item in action_items
             ],
-            "snapshot_created_at": datetime.utcnow().isoformat(),
+            "snapshot_created_at": datetime.now(timezone.utc).isoformat(),
             "total_action_items": len(action_items)
         }
 

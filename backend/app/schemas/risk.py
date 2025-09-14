@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional, List, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 Status = Literal["open", "closed", "draft", "in_progress", "mitigated", "escalated"]
@@ -70,7 +70,6 @@ class RiskRead(RiskBase):
 	risk_level: str
 	action_items_count: int
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 

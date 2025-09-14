@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -38,15 +38,15 @@ class ActionItemService:
     def create_action_item(self, action_item: ActionItemCreate, created_by: int) -> ActionItem:
         """Create a new action item"""
         db_action_item = ActionItem(
-            **action_item.dict(),
+            **action_item.model_dump(),
             created_by=created_by,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         # Set completed_date if status is completed
         if action_item.status == "completed":
-            db_action_item.completed_date = datetime.utcnow()
+            db_action_item.completed_date = datetime.now(timezone.utc)
             
         self.db.add(db_action_item)
         self.db.commit()
@@ -84,13 +84,13 @@ class ActionItemService:
             progress_percentage=db_action_item.progress_percentage
         )
             
-        update_data = action_item_update.dict(exclude_unset=True)
-        update_data["updated_at"] = datetime.utcnow()
+        update_data = action_item_update.model_dump(exclude_unset=True)
+        update_data["updated_at"] = datetime.now(timezone.utc)
         
         # Handle status changes
         if "status" in update_data:
             if update_data["status"] == "completed" and not db_action_item.completed_date:
-                update_data["completed_date"] = datetime.utcnow()
+                update_data["completed_date"] = datetime.now(timezone.utc)
             elif update_data["status"] != "completed":
                 update_data["completed_date"] = None
                 
@@ -98,7 +98,7 @@ class ActionItemService:
         if "progress_percentage" in update_data:
             if update_data["progress_percentage"] == 100 and update_data.get("status") != "completed":
                 update_data["status"] = "completed"
-                update_data["completed_date"] = datetime.utcnow()
+                update_data["completed_date"] = datetime.now(timezone.utc)
         
         for field, value in update_data.items():
             setattr(db_action_item, field, value)
@@ -150,14 +150,14 @@ class ActionItemService:
             return None
             
         db_action_item.status = status
-        db_action_item.updated_at = datetime.utcnow()
+        db_action_item.updated_at = datetime.now(timezone.utc)
         
         if progress_percentage is not None:
             db_action_item.progress_percentage = progress_percentage
             
         # Handle completion
         if status == "completed":
-            db_action_item.completed_date = datetime.utcnow()
+            db_action_item.completed_date = datetime.now(timezone.utc)
             db_action_item.progress_percentage = 100
         elif status != "completed":
             db_action_item.completed_date = None
@@ -172,7 +172,7 @@ class ActionItemService:
 
     def get_overdue_action_items(self) -> List[ActionItem]:
         """Get action items that are overdue"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return self.db.query(ActionItem).filter(
             and_(
                 ActionItem.due_date < now,

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Integer, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
@@ -19,7 +19,7 @@ class User(Base):
 	# User role (determines permissions)
 	role: Mapped[str] = mapped_column(String(50), nullable=False, default="viewer")
 	
-	created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
 	risks = relationship("Risk", back_populates="owner", foreign_keys="[Risk.owner_id]", cascade="all, delete-orphan")
 	snapshots = relationship("Snapshot", back_populates="creator", cascade="all, delete-orphan")

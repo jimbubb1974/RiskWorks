@@ -229,7 +229,7 @@ def export_snapshot(
         "risk_data": snapshot.risk_data,
         "action_items_data": snapshot.action_items_data,
         "export_info": {
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
             "exported_by": current_user.id,
             "version": "1.0"
         }

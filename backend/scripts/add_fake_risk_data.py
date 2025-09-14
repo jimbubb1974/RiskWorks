@@ -164,7 +164,7 @@ def add_fake_data_to_risks():
                 risk.notes = random.choice(NOTES_SAMPLES)
             
             # Update the timestamp
-            risk.updated_at = datetime.utcnow()
+            risk.updated_at = datetime.now(timezone.utc)
             
             updated_count += 1
         

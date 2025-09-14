@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, JSON
@@ -19,7 +19,7 @@ class Snapshot(Base):
     action_items_data: Mapped[Dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     
     # Metadata
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     
     # Relationship

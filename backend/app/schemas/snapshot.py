@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SnapshotBase(BaseModel):
@@ -24,8 +24,7 @@ class SnapshotInDB(SnapshotBase):
     created_at: datetime
     created_by: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Snapshot(SnapshotInDB):

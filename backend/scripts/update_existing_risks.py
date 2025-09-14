@@ -171,7 +171,7 @@ def update_existing_risks():
                 risk.notes = random.choice(NOTES_SAMPLES)
             
             # Update the timestamp
-            risk.updated_at = datetime.utcnow()
+            risk.updated_at = datetime.now(timezone.utc)
             
             updated_count += 1
             print(f"Updated risk: {risk.risk_name}")

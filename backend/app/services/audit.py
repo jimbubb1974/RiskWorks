@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -175,7 +175,7 @@ def get_risk_trend_data(db: Session, risk_id: int, days: int = 30) -> List[Dict[
     from sqlalchemy import and_
     from datetime import timedelta
     
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
     
     logs = db.query(AuditLog).filter(
         and_(
