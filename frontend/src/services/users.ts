@@ -42,6 +42,11 @@ export const usersService = {
     return response.data;
   },
 
+  // Delete a user (admin endpoint)
+  async deleteUser(id: number): Promise<void> {
+    await apiClient.delete(`/users/${id}`);
+  },
+
   // Get available roles
   async getRoles(): Promise<Role[]> {
     const response = await apiClient.get("/users/roles");

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -28,6 +28,8 @@ export default function UserDetail() {
   const { id } = useParams<{ id: string }>();
   const userId = parseInt(id || "0");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: user,
@@ -89,6 +91,21 @@ export default function UserDetail() {
     );
   }
 
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      "Delete this user? This cannot be undone."
+    );
+    if (!confirmed) return;
+    try {
+      await usersService.deleteUser(userId);
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      navigate("/app/users");
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail || e?.message || "Unknown error";
+      window.alert(`Failed to delete user: ${msg}`);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -110,7 +127,10 @@ export default function UserDetail() {
             <Edit className="w-5 h-5 mr-2" />
             Edit User
           </button>
-          <button className="btn-ghost text-danger-600 hover:bg-danger-50">
+          <button
+            className="btn-ghost text-danger-600 hover:bg-danger-50"
+            onClick={handleDelete}
+          >
             <Trash2 className="w-5 h-5 mr-2" />
             Delete
           </button>

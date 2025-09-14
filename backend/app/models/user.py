@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Integer, String, DateTime
+from sqlalchemy import Integer, String, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -18,6 +18,9 @@ class User(Base):
 	
 	# User role (determines permissions)
 	role: Mapped[str] = mapped_column(String(50), nullable=False, default="viewer")
+
+	# Soft delete flag
+	is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 	
 	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 

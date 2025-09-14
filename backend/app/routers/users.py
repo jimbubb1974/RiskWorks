@@ -10,6 +10,8 @@ from ..database import get_db
 from ..models.user import User
 from ..schemas.user import UserRead, UserCreate, UserUpdate
 from ..services.auth import register_user, get_current_user
+from ..models.action_item import ActionItem
+from ..models.audit_log import AuditLog
 
 router = APIRouter(prefix="/users", tags=["users"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -47,6 +49,8 @@ def list_users_endpoint(
     # Check permission to view users
     check_permission(Permission.VIEW_USERS, user_id, db)
     query = db.query(User)
+    if hasattr(User, "is_active"):
+        query = query.filter(User.is_active.is_(True))
     
     # Apply filters
     if search:
@@ -72,7 +76,10 @@ def get_user_endpoint(
     Get a specific user by ID.
     Note: In a real application, you'd want role-based access control here.
     """
-    user = db.query(User).filter(User.id == user_id).first()
+    q = db.query(User).filter(User.id == user_id)
+    if hasattr(User, "is_active"):
+        q = q.filter(User.is_active.is_(True))
+    user = q.first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
@@ -185,3 +192,58 @@ def get_user_permissions_endpoint(
         )
     
     return get_role_permissions_list(user.role)
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def soft_delete_user_endpoint(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    """Soft delete a user (admin endpoint).
+
+    Notes:
+    - User is marked inactive and excluded from listings and fetches.
+    - No DB rows are deleted to preserve audit integrity.
+    """
+    # Check permission to delete users
+    check_permission(Permission.DELETE_USERS, current_user_id, db)
+
+    # Prevent self-delete to avoid locking yourself out
+    if user_id == current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own account.",
+        )
+
+    qd = db.query(User).filter(User.id == user_id)
+    if hasattr(User, "is_active"):
+        qd = qd.filter(User.is_active.is_(True))
+    user = qd.first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Block if there are referencing action items
+    refs = (
+        db.query(ActionItem)
+        .filter((ActionItem.created_by == user_id) | (ActionItem.assigned_to == user_id))
+        .limit(1)
+        .all()
+    )
+    if refs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete user: one or more action items reference this user.",
+        )
+
+    # Block if there are audit logs referencing this user
+    audit_refs = db.query(AuditLog).filter(AuditLog.user_id == user_id).limit(1).all()
+    if audit_refs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete user: audit logs reference this user. Deletion would violate data integrity.",
+        )
+
+    user.is_active = False
+    db.commit()
+    return None
