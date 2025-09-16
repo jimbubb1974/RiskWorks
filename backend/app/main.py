@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth as auth_router
 from .routers import risks as risks_router
@@ -38,6 +41,18 @@ def create_app() -> FastAPI:
 	app.include_router(snapshots_router.router)
 	app.include_router(rbs_router.router)
 	app.include_router(audit_router.router)
+
+	# Serve built SPA if present (frontend/dist)
+	# Expect dist placed at app/static/frontend
+	static_root = os.path.join(os.path.dirname(__file__), "static", "frontend")
+	index_file = os.path.join(static_root, "index.html")
+	if os.path.exists(static_root) and os.path.exists(index_file):
+		app.mount("/app", StaticFiles(directory=static_root), name="frontend")
+
+		@app.get("/app/{full_path:path}", response_class=HTMLResponse)
+		async def spa_fallback(full_path: str):
+			with open(index_file, "r", encoding="utf-8") as f:
+				return f.read()
 
 	@app.get("/health")
 	async def health_check() -> dict:
